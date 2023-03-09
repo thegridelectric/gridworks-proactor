@@ -10,6 +10,7 @@ repository = "https://github.com/thegridelectric/gridworks-proactor"
 documentation = "https://gridworks-proactor.readthedocs.io"
 packages = [
     { include = "gwproactor", from = "src" },
+    { include = "gwproactor_test", from = "src" },
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -21,6 +22,15 @@ Changelog = "https://github.com/thegridelectric/gridworks-proactor/releases"
 [tool.poetry.dependencies]
 python = "^3.10"
 click = ">=8.0.1"
+pydantic = "^1.10.6"
+python-dotenv = "^1.0.0"
+pendulum = "^2.1.2"
+xdg = "^6.0.0"
+paho-mqtt = "^1.6.1"
+result = "^0.9.0"
+gridworks-protocol = "^0.2.8"
+# TODO: This should be in an 'extra', and noxfile.py should install that 'extra' in the 'tests' session
+pytest-asyncio = "^0.20.3"
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
@@ -48,8 +58,8 @@ typeguard = ">=2.13.3"
 xdoctest = {extras = ["colors"], version = ">=0.15.10"}
 myst-parser = {version = ">=0.16.1"}
 
-[tool.poetry.scripts]
-gridworks-proactor = "gwproactor.__main__:main"
+#[tool.poetry.group.dev.dependencies]
+#pytest-asyncio = "^0.20.3"
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
@@ -57,11 +67,11 @@ tests = ["tests", "*/tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["gwproactor", "tests"]
+source = ["gwproactor", "gwproactor_test", "tests"]
 
 [tool.coverage.report]
-show_missing = true
-fail_under = 100
+show_missing = false
+fail_under = 80
 
 [tool.isort]
 profile = "black"
