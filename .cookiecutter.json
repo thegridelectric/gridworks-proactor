@@ -1,0 +1,14 @@
+{
+  "_output_dir": "/Users/Andrew/git/gridworks",
+  "_template": "gh:cjolowicz/cookiecutter-hypermodern-python",
+  "author": "Jessica Millar",
+  "copyright_year": "2023",
+  "development_status": "Development Status :: 3 - Alpha",
+  "email": "jmillar@gridworks-consulting.com",
+  "friendly_name": "Gridworks Proactor",
+  "github_user": "thegridelectric",
+  "license": "MIT",
+  "package_name": "gwproactor",
+  "project_name": "gridworks-proactor",
+  "version": "0.0.0"
+}
