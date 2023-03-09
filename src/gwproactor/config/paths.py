@@ -46,31 +46,31 @@ class Paths(BaseModel):
     @validator("config_dir", always=True)
     def get_config_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
-            v = values["config_home"] / values["relative_path"]
+            v = Path(values["config_home"]) / values["relative_path"]
         return Path(v)
 
     @validator("data_dir", always=True)
     def get_data_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
-            v = values["data_home"] / values["relative_path"]
+            v = Path(values["data_home"]) / values["relative_path"]
         return Path(v)
 
     @validator("event_dir", always=True)
     def get_event_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
-            v = values["data_dir"] / "event"
+            v = Path(values["data_dir"]) / "event"
         return Path(v)
 
     @validator("log_dir", always=True)
     def get_log_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
-            v = values["state_home"] / values["relative_path"] / "log"
+            v = Path(values["state_home"]) / values["relative_path"] / "log"
         return Path(v)
 
     @validator("hardware_layout", always=True)
     def get_hardware_layout(cls, v, values):
         if not v:
-            v = values["config_dir"] / DEFAULT_LAYOUT_FILE
+            v = Path(values["config_dir"]) / DEFAULT_LAYOUT_FILE
         return Path(v)
 
     @validator("relative_path", always=True)
