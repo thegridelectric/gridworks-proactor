@@ -20,7 +20,7 @@ class MessageSummary:
         actor_alias: str,
         topic: str,
         payload_object: Any = None,
-        broker_flag=" ",
+        broker_flag: str = " ",
         timestamp: Optional[pendulum.datetime] = None,
         include_timestamp: bool = False,
     ) -> str:
@@ -121,7 +121,7 @@ class ProactorLogger(logging.LoggerAdapter):
         actor_alias: str,
         topic: str,
         payload_object: Any = None,
-        broker_flag=" ",
+        broker_flag: str = " ",
         timestamp: Optional[pendulum.datetime] = None,
     ) -> None:
         if self.message_summary_logger.isEnabledFor(logging.INFO):
@@ -145,18 +145,18 @@ class ProactorLogger(logging.LoggerAdapter):
     def comm_event(self, msg: str, *args, **kwargs) -> None:
         self.comm_event_logger.info(msg, *args, **kwargs)
 
-    def message_enter(self, msg: str, *args, **kwargs):
+    def message_enter(self, msg: str, *args, **kwargs) -> None:
         if self.path_enabled:
             self.path("")
             self.path(self.MESSAGE_ENTRY_DELIMITER)
             self.path(msg, *args, **kwargs)
 
-    def message_exit(self, msg: str, *args, **kwargs):
+    def message_exit(self, msg: str, *args, **kwargs) -> None:
         if self.path_enabled:
             self.path(msg, *args, **kwargs)
             self.path(self.MESSAGE_EXIT_DELIMITER)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<{self.__class__.__name__} "
             f"{self.logger.name}, "
