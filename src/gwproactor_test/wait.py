@@ -17,7 +17,7 @@ AwaitablePredicate = Callable[[], Awaitable[bool]]
 ErrorStringFunction = Callable[[], str]
 
 
-class StopWatch(object):
+class StopWatch:
     """Measure time with context manager"""
 
     start: float = 0

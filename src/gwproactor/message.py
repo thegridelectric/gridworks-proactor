@@ -70,7 +70,7 @@ class MQTTMessageModel(BaseModel):
     dup: bool = False
     mid: int = 0
     topic: str = ""
-    payload: bytes = bytes()
+    payload: bytes = b""
     qos: int = 0
     retain: bool = False
 
