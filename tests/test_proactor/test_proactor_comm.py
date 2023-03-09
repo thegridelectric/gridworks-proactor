@@ -17,4 +17,3 @@ class DummyCommTestHelper(CommTestHelper):
 
 class TestDummyProactorComm(ProactorCommTests):
     CTH = DummyCommTestHelper
-

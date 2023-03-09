@@ -26,14 +26,14 @@ class LoggerGuard:
         self.logger.setLevel(self.level)
         self.logger.propagate = self.propagate
         curr_handlers = set(self.logger.handlers)
-        for handler in (curr_handlers - self.handlers):
+        for handler in curr_handlers - self.handlers:
             self.logger.removeHandler(handler)
-        for handler in (self.handlers - curr_handlers):
+        for handler in self.handlers - curr_handlers:
             self.logger.addHandler(handler)
         curr_filters = set(self.logger.filters)
-        for filter_ in (curr_filters - self.filters):
+        for filter_ in curr_filters - self.filters:
             self.logger.removeFilter(filter_)
-        for filter_ in (self.filters - curr_filters):
+        for filter_ in self.filters - curr_filters:
             self.logger.addFilter(filter_)
         assert set(self.logger.handlers) == self.handlers
         assert set(self.logger.filters) == self.filters
@@ -52,7 +52,10 @@ class LoggerGuards:
     def __init__(self, logger_names: Optional[Sequence[str]] = None):
         if logger_names is None:
             logger_names = self.default_logger_names()
-        self.guards = {logger_name: LoggerGuard(logging.getLogger(logger_name)) for logger_name in logger_names}
+        self.guards = {
+            logger_name: LoggerGuard(logging.getLogger(logger_name))
+            for logger_name in logger_names
+        }
 
     def restore(self):
         for guard in self.guards.values():
@@ -67,7 +70,9 @@ class LoggerGuards:
 
     @classmethod
     def default_logger_names(cls) -> list[str]:
-        return ["root", LoggingSettings().base_log_name] + list(LoggerLevels().qualified_logger_names(DEFAULT_BASE_NAME).values())
+        return ["root", LoggingSettings().base_log_name] + list(
+            LoggerLevels().qualified_logger_names(DEFAULT_BASE_NAME).values()
+        )
 
 
 @pytest.fixture

@@ -30,10 +30,8 @@ __all__ = [
     "LoggerLevels",
     "LoggingSettings",
     "RotatingFileHandlerSettings",
-
     # mqtt
     "MQTTClient",
-
     # paths
     "DEFAULT_ENV_FILE",
     "DEFAULT_BASE_DIR",
@@ -42,7 +40,6 @@ __all__ = [
     "DEFAULT_NAME_DIR",
     "DEFAULT_LAYOUT_FILE",
     "Paths",
-
     # proactor
     "ProactorSettings",
 ]

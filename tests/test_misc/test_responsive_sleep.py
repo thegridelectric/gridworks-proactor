@@ -16,7 +16,10 @@ class StopMe:
         while self.running:
             print(".")
             responsive_sleep(
-                self, 1.0, step_duration=self.step_duration, running_field_name="running"
+                self,
+                1.0,
+                step_duration=self.step_duration,
+                running_field_name="running",
             )
 
     def start(self):

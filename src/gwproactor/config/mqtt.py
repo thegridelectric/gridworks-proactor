@@ -6,6 +6,7 @@ from pydantic import SecretStr
 
 class MQTTClient(BaseModel):
     """Settings for connecting to an MQTT Broker"""
+
     host: str = "localhost"
     port: int = 1883
     keepalive: int = 60

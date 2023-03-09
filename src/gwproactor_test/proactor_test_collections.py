@@ -36,7 +36,7 @@ class ProactorCommTests:
                 link.active_for_send,
                 1,
                 "ERROR waiting link active_for_send",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert not link.active_for_recv()
             assert not link.active()
@@ -49,14 +49,19 @@ class ProactorCommTests:
                 assert comm_event.MessageId in child._event_persister
 
             # Tell client we lost comm.
-            child._mqtt_clients.clients["gridworks"]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            child._mqtt_clients.clients["gridworks"]._client._loop_rc_handle(
+                MQTT_ERR_CONN_LOST
+            )
 
             # Wait for reconnect
             await await_for(
-                lambda: stats.comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] > 1,
+                lambda: stats.comm_event_counts[
+                    "gridworks.event.comm.mqtt.fully_subscribed"
+                ]
+                > 1,
                 3,
                 "ERROR waiting link to resubscribe after comm loss",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.active_for_send()
             assert not link.active_for_recv()
@@ -70,7 +75,9 @@ class ProactorCommTests:
                 assert comm_event.MessageId in child._event_persister
 
     async def test_basic_comm_child_first(self):
-        async with self.CTH(add_child=True, add_parent=True, verbose=True, parent_on_screen=True) as h:
+        async with self.CTH(
+            add_child=True, add_parent=True, verbose=True, parent_on_screen=True
+        ) as h:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
             child_comm_event_counts = child_stats.comm_event_counts
@@ -86,13 +93,16 @@ class ProactorCommTests:
                 child_link.active_for_send,
                 1,
                 "ERROR waiting link active_for_send",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert not child_link.active_for_recv()
             assert not child_link.active()
             assert child_link.state == StateName.awaiting_peer
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert (
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                == 1
+            )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 0
             assert len(child_stats.comm_events) == 2
@@ -107,13 +117,16 @@ class ProactorCommTests:
                 child_link.active,
                 10,
                 "ERROR waiting link active",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert child_link.active_for_recv()
             assert child_link.active()
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert (
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                == 1
+            )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 1
             assert len(child_stats.comm_events) == 3
@@ -123,25 +136,33 @@ class ProactorCommTests:
                 lambda: child._event_persister.num_pending == 0,
                 1,
                 "ERROR waiting for events to be acked",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
             # Tell client we lost comm.
-            child._mqtt_clients.clients["gridworks"]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            child._mqtt_clients.clients["gridworks"]._client._loop_rc_handle(
+                MQTT_ERR_CONN_LOST
+            )
 
             # Wait for reconnect
             await await_for(
-                lambda: child_stats.comm_event_counts["gridworks.event.comm.peer_active"] > 1,
+                lambda: child_stats.comm_event_counts[
+                    "gridworks.event.comm.peer_active"
+                ]
+                > 1,
                 3,
                 "ERROR waiting link to resubscribe after comm loss",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert child_link.active_for_send()
             assert child_link.active_for_recv()
             assert child_link.active()
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
-            assert child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 2
+            assert (
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                == 2
+            )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
             assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 2
             assert len(child_stats.comm_events) == 7
@@ -151,7 +172,7 @@ class ProactorCommTests:
                 lambda: child._event_persister.num_pending == 0,
                 1,
                 "ERROR waiting for events to be acked",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
     @pytest.mark.skip()
@@ -189,7 +210,7 @@ class ProactorCommTests:
             child_comm_event_counts = child_stats.comm_event_counts
             child_link = child._link_states.link(child.upstream_client)
             parent = h.parent
-            #TODO: hack
+            # TODO: hack
             parent_link = parent._link_states.link(parent.primary_peer_client)
 
             # unstarted parent
@@ -201,7 +222,7 @@ class ProactorCommTests:
                 parent_link.active_for_send,
                 1,
                 "ERROR waiting link active_for_send",
-                err_str_f=parent.summary_str
+                err_str_f=parent.summary_str,
             )
 
             # unstarted child
@@ -214,14 +235,17 @@ class ProactorCommTests:
                 child_link.active,
                 1,
                 "ERROR waiting link active",
-                err_str_f=parent.summary_str
+                err_str_f=parent.summary_str,
             )
 
             assert child_link.active_for_recv()
             assert child_link.active()
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert (
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                == 1
+            )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 1
             assert len(child_stats.comm_events) == 3
@@ -231,7 +255,7 @@ class ProactorCommTests:
                 lambda: child._event_persister.num_pending == 0,
                 1,
                 "ERROR waiting for events to be acked",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
     @pytest.mark.asyncio
@@ -256,13 +280,16 @@ class ProactorCommTests:
                 child_link.active,
                 1,
                 "ERROR waiting link active",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert child_link.active_for_recv()
             assert child_link.active()
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert (
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                == 1
+            )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 1
             assert len(child_stats.comm_events) == 3
@@ -272,25 +299,33 @@ class ProactorCommTests:
                 lambda: child._event_persister.num_pending == 0,
                 1,
                 "ERROR waiting for events to be acked",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
             # Tell *child* client we lost comm.
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+                MQTT_ERR_CONN_LOST
+            )
 
             # Wait for reconnect
             await await_for(
-                lambda: child_stats.comm_event_counts["gridworks.event.comm.peer_active"] > 1,
+                lambda: child_stats.comm_event_counts[
+                    "gridworks.event.comm.peer_active"
+                ]
+                > 1,
                 3,
                 "ERROR waiting link to resubscribe after comm loss",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert child_link.active_for_send()
             assert child_link.active_for_recv()
             assert child_link.active()
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
-            assert child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 2
+            assert (
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                == 2
+            )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
             assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 2
             assert len(child_stats.comm_events) == 7
@@ -300,19 +335,24 @@ class ProactorCommTests:
                 lambda: child._event_persister.num_pending == 0,
                 1,
                 "ERROR waiting for events to be acked",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
             # Tell *parent* client we lost comm.
-            parent._mqtt_clients.clients[parent.primary_peer_client]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            parent._mqtt_clients.clients[
+                parent.primary_peer_client
+            ]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             # wait for child to get ping from parent when parent reconnects to mqtt
-            parent_ping_topic = MQTTTopic.encode("gw", parent.publication_name, "gridworks-ping")
+            parent_ping_topic = MQTTTopic.encode(
+                "gw", parent.publication_name, "gridworks-ping"
+            )
             num_parent_pings = child_stats.num_received_by_topic[parent_ping_topic]
             await await_for(
-                lambda: child_stats.num_received_by_topic[parent_ping_topic] == num_parent_pings + 1,
+                lambda: child_stats.num_received_by_topic[parent_ping_topic]
+                == num_parent_pings + 1,
                 3,
                 f"ERROR waiting for parent ping {parent_ping_topic}",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             # verify no child comm state change has occurred.
             assert child_link.active_for_send()
@@ -320,29 +360,42 @@ class ProactorCommTests:
             assert child_link.active()
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
-            assert child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 2
+            assert (
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                == 2
+            )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
             assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 2
             assert len(child_stats.comm_events) == 7
             assert child._event_persister.num_pending == 0
 
             # Tell *both* clients we lost comm.
-            parent._mqtt_clients.clients[parent.primary_peer_client]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            parent._mqtt_clients.clients[
+                parent.primary_peer_client
+            ]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+                MQTT_ERR_CONN_LOST
+            )
 
             # Wait for reconnect
             await await_for(
-                lambda: child_stats.comm_event_counts["gridworks.event.comm.peer_active"] > 2,
+                lambda: child_stats.comm_event_counts[
+                    "gridworks.event.comm.peer_active"
+                ]
+                > 2,
                 3,
                 "ERROR waiting link to resubscribe after comm loss",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert child_link.active_for_send()
             assert child_link.active_for_recv()
             assert child_link.active()
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 3
-            assert child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 3
+            assert (
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                == 3
+            )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 2
             assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 3
             assert len(child_stats.comm_events) == 11
@@ -352,7 +405,7 @@ class ProactorCommTests:
                 lambda: child._event_persister.num_pending == 0,
                 1,
                 "ERROR waiting for events to be acked",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
     @pytest.mark.asyncio
@@ -380,7 +433,7 @@ class ProactorCommTests:
                 lambda: len(child.pending_subacks) == 1,
                 1,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -399,7 +452,7 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.awaiting_peer),
                 1,
                 f"ERROR waiting mqtt_suback",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.active_for_send()
             assert not link.active_for_recv()
@@ -413,12 +466,14 @@ class ProactorCommTests:
 
             # Tell client we lost comm
             child.pause_subacks()
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+                MQTT_ERR_CONN_LOST
+            )
             await await_for(
                 lambda: len(child.pending_subacks) == 1,
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -433,18 +488,20 @@ class ProactorCommTests:
 
             # Tell client we lost comm
             child.pending_subacks = []
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+                MQTT_ERR_CONN_LOST
+            )
             await await_for(
                 lambda: len(stats.comm_events) > 4,
                 1,
                 "ERROR waiting comm fail",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             await await_for(
                 lambda: link.in_state(StateName.awaiting_setup_and_peer),
                 3,
                 "ERROR waiting comm restore",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -462,7 +519,7 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.awaiting_peer),
                 1,
                 f"ERROR waiting mqtt_suback",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.active_for_send()
             assert not link.active_for_recv()
@@ -509,7 +566,7 @@ class ProactorCommTests:
                 lambda: len(child.pending_subacks) == 3,
                 3,
                 "ERROR waiting link reconnect",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
             assert not link.active_for_recv()
@@ -531,7 +588,7 @@ class ProactorCommTests:
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (1/3)",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
 
@@ -543,7 +600,7 @@ class ProactorCommTests:
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (2/3)",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
 
@@ -555,7 +612,7 @@ class ProactorCommTests:
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (3/3)",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_peer
             assert not link.active_for_recv()
@@ -571,12 +628,14 @@ class ProactorCommTests:
             # (message_from_peer -> awaiting_setup)
             # Tell client we lost comm
             child.pause_subacks()
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+                MQTT_ERR_CONN_LOST
+            )
             await await_for(
                 lambda: len(child.pending_subacks) == 3,
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -599,7 +658,7 @@ class ProactorCommTests:
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (1/3)",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
 
@@ -611,7 +670,7 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.awaiting_setup),
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -669,7 +728,7 @@ class ProactorCommTests:
                 lambda: len(child.pending_subacks) == 3,
                 3,
                 "ERROR waiting link reconnect",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
             assert not link.active_for_recv()
@@ -691,7 +750,7 @@ class ProactorCommTests:
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (1/3)",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
 
@@ -704,7 +763,7 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.awaiting_setup),
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -723,21 +782,23 @@ class ProactorCommTests:
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (2/3)",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_setup
 
             # (awaiting_setup -> message_from_peer -> awaiting_setup)
             # Receive another message from peer, remaining in awaiting_setup
             parent = h.parent
-            dbg_topic = MQTTTopic.encode("gw", parent.publication_name, DBGPayload.__fields__["TypeName"].default)
+            dbg_topic = MQTTTopic.encode(
+                "gw", parent.publication_name, DBGPayload.__fields__["TypeName"].default
+            )
             assert stats.num_received_by_topic[dbg_topic] == 0
             parent.send_dbg_to_peer()
             await await_for(
                 lambda: stats.num_received_by_topic[dbg_topic] == 1,
                 1,
                 "ERROR waiting for dbg message",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_setup
 
@@ -745,12 +806,14 @@ class ProactorCommTests:
             # Tell client we lost comm
             child.pending_subacks.clear()
             child.pause_subacks()
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+                MQTT_ERR_CONN_LOST
+            )
             await await_for(
                 lambda: len(child.pending_subacks) == 3,
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
@@ -770,18 +833,20 @@ class ProactorCommTests:
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (1/3)",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
 
             # (awaiting_setup_and_peer -> message_from_peer -> awaiting_setup)
             # Force parent to restore comm, delivering a message, sending us to awaiting_setup
-            parent._mqtt_clients.clients[parent.primary_peer_client]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            parent._mqtt_clients.clients[
+                parent.primary_peer_client
+            ]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             await await_for(
                 lambda: link.in_state(StateName.awaiting_setup),
                 3,
                 f"ERROR waiting for message from peer",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
             # (awaiting_setup -> mqtt_suback -> active)
@@ -791,7 +856,7 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.active),
                 1,
                 f"ERROR waiting for active",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
     @pytest.mark.asyncio
@@ -819,25 +884,25 @@ class ProactorCommTests:
                 lambda: parent_link.in_state(StateName.awaiting_peer),
                 3,
                 "ERROR waiting for parent to connect to broker",
-                err_str_f=parent.summary_str
+                err_str_f=parent.summary_str,
             )
 
             # start child
-            child.ack_timeout_seconds = .1
+            child.ack_timeout_seconds = 0.1
             assert stats.timeouts == 0
             h.start_child()
             await await_for(
                 lambda: link.in_state(StateName.awaiting_peer),
                 3,
                 "ERROR waiting for child to connect to broker",
-                err_str_f=parent.summary_str
+                err_str_f=parent.summary_str,
             )
             # (awaiting_peer -> response_timeout -> awaiting_peer)
             await await_for(
                 lambda: stats.timeouts > 0,
                 1,
                 "ERROR waiting for child to timeout",
-                err_str_f=parent.summary_str
+                err_str_f=parent.summary_str,
             )
             assert link.state == StateName.awaiting_peer
             assert child._event_persister.num_pending > 0
@@ -849,14 +914,14 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.active),
                 1,
                 "ERROR waiting for parent to restore link #1",
-                err_str_f=parent.summary_str
+                err_str_f=parent.summary_str,
             )
             # wait for all events to be acked
             await await_for(
                 lambda: child._event_persister.num_pending == 0,
                 1,
                 "ERROR waiting for events to be acked",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
             # Timeout while active
@@ -868,7 +933,7 @@ class ProactorCommTests:
                 lambda: stats.timeouts == exp_timeouts,
                 1,
                 "ERROR waiting for child to timeout",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             assert link.state == StateName.awaiting_peer
             assert child._event_persister.num_pending > 0
@@ -876,7 +941,7 @@ class ProactorCommTests:
                 lambda: len(parent.needs_ack) == 2,
                 1,
                 "ERROR waiting for child to timeout",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
             # (awaiting_peer -> message_from_peer -> active)
@@ -885,7 +950,7 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.active),
                 1,
                 "ERROR waiting for parent to restore link #1",
-                err_str_f=parent.summary_str
+                err_str_f=parent.summary_str,
             )
 
     @pytest.mark.skip
@@ -899,7 +964,9 @@ class ProactorCommTests:
         """
         child_settings = self.CTH.child_settings_t()
         parent_settings = self.CTH.parent_settings_t()
-        child_settings.mqtt_link_poll_seconds = parent_settings.mqtt_link_poll_seconds = .1
+        child_settings.mqtt_link_poll_seconds = (
+            parent_settings.mqtt_link_poll_seconds
+        ) = 0.1
         async with self.CTH(
             add_child=True,
             add_parent=True,
@@ -909,14 +976,18 @@ class ProactorCommTests:
         ) as h:
             parent = h.parent
             parent_stats = parent.stats.link(parent.primary_peer_client)
-            parent_ping_topic = MQTTTopic.encode("gw", parent.publication_name, "gridworks-ping")
+            parent_ping_topic = MQTTTopic.encode(
+                "gw", parent.publication_name, "gridworks-ping"
+            )
 
             child = h.child
             child.suppress_status = True
-            child.ack_timeout_seconds = .1
+            child.ack_timeout_seconds = 0.1
             link = child._link_states.link(child.upstream_client)
             stats = child.stats.link(child.upstream_client)
-            child_ping_topic = MQTTTopic.encode("gw", child.publication_name, "gridworks-ping")
+            child_ping_topic = MQTTTopic.encode(
+                "gw", child.publication_name, "gridworks-ping"
+            )
 
             # start parent and child
             h.start_parent()
@@ -925,18 +996,25 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.active),
                 3,
                 "ERROR waiting for child active",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
 
             # Test that ping sent peridoically if no messages sent
             start_pings_from_parent = stats.num_received_by_topic[parent_ping_topic]
-            start_pings_from_child = parent_stats.num_received_by_topic[child_ping_topic]
+            start_pings_from_child = parent_stats.num_received_by_topic[
+                child_ping_topic
+            ]
             start_messages_from_parent = stats.num_received
             start_messages_from_child = parent_stats.num_received
-            wait_seconds = .5
+            wait_seconds = 0.5
             await asyncio.sleep(wait_seconds)
-            pings_from_parent = stats.num_received_by_topic[parent_ping_topic] - start_pings_from_parent
-            pings_from_child = parent_stats.num_received_by_topic[child_ping_topic] - start_pings_from_child
+            pings_from_parent = (
+                stats.num_received_by_topic[parent_ping_topic] - start_pings_from_parent
+            )
+            pings_from_child = (
+                parent_stats.num_received_by_topic[child_ping_topic]
+                - start_pings_from_child
+            )
             messages_from_parent = stats.num_received - start_messages_from_parent
             messages_from_child = parent_stats.num_received - start_messages_from_child
             exp_pings_nominal = wait_seconds / parent.settings.mqtt_link_poll_seconds
@@ -953,15 +1031,22 @@ class ProactorCommTests:
 
             # Test that ping not sent peridoically if messages are sent
             start_pings_from_parent = stats.num_received_by_topic[parent_ping_topic]
-            start_pings_from_child = parent_stats.num_received_by_topic[child_ping_topic]
+            start_pings_from_child = parent_stats.num_received_by_topic[
+                child_ping_topic
+            ]
             start_messages_from_parent = stats.num_received
             start_messages_from_child = parent_stats.num_received
             reps = 50
             for _ in range(reps):
                 parent.send_dbg_to_peer()
-                await asyncio.sleep(.01)
-            pings_from_parent = stats.num_received_by_topic[parent_ping_topic] - start_pings_from_parent
-            pings_from_child = parent_stats.num_received_by_topic[child_ping_topic] - start_pings_from_child
+                await asyncio.sleep(0.01)
+            pings_from_parent = (
+                stats.num_received_by_topic[parent_ping_topic] - start_pings_from_parent
+            )
+            pings_from_child = (
+                parent_stats.num_received_by_topic[child_ping_topic]
+                - start_pings_from_child
+            )
             messages_from_parent = stats.num_received - start_messages_from_parent
             messages_from_child = parent_stats.num_received - start_messages_from_child
             exp_pings_nominal = 2
@@ -984,12 +1069,12 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.awaiting_peer),
                 1,
                 "ERROR waiting for for parent to be slow",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )
             parent.release_acks(clear=True)
             await await_for(
                 lambda: link.in_state(StateName.active),
                 1,
                 "ERROR waiting for parent to respond",
-                err_str_f=child.summary_str
+                err_str_f=child.summary_str,
             )

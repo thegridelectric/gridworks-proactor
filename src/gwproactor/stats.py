@@ -12,8 +12,12 @@ from gwproactor.message import MQTTReceiptPayload
 @dataclass
 class LinkStats:
     name: str
-    num_received_by_type: dict[str, int] = field(default_factory=lambda: defaultdict(int))
-    num_received_by_topic: dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    num_received_by_type: dict[str, int] = field(
+        default_factory=lambda: defaultdict(int)
+    )
+    num_received_by_topic: dict[str, int] = field(
+        default_factory=lambda: defaultdict(int)
+    )
     comm_event_counts: dict[str, int] = field(default_factory=lambda: defaultdict(int))
     timeouts: int = 0
 
@@ -75,7 +79,9 @@ class ProactorStats:
 
     def add_link(self, link_name: str) -> None:
         if link_name in self.links:
-            raise ValueError(f"ERROR. link name {link_name} already present in self.links: {self.links.keys()}")
+            raise ValueError(
+                f"ERROR. link name {link_name} already present in self.links: {self.links.keys()}"
+            )
         self.links[link_name] = self.make_link(link_name)
 
     def link(self, name: str) -> LinkStats:

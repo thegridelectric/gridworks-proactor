@@ -15,6 +15,7 @@ from gwproactor.message import PatInternalWatchdogMessage
 
 DEFAULT_STEP_DURATION = 0.1
 
+
 def responsive_sleep(
     obj,
     seconds: float,
@@ -27,9 +28,13 @@ def responsive_sleep(
     indicates that a stop has been requested (e.g. what you would expect from a field named '_stop_requested'),
     set running_field parameter to False."""
     end_time = time.time() + seconds
-    while getattr(obj, running_field_name) == running_field and (now := time.time()) < end_time:
+    while (
+        getattr(obj, running_field_name) == running_field
+        and (now := time.time()) < end_time
+    ):
         time.sleep(min(end_time - now, step_duration))
     return getattr(obj, running_field_name) == running_field
+
 
 class AsyncQueueWriter:
     """Allow synchronous code to write to an asyncio Queue.
@@ -40,14 +45,18 @@ class AsyncQueueWriter:
     _loop: Optional[asyncio.AbstractEventLoop] = None
     _async_queue: Optional[asyncio.Queue] = None
 
-    def set_async_loop(self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue) -> None:
+    def set_async_loop(
+        self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
+    ) -> None:
         self._loop = loop
         self._async_queue = async_queue
 
     def put(self, item: Any) -> None:
         """Write to asyncio queue in a threadsafe way."""
         if self._loop is None or self._async_queue is None:
-            raise ValueError("ERROR. start(loop, async_queue) must be called prior to put(item)")
+            raise ValueError(
+                "ERROR. start(loop, async_queue) must be called prior to put(item)"
+            )
         self._loop.call_soon_threadsafe(self._async_queue.put_nowait, item)
 
 
@@ -64,7 +73,9 @@ class SyncAsyncQueueWriter:
     def __init__(self, sync_queue: Optional[queue.Queue] = None):
         self.sync_queue = sync_queue
 
-    def set_async_loop(self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue) -> None:
+    def set_async_loop(
+        self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
+    ) -> None:
         self._loop = loop
         self._async_queue = async_queue
 
@@ -77,7 +88,9 @@ class SyncAsyncQueueWriter:
     def put_to_async_queue(self, item: Any):
         """Write to asynchronous queue in a threadsafe way."""
         if self._loop is None or self._async_queue is None:
-            raise ValueError("ERROR. start(loop, async_queue) must be called prior to put(item)")
+            raise ValueError(
+                "ERROR. start(loop, async_queue) must be called prior to put(item)"
+            )
         self._loop.call_soon_threadsafe(self._async_queue.put_nowait, item)
 
     def get_from_sync_queue(
@@ -138,10 +151,14 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
     def request_stop(self) -> None:
         self.running = False
 
-    def set_async_loop(self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue) -> None:
+    def set_async_loop(
+        self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
+    ) -> None:
         self._channel.set_async_loop(loop, async_queue)
 
-    def set_async_loop_and_start(self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue) -> None:
+    def set_async_loop_and_start(
+        self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
+    ) -> None:
         self.set_async_loop(loop, async_queue)
         self.start()
 

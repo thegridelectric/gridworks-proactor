@@ -40,29 +40,42 @@ class _Case:
         )
 
     def __str__(self):
-        return f"{self.start.value}--{self.input.value}-->{self.end.value}---ok:{self.ok}"
+        return (
+            f"{self.start.value}--{self.input.value}-->{self.end.value}---ok:{self.ok}"
+        )
 
     def get_input_content(self, name: str) -> Any:
         content = self.input_content
         if content is None or isinstance(content, int):
             match self.input:
                 case TransitionName.mqtt_connected:
-                    content = MQTTConnectMessage(client_name=name, userdata=None, flags=dict(), rc=0)
+                    content = MQTTConnectMessage(
+                        client_name=name, userdata=None, flags=dict(), rc=0
+                    )
                 case TransitionName.mqtt_connect_failed:
                     content = MQTTConnectFailMessage(client_name=name, userdata=None)
                 case TransitionName.mqtt_disconnected:
-                    content = MQTTDisconnectMessage(client_name=name, userdata=None, rc=0)
+                    content = MQTTDisconnectMessage(
+                        client_name=name, userdata=None, rc=0
+                    )
                 case TransitionName.mqtt_suback:
                     if content is None:
                         content = 1
                     content = name, content
                 case TransitionName.message_from_peer:
-                    content = MQTTReceiptMessage(client_name=name, userdata=None, message=MQTTMessage())
+                    content = MQTTReceiptMessage(
+                        client_name=name, userdata=None, message=MQTTMessage()
+                    )
                 case _:
                     pass
         return content
 
-    def assert_case(self, links: LinkStates, name: str, got: Result[Transition, InvalidCommStateInput]):
+    def assert_case(
+        self,
+        links: LinkStates,
+        name: str,
+        got: Result[Transition, InvalidCommStateInput],
+    ):
         assert links[name].name == name
         assert links.link(name).name == name
         if self.ok:
@@ -86,15 +99,35 @@ class _Case:
             case TransitionName.start_called:
                 self.assert_case(links, name, links.start(name))
             case TransitionName.mqtt_connected:
-                self.assert_case(links, name, links.process_mqtt_connected(self.get_input_content(name)))
+                self.assert_case(
+                    links,
+                    name,
+                    links.process_mqtt_connected(self.get_input_content(name)),
+                )
             case TransitionName.mqtt_connect_failed:
-                self.assert_case(links, name, links.process_mqtt_connect_fail(self.get_input_content(name)))
+                self.assert_case(
+                    links,
+                    name,
+                    links.process_mqtt_connect_fail(self.get_input_content(name)),
+                )
             case TransitionName.mqtt_disconnected:
-                self.assert_case(links, name, links.process_mqtt_disconnected(self.get_input_content(name)))
+                self.assert_case(
+                    links,
+                    name,
+                    links.process_mqtt_disconnected(self.get_input_content(name)),
+                )
             case TransitionName.mqtt_suback:
-                self.assert_case(links, name, links.process_mqtt_suback(*self.get_input_content(name)))
+                self.assert_case(
+                    links,
+                    name,
+                    links.process_mqtt_suback(*self.get_input_content(name)),
+                )
             case TransitionName.message_from_peer:
-                self.assert_case(links, name, links.process_mqtt_message(self.get_input_content(name)))
+                self.assert_case(
+                    links,
+                    name,
+                    links.process_mqtt_message(self.get_input_content(name)),
+                )
             case TransitionName.response_timeout:
                 self.assert_case(links, name, links.process_ack_timeout(name))
             case TransitionName.stop_called:
@@ -112,7 +145,8 @@ class _State:
         # By default, all transitions illegal
         self.transitions = {
             transition: [_Case(start, transition, start, False)]
-            for transition in TransitionName if transition != TransitionName.none
+            for transition in TransitionName
+            if transition != TransitionName.none
         }
 
     def set_case(self, case: _Case | list[_Case]):
@@ -126,9 +160,12 @@ class _State:
             inputs = [case.input for case in cases]
             if any([start != cases[0].start for start in starts]):
                 raise ValueError(
-                    f"If multiple cases added they must share the same start state. Found states: {starts}")
+                    f"If multiple cases added they must share the same start state. Found states: {starts}"
+                )
             if any([input_ != cases[0].input for input_ in inputs]):
-                raise ValueError(f"If multiple cases added they must share the same input. Found inputs: {inputs}")
+                raise ValueError(
+                    f"If multiple cases added they must share the same input. Found inputs: {inputs}"
+                )
             start = cases[0].start
             input_ = cases[0].input
         if start != self.start:
@@ -141,7 +178,9 @@ class _Cases:
 
     def __init__(self, cases: Optional[list[_Case]] = None):
         # Disallow all transitions by default.
-        self.states = {state: _State(state) for state in StateName if state != StateName.none}
+        self.states = {
+            state: _State(state) for state in StateName if state != StateName.none
+        }
         # Set explicit cases
         for case in cases:
             self.set_case(case)
@@ -154,7 +193,8 @@ class _Cases:
             starts = [case.start for case in cases]
             if any([start != cases[0].start for start in starts]):
                 raise ValueError(
-                    f"If multiple cases added they must share the same start state. Found states: {starts}")
+                    f"If multiple cases added they must share the same start state. Found states: {starts}"
+                )
             start = cases[0].start
         self.states[start].set_case(case)
 
@@ -170,41 +210,95 @@ all_cases = _Cases(
     [
         _Case(StateName.not_started, TransitionName.start_called, StateName.connecting),
         _Case(StateName.not_started, TransitionName.stop_called, StateName.stopped),
-
-        _Case(StateName.connecting, TransitionName.mqtt_connected, StateName.awaiting_setup_and_peer),
-        _Case(StateName.connecting, TransitionName.mqtt_connect_failed, StateName.connecting),
+        _Case(
+            StateName.connecting,
+            TransitionName.mqtt_connected,
+            StateName.awaiting_setup_and_peer,
+        ),
+        _Case(
+            StateName.connecting,
+            TransitionName.mqtt_connect_failed,
+            StateName.connecting,
+        ),
         _Case(StateName.connecting, TransitionName.stop_called, StateName.stopped),
-
         [
-            _Case(StateName.awaiting_setup_and_peer, TransitionName.mqtt_suback,
-                  StateName.awaiting_setup_and_peer, input_content=1),
-            _Case(StateName.awaiting_setup_and_peer, TransitionName.mqtt_suback, StateName.awaiting_peer, input_content=0),
+            _Case(
+                StateName.awaiting_setup_and_peer,
+                TransitionName.mqtt_suback,
+                StateName.awaiting_setup_and_peer,
+                input_content=1,
+            ),
+            _Case(
+                StateName.awaiting_setup_and_peer,
+                TransitionName.mqtt_suback,
+                StateName.awaiting_peer,
+                input_content=0,
+            ),
         ],
-        _Case(StateName.awaiting_setup_and_peer, TransitionName.message_from_peer, StateName.awaiting_setup),
-        _Case(StateName.awaiting_setup_and_peer, TransitionName.mqtt_disconnected, StateName.connecting),
-        _Case(StateName.awaiting_setup_and_peer, TransitionName.stop_called, StateName.stopped),
-
+        _Case(
+            StateName.awaiting_setup_and_peer,
+            TransitionName.message_from_peer,
+            StateName.awaiting_setup,
+        ),
+        _Case(
+            StateName.awaiting_setup_and_peer,
+            TransitionName.mqtt_disconnected,
+            StateName.connecting,
+        ),
+        _Case(
+            StateName.awaiting_setup_and_peer,
+            TransitionName.stop_called,
+            StateName.stopped,
+        ),
         [
-            _Case(StateName.awaiting_setup, TransitionName.mqtt_suback, StateName.awaiting_setup, input_content=1),
-            _Case(StateName.awaiting_setup, TransitionName.mqtt_suback, StateName.active, input_content=0),
+            _Case(
+                StateName.awaiting_setup,
+                TransitionName.mqtt_suback,
+                StateName.awaiting_setup,
+                input_content=1,
+            ),
+            _Case(
+                StateName.awaiting_setup,
+                TransitionName.mqtt_suback,
+                StateName.active,
+                input_content=0,
+            ),
         ],
-        _Case(StateName.awaiting_setup, TransitionName.mqtt_disconnected, StateName.connecting),
-        _Case(StateName.awaiting_setup, TransitionName.message_from_peer, StateName.awaiting_setup),
+        _Case(
+            StateName.awaiting_setup,
+            TransitionName.mqtt_disconnected,
+            StateName.connecting,
+        ),
+        _Case(
+            StateName.awaiting_setup,
+            TransitionName.message_from_peer,
+            StateName.awaiting_setup,
+        ),
         _Case(StateName.awaiting_setup, TransitionName.stop_called, StateName.stopped),
-
-        _Case(StateName.awaiting_peer, TransitionName.message_from_peer, StateName.active),
-        _Case(StateName.awaiting_peer, TransitionName.mqtt_disconnected, StateName.connecting),
-        _Case(StateName.awaiting_peer, TransitionName.response_timeout, StateName.awaiting_peer),
+        _Case(
+            StateName.awaiting_peer, TransitionName.message_from_peer, StateName.active
+        ),
+        _Case(
+            StateName.awaiting_peer,
+            TransitionName.mqtt_disconnected,
+            StateName.connecting,
+        ),
+        _Case(
+            StateName.awaiting_peer,
+            TransitionName.response_timeout,
+            StateName.awaiting_peer,
+        ),
         _Case(StateName.awaiting_peer, TransitionName.stop_called, StateName.stopped),
-
         _Case(StateName.active, TransitionName.message_from_peer, StateName.active),
-        _Case(StateName.active, TransitionName.response_timeout, StateName.awaiting_peer),
+        _Case(
+            StateName.active, TransitionName.response_timeout, StateName.awaiting_peer
+        ),
         _Case(StateName.active, TransitionName.mqtt_disconnected, StateName.connecting),
         _Case(StateName.active, TransitionName.stop_called, StateName.stopped),
-
         _Case(StateName.stopped, TransitionName.stop_called, StateName.stopped),
     ]
 )
+
 
 @pytest.mark.parametrize("case", all_cases.cases(), ids=_Case.__str__)
 def test_transitions(case):

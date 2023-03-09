@@ -16,8 +16,10 @@ from gwproactor.message import PatExternalWatchdog
 from gwproactor.message import PatExternalWatchdogMessage
 from gwproactor.message import PatInternalWatchdog
 
+
 class _MonitoredName(MonitoredName):
     last_pat: float = 0.0
+
 
 class WatchdogManager(Communicator, Runnable):
 
@@ -28,11 +30,7 @@ class WatchdogManager(Communicator, Runnable):
     _monitored_names: dict[str, _MonitoredName]
     _pat_external_watchdog_process_args: list[str]
 
-    def __init__(
-        self,
-        seconds_per_pat,
-        services: ServicesInterface
-    ):
+    def __init__(self, seconds_per_pat, services: ServicesInterface):
         super().__init__(KnownNames.watchdog_manager.value, services)
         self.lg = services.logger
         self._seconds_per_pat = seconds_per_pat
@@ -47,11 +45,15 @@ class WatchdogManager(Communicator, Runnable):
                     f"--pid={os.getpid()}",
                     "WATCHDOG=1",
                 ]
-            self.lg.lifecycle(f"WatchdogManager: [{' '.join(self._pat_external_watchdog_process_args)}]")
+            self.lg.lifecycle(
+                f"WatchdogManager: [{' '.join(self._pat_external_watchdog_process_args)}]"
+            )
             now = time.time()
             for monitored in self._monitored_names.values():
                 monitored.last_pat = now
-            self._watchdog_task = asyncio.create_task(self._check_pats(), name="pat_watchdog")
+            self._watchdog_task = asyncio.create_task(
+                self._check_pats(), name="pat_watchdog"
+            )
 
     def stop(self):
         if self._watchdog_task is not None and not self._watchdog_task.done():
@@ -76,12 +78,16 @@ class WatchdogManager(Communicator, Runnable):
                 self._pat_external_watchdog()
             case _:
                 path_dbg |= 0x00000004
-                raise ValueError(f"WatchdogManager does not handle message payloads of type {type(message.Payload)}")
+                raise ValueError(
+                    f"WatchdogManager does not handle message payloads of type {type(message.Payload)}"
+                )
         # self.lg.path(f"--WatchdogManager.process_message  0x{path_dbg:08X}")
 
     def _pat_internal_watchdog(self, name: str):
         if name not in self._monitored_names:
-            raise ValueError(f"ERROR. Received interal watchdog pat from unmonitored name: {name}. Monistored names: {list(self._monitored_names.keys())}")
+            raise ValueError(
+                f"ERROR. Received interal watchdog pat from unmonitored name: {name}. Monistored names: {list(self._monitored_names.keys())}"
+            )
         self._monitored_names[name].last_pat = time.time()
 
     def add_monitored_name(self, monitored: MonitoredName) -> None:
@@ -92,8 +98,12 @@ class WatchdogManager(Communicator, Runnable):
                 f"WatchdogManager's _seconds_per_pat (sample rate) is {self._seconds_per_pat}"
             )
         if monitored.name in self._monitored_names:
-            raise ValueError(f"ERROR. Name {monitored.name} is already being monitored with {self._monitored_names[monitored.name]}")
-        self._monitored_names[monitored.name] = _MonitoredName(monitored.name, monitored.timeout_seconds)
+            raise ValueError(
+                f"ERROR. Name {monitored.name} is already being monitored with {self._monitored_names[monitored.name]}"
+            )
+        self._monitored_names[monitored.name] = _MonitoredName(
+            monitored.name, monitored.timeout_seconds
+        )
 
     def _timeout_expired(self) -> Optional[_MonitoredName]:
         # self.lg.path("++timeout_expired")
@@ -122,14 +132,16 @@ class WatchdogManager(Communicator, Runnable):
         while (expired := self._timeout_expired()) is None:
             self._send(PatExternalWatchdogMessage())
             await asyncio.sleep(self._seconds_per_pat)
-        self._send(InternalShutdownMessage(
-            Src=self.name,
-            Reason=(
-                f"Monitored object ({expired.name}) failed to pat internal watchdog.  \n"
-                f"  Last pat from {expired.name}: {int(time.time() - expired.last_pat)} seconds ago\n"
-                f"  Allowed seconds: {int(expired.timeout_seconds)}"
+        self._send(
+            InternalShutdownMessage(
+                Src=self.name,
+                Reason=(
+                    f"Monitored object ({expired.name}) failed to pat internal watchdog.  \n"
+                    f"  Last pat from {expired.name}: {int(time.time() - expired.last_pat)} seconds ago\n"
+                    f"  Allowed seconds: {int(expired.timeout_seconds)}"
+                ),
             )
-        ))
+        )
 
     def _pat_external_watchdog(self):
         if self._pat_external_watchdog_process_args:

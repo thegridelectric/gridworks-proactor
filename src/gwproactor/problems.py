@@ -15,11 +15,11 @@ class Problems(ValueError):
     max_problems: Optional[int] = MAX_PROBLEMS
 
     def __init__(
-            self,
-            msg: str = "",
-            warnings: Optional[Sequence[BaseException]] = None,
-            errors: Optional[Sequence[BaseException]] = None,
-            max_problems: Optional[int] = MAX_PROBLEMS
+        self,
+        msg: str = "",
+        warnings: Optional[Sequence[BaseException]] = None,
+        errors: Optional[Sequence[BaseException]] = None,
+        max_problems: Optional[int] = MAX_PROBLEMS,
     ):
         self.errors = [] if errors is None else list(errors)
         self.warnings = [] if warnings is None else list(warnings)
@@ -40,8 +40,8 @@ class Problems(ValueError):
         return self
 
     def add_problems(self, other: "Problems") -> "Problems":
-        self.errors.extend(other.errors[:self.max_problems - len(self.errors)])
-        self.warnings.extend(other.warnings[:self.max_problems - len(self.warnings)])
+        self.errors.extend(other.errors[: self.max_problems - len(self.errors)])
+        self.warnings.extend(other.warnings[: self.max_problems - len(self.warnings)])
         return self
 
     def __str__(self) -> str:
@@ -73,8 +73,5 @@ class Problems(ValueError):
         else:
             problem_type = ProblemType.warning
         return ProblemEvent(
-            Src=src,
-            ProblemType=problem_type,
-            Summary=summary,
-            Details=str(self)
+            Src=src, ProblemType=problem_type, Summary=summary, Details=str(self)
         )

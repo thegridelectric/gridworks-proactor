@@ -17,4 +17,3 @@ from gwproactor_test.wait import AwaitablePredicate
 from gwproactor_test.wait import ErrorStringFunction
 from gwproactor_test.wait import Predicate
 from gwproactor_test.wait import StopWatch
-

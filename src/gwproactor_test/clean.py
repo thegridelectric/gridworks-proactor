@@ -23,7 +23,10 @@ from gwproactor_test.dummies import DUMMY_PARENT_ENV_PREFIX
 TEST_DOTENV_PATH = "tests/.env-gwproactor-test"
 TEST_DOTENV_PATH_VAR = "GWPROACTOR_TEST_DOTENV_PATH"
 TEST_HARDWARE_LAYOUT_PATH = Path(__file__).parent / "config" / DEFAULT_LAYOUT_FILE
-DUMMY_TEST_HARDWARE_LAYOUT_PATH = Path(__file__).parent / "config" / "dummy-hardware-layout.json"
+DUMMY_TEST_HARDWARE_LAYOUT_PATH = (
+    Path(__file__).parent / "config" / "dummy-hardware-layout.json"
+)
+
 
 class DefaultTestEnv:
     """Context manager for monkeypatched environment with:
@@ -60,12 +63,12 @@ class DefaultTestEnv:
     prefixes: Optional[list[str]] = None
 
     def __init__(
-            self,
-            xdg_home: Path | str | None = None,
-            src_test_layout: Path = TEST_HARDWARE_LAYOUT_PATH,
-            copy_test_layout: bool = True,
-            use_test_dotenv: bool = True,
-            prefixes: Optional[list[str]] = None
+        self,
+        xdg_home: Path | str | None = None,
+        src_test_layout: Path = TEST_HARDWARE_LAYOUT_PATH,
+        copy_test_layout: bool = True,
+        use_test_dotenv: bool = True,
+        prefixes: Optional[list[str]] = None,
     ):
         if isinstance(xdg_home, str) and bool(xdg_home):
             xdg_home = Path(xdg_home)
@@ -152,7 +155,7 @@ def default_test_env(request, tmp_path) -> Generator[MonkeyPatch, None, None]:
 @pytest.fixture
 def clean_test_env(request, tmp_path) -> Generator[MonkeyPatch, None, None]:
     """Get a monkeypatched environment with all vars starting with any entry in DEFAULT_PREFIXES *removed* (and none
-    loaded from any dotenv file). """
+    loaded from any dotenv file)."""
     test_env = getattr(request, "param", DefaultTestEnv(use_test_dotenv=False))
     if test_env.xdg_home is None:
         test_env.xdg_home = tmp_path

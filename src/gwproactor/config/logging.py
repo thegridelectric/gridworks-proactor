@@ -15,6 +15,7 @@ DEFAULT_LOG_FILE_NAME = "scada.log"
 DEFAULT_BYTES_PER_LOG_FILE = 2 * 1024 * 1024
 DEFAULT_NUM_LOG_FILES = 10
 
+
 class FormatterSettings(BaseModel):
     fmt: str = DEFAULT_LOGGING_FORMAT
     datefmt: str = ""
@@ -36,7 +37,9 @@ class RotatingFileHandlerSettings(BaseModel):
     num_log_files: int = DEFAULT_NUM_LOG_FILES
     level: int = logging.NOTSET
 
-    def create(self, log_dir: Path | str, formatter: logging.Formatter) -> RotatingFileHandler:
+    def create(
+        self, log_dir: Path | str, formatter: logging.Formatter
+    ) -> RotatingFileHandler:
         handler = logging.handlers.RotatingFileHandler(
             filename=log_dir / self.filename,
             maxBytes=self.bytes_per_log_file,
@@ -55,18 +58,24 @@ class LoggerLevels(BaseModel):
 
     def qualified_logger_names(self, base_log_name: str) -> dict[str, str]:
         return {
-            field_name: f"{base_log_name}.{field_name}" for field_name in self.__fields__
+            field_name: f"{base_log_name}.{field_name}"
+            for field_name in self.__fields__
         }
 
-    def _logger_levels(self, base_log_name: str, fields: Iterable[str]) -> dict[str, dict[str, int]]:
+    def _logger_levels(
+        self, base_log_name: str, fields: Iterable[str]
+    ) -> dict[str, dict[str, int]]:
         return {
-            f"{base_log_name}.{field_name}": dict(level=getattr(self, field_name)) for field_name in fields
+            f"{base_log_name}.{field_name}": dict(level=getattr(self, field_name))
+            for field_name in fields
         }
 
     def logger_names_to_levels(self, base_log_name: str) -> dict[str, dict[str, int]]:
         return self._logger_levels(base_log_name, self.__fields__)
 
-    def set_logger_names_to_levels(self, base_log_name: str) -> dict[str, dict[str, int]]:
+    def set_logger_names_to_levels(
+        self, base_log_name: str
+    ) -> dict[str, dict[str, int]]:
         return self._logger_levels(base_log_name, self.__fields_set__)
 
     @validator("*")
@@ -80,7 +89,8 @@ class LoggerLevels(BaseModel):
             int_v = logging.getLevelName(v)
             if not isinstance(int_v, int):
                 raise ValueError(
-                    f"Could not convert level ({v}/{type(v)}) to an int, either by cast or by logging.getLevelName()")
+                    f"Could not convert level ({v}/{type(v)}) to an int, either by cast or by logging.getLevelName()"
+                )
         return int_v
 
 
@@ -92,7 +102,10 @@ class LoggingSettings(BaseModel):
     file_handler: RotatingFileHandlerSettings = RotatingFileHandlerSettings()
 
     def qualified_logger_names(self) -> dict[str, str]:
-        return dict(self.levels.qualified_logger_names(self.base_log_name), base=self.base_log_name)
+        return dict(
+            self.levels.qualified_logger_names(self.base_log_name),
+            base=self.base_log_name,
+        )
 
     def logger_levels(self) -> dict[str, dict[str, int]]:
         d = dict(

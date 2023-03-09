@@ -53,7 +53,6 @@ class RecorderLinkStats(LinkStats):
 
 
 class RecorderStats(ProactorStats):
-
     @classmethod
     def make_link(cls, link_name: str) -> RecorderLinkStats:
         return RecorderLinkStats(link_name)
@@ -63,7 +62,6 @@ ProactorT = TypeVar("ProactorT", bound=Proactor)
 
 
 class RecorderInterface(ServicesInterface, Runnable):
-
     @classmethod
     @abstractmethod
     def make_stats(cls) -> RecorderStats:
@@ -119,8 +117,9 @@ class _PausedAck:
     context: Optional[Any]
 
 
-def make_recorder_class(proactor_type: Type[ProactorT]) -> Callable[..., RecorderInterface]:
-
+def make_recorder_class(
+    proactor_type: Type[ProactorT],
+) -> Callable[..., RecorderInterface]:
     class Recorder(proactor_type):
 
         subacks_paused: bool
@@ -144,7 +143,9 @@ def make_recorder_class(proactor_type: Type[ProactorT]) -> Callable[..., Recorde
 
         def generate_event(self: ProactorT, event: EventT) -> None:
             if isinstance(event, CommEvent):
-                cast(RecorderLinkStats, self.stats.link(event.PeerName)).comm_events.append(event)
+                cast(
+                    RecorderLinkStats, self.stats.link(event.PeerName)
+                ).comm_events.append(event)
             super().generate_event(event)
 
         def split_client_subacks(self: ProactorT, client_name: str):
@@ -189,14 +190,16 @@ def make_recorder_class(proactor_type: Type[ProactorT]) -> Callable[..., Recorde
                     self._publish_message(**dataclasses.asdict(paused_ack))
 
         def _publish_message(
-                self, client, message: Message, qos: int = 0, context: Any = None
+            self, client, message: Message, qos: int = 0, context: Any = None
         ) -> MQTTMessageInfo:
             if self.acks_paused:
                 self.needs_ack.append(_PausedAck(client, message, qos, context))
                 return MQTTMessageInfo(-1)
             else:
                 # noinspection PyProtectedMember
-                return super()._publish_message(client, message, qos=qos, context=context)
+                return super()._publish_message(
+                    client, message, qos=qos, context=context
+                )
 
         def drop_mqtt(self, drop: bool):
             self.mqtt_messages_dropped = drop
@@ -214,20 +217,26 @@ def make_recorder_class(proactor_type: Type[ProactorT]) -> Callable[..., Recorde
                 s += f"  {link_name:10s}  {self._link_states.link_state(link_name).value}\n"
             return s
 
-        def _start_ack_timer(self: ProactorT, client_name: str, message_id: str, context: Any = None,
-                             delay: Optional[float] = None) -> None:
+        def _start_ack_timer(
+            self: ProactorT,
+            client_name: str,
+            message_id: str,
+            context: Any = None,
+            delay: Optional[float] = None,
+        ) -> None:
             if delay is None:
                 delay = self.ack_timeout_seconds
             # noinspection PyProtectedMember
-            super()._start_ack_timer(client_name, message_id, context=context, delay=delay)
+            super()._start_ack_timer(
+                client_name, message_id, context=context, delay=delay
+            )
 
         def summarize(self: ProactorT):
             self._logger.info(self.summary_str())
 
         def ping_peer(self):
             self._publish_message(
-                self.primary_peer_client,
-                PingMessage(Src=self.publication_name)
+                self.primary_peer_client, PingMessage(Src=self.publication_name)
             )
 
         @property
@@ -238,7 +247,12 @@ def make_recorder_class(proactor_type: Type[ProactorT]) -> Callable[..., Recorde
             return self._mqtt_clients.client_wrapper(client_name)
 
         def mqtt_subscriptions(self, client_name: str) -> list[str]:
-            return [item[0] for item in self._mqtt_clients.client_wrapper(client_name).subscription_items()]
+            return [
+                item[0]
+                for item in self._mqtt_clients.client_wrapper(
+                    client_name
+                ).subscription_items()
+            ]
 
         def send_dbg_to_peer(
             self,

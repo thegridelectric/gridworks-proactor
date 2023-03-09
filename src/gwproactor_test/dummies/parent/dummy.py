@@ -24,9 +24,10 @@ ParentMessageDecoder = create_message_payload_discriminator(
 
 
 class ParentMQTTCodec(MQTTCodec):
-
     def __init__(self):
-        super().__init__(Decoders.from_objects(message_payload_discriminator=ParentMessageDecoder))
+        super().__init__(
+            Decoders.from_objects(message_payload_discriminator=ParentMessageDecoder)
+        )
 
     def validate_source_alias(self, source_alias: str):
         if source_alias != DUMMY_CHILD_NAME:
@@ -43,9 +44,14 @@ class DummyParent(Proactor):
     ):
         super().__init__(
             name=name if name else DUMMY_PARENT_NAME,
-            settings=DummyParentSettings() if settings is None else settings
+            settings=DummyParentSettings() if settings is None else settings,
         )
-        self._add_mqtt_client(self.CHILD_MQTT, self.settings.child_mqtt, ParentMQTTCodec(), primary_peer=True)
+        self._add_mqtt_client(
+            self.CHILD_MQTT,
+            self.settings.child_mqtt,
+            ParentMQTTCodec(),
+            primary_peer=True,
+        )
         self._mqtt_clients.subscribe(
             self.CHILD_MQTT,
             MQTTTopic.encode_subscription(Message.type_name(), DUMMY_CHILD_NAME),
@@ -53,7 +59,9 @@ class DummyParent(Proactor):
         )
 
     @classmethod
-    def make_event_persister(cls, settings: DummyParentSettings) -> SimpleDirectoryWriter:
+    def make_event_persister(
+        cls, settings: DummyParentSettings
+    ) -> SimpleDirectoryWriter:
         return SimpleDirectoryWriter(settings.paths.event_dir)
 
     @property

@@ -77,7 +77,6 @@ class CommTestHelper:
             child_name,
             self.child_settings_t() if child_settings is None else child_settings,
             dict() if child_kwargs is None else child_kwargs,
-
         )
         self.parent_helper = ProactorTestHelper(
             parent_name,
@@ -98,12 +97,10 @@ class CommTestHelper:
                 self.start_parent()
 
     @classmethod
-    def _make(cls, recorder_t: Callable[..., RecorderInterface], helper: ProactorTestHelper) -> RecorderInterface:
-        return recorder_t(
-            helper.name,
-            helper.settings,
-            **helper.kwargs
-        )
+    def _make(
+        cls, recorder_t: Callable[..., RecorderInterface], helper: ProactorTestHelper
+    ) -> RecorderInterface:
+        return recorder_t(helper.name, helper.settings, **helper.kwargs)
 
     def make_parent(self) -> RecorderInterface:
         return self._make(self.parent_recorder_t, self.parent_helper)
@@ -161,15 +158,27 @@ class CommTestHelper:
             self.parent_helper.settings.logging.levels.lifecycle = logging.WARNING
         args = argparse.Namespace(verbose=self.verbose)
         self.logger_guards = LoggerGuards()
-        setup_logging(args, self.child_helper.settings, errors, add_screen_handler=True, root_gets_handlers=False)
+        setup_logging(
+            args,
+            self.child_helper.settings,
+            errors,
+            add_screen_handler=True,
+            root_gets_handlers=False,
+        )
         assert not errors
-        setup_logging(args, self.parent_helper.settings, errors,
-                      add_screen_handler=self.parent_on_screen, root_gets_handlers=False)
+        setup_logging(
+            args,
+            self.parent_helper.settings,
+            errors,
+            add_screen_handler=self.parent_on_screen,
+            root_gets_handlers=False,
+        )
         assert not errors
 
     async def stop_and_join(self):
         proactors = [
-            helper.proactor for helper in [self.child_helper, self.parent_helper]
+            helper.proactor
+            for helper in [self.child_helper, self.parent_helper]
             if helper.proactor is not None
         ]
         for proactor in proactors:

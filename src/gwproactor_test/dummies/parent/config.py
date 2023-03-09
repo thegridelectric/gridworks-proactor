@@ -16,11 +16,15 @@ class DummyParentSettings(ProactorSettings):
         env_prefix = DUMMY_PARENT_ENV_PREFIX
 
     @validator("logging", always=True)
-    def get_logging(cls, v: Optional[LoggingSettings], values: dict[str, Any]) -> LoggingSettings:
+    def get_logging(
+        cls, v: Optional[LoggingSettings], values: dict[str, Any]
+    ) -> LoggingSettings:
         if v is None:
             v = LoggingSettings()
         if not isinstance(values["paths"], Paths):
-            raise ValueError(f"ERROR. 'paths' value has type {type(values['paths'])}, not Paths")
+            raise ValueError(
+                f"ERROR. 'paths' value has type {type(values['paths'])}, not Paths"
+            )
         paths: Paths = values["paths"]
         v.base_log_name = str(paths.name)
         v.file_handler.filename = "atn.log"

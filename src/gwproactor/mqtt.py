@@ -36,10 +36,12 @@ from gwproactor.message import MQTTSubackPayload
 from gwproactor.sync_thread import AsyncQueueWriter
 from gwproactor.sync_thread import responsive_sleep
 
+
 class QOS(enum.IntEnum):
     AtMostOnce = 0
     AtLeastOnce = 1
     ExactlyOnce = 2
+
 
 class Subscription(NamedTuple):
     Topic: str
@@ -78,7 +80,9 @@ class MQTTClientWrapper:
         self._subscriptions = dict()
         self._pending_subscriptions = set()
         self._pending_subacks = dict()
-        self._thread = threading.Thread(target=self._client_thread, name=f"MQTT-client-thread-{self.name}")
+        self._thread = threading.Thread(
+            target=self._client_thread, name=f"MQTT-client-thread-{self.name}"
+        )
         self._stop_requested = False
 
     def _client_thread(self):
@@ -86,13 +90,14 @@ class MQTTClientWrapper:
         backoff = 1
         while not self._stop_requested:
             try:
-                self._client.connect(self._client_config.host, port=self._client_config.port)
+                self._client.connect(
+                    self._client_config.host, port=self._client_config.port
+                )
                 self._client.loop_forever(retry_first_connection=True)
             except BaseException as e:
                 self._receive_queue.put(
                     MQTTProblemsMessage(
-                        client_name=self.name,
-                        problems=Problems(errors=[e])
+                        client_name=self.name, problems=Problems(errors=[e])
                     )
                 )
             finally:
@@ -106,7 +111,12 @@ class MQTTClientWrapper:
                     backoff = 1
                 else:
                     backoff = min(backoff * 2, MAX_BACK_OFF)
-                responsive_sleep(self, backoff, running_field_name="_stop_requested", running_field=False)
+                responsive_sleep(
+                    self,
+                    backoff,
+                    running_field_name="_stop_requested",
+                    running_field=False,
+                )
 
     def start(self):
         self._thread.start()
@@ -216,7 +226,9 @@ class MQTTClientWrapper:
             )
         )
 
-    def enable_logger(self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None):
+    def enable_logger(
+        self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
+    ):
         self._client.enable_logger(logger)
 
     def disable_logger(self):
@@ -245,7 +257,8 @@ class MQTTClients:
         if upstream:
             if self.upstream_client:
                 raise ValueError(
-                    f"ERROR. upstream client already set as {self.upstream_client}. Client {name} may not be set as upstream.")
+                    f"ERROR. upstream client already set as {self.upstream_client}. Client {name} may not be set as upstream."
+                )
             self.upstream_client = name
         if primary_peer:
             if self.primary_peer_client:
@@ -293,7 +306,9 @@ class MQTTClients:
     def subscribed(self, client: str) -> bool:
         return self.clients[client].subscribed()
 
-    def enable_loggers(self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None):
+    def enable_loggers(
+        self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
+    ):
         for client_name in self.clients:
             self.clients[client_name].enable_logger(logger)
 

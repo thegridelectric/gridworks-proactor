@@ -6,6 +6,7 @@ from gwproactor.config.paths import Paths
 
 MQTT_LINK_POLL_SECONDS = 60
 
+
 class ProactorSettings(BaseSettings):
     paths: Paths = None
     logging: LoggingSettings = LoggingSettings()
@@ -20,5 +21,3 @@ class ProactorSettings(BaseSettings):
         if v is None:
             v = Paths()
         return v
-
-

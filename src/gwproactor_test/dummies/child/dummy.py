@@ -20,12 +20,11 @@ ChildMessageDecoder = create_message_payload_discriminator(
     [
         "gwproto.messages",
         "gwproactor.message",
-    ]
+    ],
 )
 
 
 class ChildMQTTCode(MQTTCodec):
-
     def __init__(self):
         super().__init__(
             Decoders.from_objects(message_payload_discriminator=ChildMessageDecoder)
@@ -48,7 +47,7 @@ class DummyChild(Proactor):
     ):
         super().__init__(
             name=name if name else DUMMY_CHILD_NAME,
-            settings=DummyChildSettings() if settings is None else settings
+            settings=DummyChildSettings() if settings is None else settings,
         )
         self._add_mqtt_client(
             DummyChild.PARENT_MQTT,
@@ -68,7 +67,9 @@ class DummyChild(Proactor):
         self.log_subscriptions("construction")
 
     @classmethod
-    def make_event_persister(cls, settings: ProactorSettings) -> TimedRollingFilePersister:
+    def make_event_persister(
+        cls, settings: ProactorSettings
+    ) -> TimedRollingFilePersister:
         return TimedRollingFilePersister(settings.paths.event_dir)
 
     @property

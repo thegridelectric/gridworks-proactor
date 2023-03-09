@@ -82,7 +82,14 @@ class ProactorLogger(logging.LoggerAdapter):
     lifecycle_logger: logging.Logger
     comm_event_logger: logging.Logger
 
-    def __init__(self, base: str, message_summary: str, lifecycle: str, comm_event: str, extra: Optional[dict] = None):
+    def __init__(
+        self,
+        base: str,
+        message_summary: str,
+        lifecycle: str,
+        comm_event: str,
+        extra: Optional[dict] = None,
+    ):
         super().__init__(logging.getLogger(base), extra=extra)
         self.message_summary_logger = logging.getLogger(message_summary)
         self.lifecycle_logger = logging.getLogger(lifecycle)
@@ -125,7 +132,7 @@ class ProactorLogger(logging.LoggerAdapter):
                     topic=topic,
                     payload_object=payload_object,
                     broker_flag=broker_flag,
-                    timestamp=timestamp
+                    timestamp=timestamp,
                 )
             )
 
@@ -148,7 +155,6 @@ class ProactorLogger(logging.LoggerAdapter):
         if self.path_enabled:
             self.path(msg, *args, **kwargs)
             self.path(self.MESSAGE_EXIT_DELIMITER)
-
 
     def __repr__(self):
         return (

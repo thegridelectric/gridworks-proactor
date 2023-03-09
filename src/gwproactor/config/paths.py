@@ -12,7 +12,6 @@ DEFAULT_NAME_DIR = Path(DEFAULT_NAME)
 DEFAULT_LAYOUT_FILE = Path("hardware-layout.json")
 
 
-
 class Paths(BaseModel):
     # Relative offsets used under home directories
     base: Path | str = DEFAULT_BASE_DIR
@@ -67,7 +66,7 @@ class Paths(BaseModel):
             v = values["state_home"] / values["relative_path"] / "log"
         return Path(v)
 
-    @validator('hardware_layout', always=True)
+    @validator("hardware_layout", always=True)
     def get_hardware_layout(cls, v, values):
         if not v:
             v = values["config_dir"] / DEFAULT_LAYOUT_FILE

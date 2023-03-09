@@ -84,8 +84,8 @@ class FileMissingWarning(PersisterWarning):
 class UIDMissingWarning(PersisterWarning):
     ...
 
-class PersisterInterface(abc.ABC):
 
+class PersisterInterface(abc.ABC):
     @abstractmethod
     def persist(self, uid: str, content: bytes) -> Result[bool, Problems]:
         """Persist content, indexed by uid"""
@@ -120,8 +120,8 @@ class _PersistedItem(NamedTuple):
     uid: str
     path: Path
 
-class StubPersister(PersisterInterface):
 
+class StubPersister(PersisterInterface):
     def persist(self, uid: str, content: bytes) -> Result[bool, Problems]:
         return Ok()
 
@@ -175,9 +175,11 @@ class SimpleDirectoryWriter(StubPersister):
                     )
                 )
         except BaseException as e:
-            return Err(problems.add_error(e).add_error(PersisterError(
-                f"Unexpected error", uid=uid
-            )))
+            return Err(
+                problems.add_error(e).add_error(
+                    PersisterError(f"Unexpected error", uid=uid)
+                )
+            )
         if problems:
             return Err(problems)
         else:
@@ -194,11 +196,7 @@ class TimedRollingFilePersister(PersisterInterface):
     _curr_dir: Path
     _curr_bytes: int
 
-    def __init__(
-        self,
-        base_dir: Path | str,
-        max_bytes: int = DEFAULT_MAX_BYTES
-    ):
+    def __init__(self, base_dir: Path | str, max_bytes: int = DEFAULT_MAX_BYTES):
         self._base_dir = Path(base_dir).resolve()
         self._max_bytes = max_bytes
         self._curr_dir = self._today_dir()
@@ -244,11 +242,17 @@ class TimedRollingFilePersister(PersisterInterface):
                 problems.add_warning(UIDExistedWarning(uid=uid, path=existing_path))
                 if existing_path.exists():
                     self._curr_bytes -= existing_path.stat().st_size
-                    problems.add_warning(FileExistedWarning(uid=uid, path=existing_path))
+                    problems.add_warning(
+                        FileExistedWarning(uid=uid, path=existing_path)
+                    )
                 else:
-                    problems.add_warning(FileMissingWarning(uid=uid, path=existing_path))
+                    problems.add_warning(
+                        FileMissingWarning(uid=uid, path=existing_path)
+                    )
             self._roll_curr_dir()
-            self._pending[uid] = self._curr_dir / self._make_name(pendulum.now("utc"), uid)
+            self._pending[uid] = self._curr_dir / self._make_name(
+                pendulum.now("utc"), uid
+            )
             try:
                 with self._pending[uid].open("wb") as f:
                     f.write(content)
@@ -256,13 +260,17 @@ class TimedRollingFilePersister(PersisterInterface):
             except BaseException as e:  # pragma: no cover
                 return Err(
                     problems.add_error(e).add_error(
-                        WriteFailed(f"Open or write failed", uid=uid, path=existing_path)
+                        WriteFailed(
+                            f"Open or write failed", uid=uid, path=existing_path
+                        )
                     )
                 )
         except BaseException as e:
-            return Err(problems.add_error(e).add_error(PersisterError(
-                f"Unexpected error", uid=uid
-            )))
+            return Err(
+                problems.add_error(e).add_error(
+                    PersisterError(f"Unexpected error", uid=uid)
+                )
+            )
         if problems:
             return Err(problems)
         else:
@@ -283,12 +291,17 @@ class TimedRollingFilePersister(PersisterInterface):
                 last_day_dir = day_dir
             except BaseException as e:
                 problems.add_error(e)
-                problems.add_error(PersisterError("Unexpected error", uid=uid, path=path))
+                problems.add_error(
+                    PersisterError("Unexpected error", uid=uid, path=path)
+                )
             if self._curr_bytes <= self._max_bytes - needed_bytes:
                 break
         try:
             if last_day_dir is not None:
-                if not self._pending or next(iter(self._pending.values())).parent != last_day_dir:
+                if (
+                    not self._pending
+                    or next(iter(self._pending.values())).parent != last_day_dir
+                ):
                     shutil.rmtree(last_day_dir, ignore_errors=True)
         except BaseException as e:  # pragma: no cover
             problems.add_error(e)
@@ -360,11 +373,15 @@ class TimedRollingFilePersister(PersisterInterface):
                     for day_dir_entry in base_dir_entry.iterdir():
                         # noinspection PyBroadException
                         try:
-                            if persisted_item := self._persisted_item_from_file_path(day_dir_entry):
+                            if persisted_item := self._persisted_item_from_file_path(
+                                day_dir_entry
+                            ):
                                 self._curr_bytes += persisted_item.path.stat().st_size
                                 paths.append(persisted_item)
                         except BaseException as e:
-                            problems.add_error(e).add_error(ReindexError(path=day_dir_entry))
+                            problems.add_error(e).add_error(
+                                ReindexError(path=day_dir_entry)
+                            )
             except BaseException as e:
                 problems.add_error(e).add_error(ReindexError())
         self._pending = dict(sorted(paths, key=lambda item: item.path))

@@ -16,7 +16,11 @@ from pydantic import ValidationError
 def test_logger_levels():
 
     # Check if fields have been added or renamed
-    assert set(LoggerLevels().__fields__.keys()) == {"message_summary", "lifecycle", "comm_event"}
+    assert set(LoggerLevels().__fields__.keys()) == {
+        "message_summary",
+        "lifecycle",
+        "comm_event",
+    }
 
     # Defaults
     levels = LoggerLevels()
@@ -39,9 +43,7 @@ def test_logger_levels():
         LoggerLevels(message_summary="FOO")
 
     levels = LoggerLevels(
-        message_summary="Critical",
-        lifecycle="DEBUG",
-        comm_event="debug"
+        message_summary="Critical", lifecycle="DEBUG", comm_event="debug"
     )
     assert levels.message_summary == logging.CRITICAL
     assert levels.lifecycle == logging.DEBUG
@@ -50,8 +52,8 @@ def test_logger_levels():
     # qualified_names()
     base_name = "foo"
     assert levels.qualified_logger_names(base_name) == {
-        field_name: f"{base_name}.{field_name}" for
-        field_name in levels.__fields__.keys()
+        field_name: f"{base_name}.{field_name}"
+        for field_name in levels.__fields__.keys()
     }
 
     # logger_names_to_levels()
@@ -62,7 +64,9 @@ def test_logger_levels():
     }
 
     # set_logger_names_to_levels() - all fields set
-    assert levels.set_logger_names_to_levels(base_name) == levels.logger_names_to_levels(base_name)
+    assert levels.set_logger_names_to_levels(
+        base_name
+    ) == levels.logger_names_to_levels(base_name)
     # only some fields set
     levels = LoggerLevels(comm_event=2)
     assert levels.set_logger_names_to_levels(base_name) == {
@@ -75,7 +79,11 @@ def test_logger_levels():
 def test_logging_settings():
 
     # Check if loggers have been added or renamed
-    assert set(LoggingSettings().levels.__fields__.keys()) == {"message_summary", "lifecycle", "comm_event"}
+    assert set(LoggingSettings().levels.__fields__.keys()) == {
+        "message_summary",
+        "lifecycle",
+        "comm_event",
+    }
 
     # Defaults
     logging_settings = LoggingSettings()
@@ -93,7 +101,7 @@ def test_logging_settings():
             message_summary=2,
             lifecycle=3,
             comm_event=4,
-        )
+        ),
     )
     assert logging_settings.base_log_name == "foo"
     assert logging_settings.base_log_level == 1
@@ -104,8 +112,8 @@ def test_logging_settings():
     # qualified_names()
     logging_settings = LoggingSettings()
     exp_logger_names = {
-        field_name: f"gridworks.{field_name}" for
-        field_name in logging_settings.levels.__fields__.keys()
+        field_name: f"gridworks.{field_name}"
+        for field_name in logging_settings.levels.__fields__.keys()
     }
     exp_logger_names["base"] = logging_settings.base_log_name
     assert logging_settings.qualified_logger_names() == exp_logger_names
@@ -128,7 +136,9 @@ def test_logging_settings():
     }
 
     # custom base name and level dicts
-    logging_settings = LoggingSettings(base_log_name="foo", base_log_level=0, levels=LoggerLevels(message_summary=1))
+    logging_settings = LoggingSettings(
+        base_log_name="foo", base_log_level=0, levels=LoggerLevels(message_summary=1)
+    )
     assert logging_settings.qualified_logger_names() == {
         "base": "foo",
         "message_summary": "foo.message_summary",
@@ -141,7 +151,9 @@ def test_logging_settings():
         "foo.lifecycle": dict(level=20),
         "foo.comm_event": dict(level=20),
     }
-    assert logging_settings.set_logger_levels() == {"foo.message_summary": dict(level=1)}
+    assert logging_settings.set_logger_levels() == {
+        "foo.message_summary": dict(level=1)
+    }
 
     # verbose()
     logging_settings = LoggingSettings()
@@ -155,12 +167,11 @@ def test_logging_settings():
     assert logging_settings.message_summary_enabled()
 
 
-def get_exp_formatted_time(record: logging.LogRecord, formatter: logging.Formatter) -> str:
+def get_exp_formatted_time(
+    record: logging.LogRecord, formatter: logging.Formatter
+) -> str:
     return formatter.default_msec_format % (
-        time.strftime(
-            formatter.default_time_format,
-            time.gmtime(record.created)
-        ),
+        time.strftime(formatter.default_time_format, time.gmtime(record.created)),
         record.msecs,
     )
 
@@ -168,12 +179,7 @@ def get_exp_formatted_time(record: logging.LogRecord, formatter: logging.Formatt
 def test_formatter_settings():
     settings = FormatterSettings()
     formatter = settings.create()
-    record = logging.makeLogRecord(
-        dict(
-            msg="bla %s %d",
-            args=("biz", 1)
-        )
-    )
+    record = logging.makeLogRecord(dict(msg="bla %s %d", args=("biz", 1)))
     got_formatted_time = formatter.formatTime(record, formatter.datefmt)
     created_gmt = time.gmtime(record.created)
     strftimed = time.strftime(logging.Formatter.default_time_format, created_gmt)
@@ -197,7 +203,7 @@ def test_rotating_file_handler_settings(tmp_path):
     settings = RotatingFileHandlerSettings(
         level=logging.INFO,
         bytes_per_log_file=bytes_per_log_file,
-        num_log_files=num_log_files
+        num_log_files=num_log_files,
     )
     handler = settings.create(tmp_path, FormatterSettings().create())
     assert handler.level == logging.INFO

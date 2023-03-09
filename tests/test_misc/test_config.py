@@ -6,11 +6,19 @@ from gwproactor.config import MQTTClient
 from gwproactor.config import Paths
 from pydantic import SecretStr
 
+
 def test_mqtt_client_settings():
     """Test MQTTClient"""
     password = "d"
     port = 1883
-    exp = dict(host="a", keepalive=1, bind_address="b", bind_port=2, username="c", password=SecretStr(password))
+    exp = dict(
+        host="a",
+        keepalive=1,
+        bind_address="b",
+        bind_port=2,
+        username="c",
+        password=SecretStr(password),
+    )
     settings = MQTTClient(**exp)
     d = settings.dict()
     assert d == dict(exp, port=port)
@@ -54,7 +62,9 @@ def assert_paths(paths: Paths, **kwargs):
         if isinstance(got_value, Path) and not isinstance(exp_value, Path):
             exp_value = Path(exp_value)
             exp[field] = exp_value
-        assert got_value == exp_value, f"Paths.{field}\n\texp: {exp_value}\n\tgot: {got_value}"
+        assert (
+            got_value == exp_value
+        ), f"Paths.{field}\n\texp: {exp_value}\n\tgot: {got_value}"
     assert paths.dict() == exp
 
 
@@ -139,7 +149,7 @@ def test_paths(clean_test_env, tmp_path):
     )
 
 
-def test_paths_mkdirs(clean_test_env, tmp_path): # noqa
+def test_paths_mkdirs(clean_test_env, tmp_path):  # noqa
     paths = Paths()
     assert not paths.data_dir.exists()
     # Get rid of the config dir created inside of tmp_path by clean_test_env

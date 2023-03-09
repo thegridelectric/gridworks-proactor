@@ -31,11 +31,11 @@ def format_exceptions(exceptions: list[BaseException]) -> str:
 
 
 def setup_logging(
-        args: argparse.Namespace,
-        settings: ProactorSettings,
-        errors: Optional[list[BaseException]] = None,
-        add_screen_handler: bool = True,
-        root_gets_handlers: bool = True,
+    args: argparse.Namespace,
+    settings: ProactorSettings,
+    errors: Optional[list[BaseException]] = None,
+    add_screen_handler: bool = True,
+    root_gets_handlers: bool = True,
 ) -> None:
     """Get python logging config based on parsed command line args, defaults, environment variables and logging config file.
 
@@ -92,7 +92,9 @@ def setup_logging(
             except BaseException as e:
                 errors.append(e)
         try:
-            file_handler = settings.logging.file_handler.create(settings.paths.log_dir, formatter)
+            file_handler = settings.logging.file_handler.create(
+                settings.paths.log_dir, formatter
+            )
             if formatter is not None:
                 file_handler.setFormatter(formatter)
             base_logger.addHandler(file_handler)

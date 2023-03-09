@@ -138,28 +138,62 @@ class State(abc.ABC):
         raise NotImplementedError
 
     def start(self) -> Result[Transition, InvalidCommStateInput]:
-        return Err(InvalidCommStateInput("", current_state=self.name, transition=TransitionName.start_called))
+        return Err(
+            InvalidCommStateInput(
+                "", current_state=self.name, transition=TransitionName.start_called
+            )
+        )
 
     def stop(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.stop_called, self.name, StateName.stopped))
+        return Ok(
+            Transition("", TransitionName.stop_called, self.name, StateName.stopped)
+        )
 
     def process_mqtt_connected(self) -> Result[Transition, InvalidCommStateInput]:
-        return Err(InvalidCommStateInput("", current_state=self.name, transition=TransitionName.mqtt_connected))
+        return Err(
+            InvalidCommStateInput(
+                "", current_state=self.name, transition=TransitionName.mqtt_connected
+            )
+        )
 
     def process_mqtt_disconnected(self) -> Result[Transition, InvalidCommStateInput]:
-        return Err(InvalidCommStateInput("", current_state=self.name, transition=TransitionName.mqtt_disconnected))
+        return Err(
+            InvalidCommStateInput(
+                "", current_state=self.name, transition=TransitionName.mqtt_disconnected
+            )
+        )
 
     def process_mqtt_connect_fail(self) -> Result[Transition, InvalidCommStateInput]:
-        return Err(InvalidCommStateInput("", current_state=self.name, transition=TransitionName.mqtt_connect_failed))
+        return Err(
+            InvalidCommStateInput(
+                "",
+                current_state=self.name,
+                transition=TransitionName.mqtt_connect_failed,
+            )
+        )
 
-    def process_mqtt_suback(self, num_pending_subscriptions: int) -> Result[Transition, InvalidCommStateInput]:
-        return Err(InvalidCommStateInput("", current_state=self.name, transition=TransitionName.mqtt_suback))
+    def process_mqtt_suback(
+        self, num_pending_subscriptions: int
+    ) -> Result[Transition, InvalidCommStateInput]:
+        return Err(
+            InvalidCommStateInput(
+                "", current_state=self.name, transition=TransitionName.mqtt_suback
+            )
+        )
 
     def process_mqtt_message(self) -> Result[Transition, InvalidCommStateInput]:
-        return Err(InvalidCommStateInput("", current_state=self.name, transition=TransitionName.message_from_peer))
+        return Err(
+            InvalidCommStateInput(
+                "", current_state=self.name, transition=TransitionName.message_from_peer
+            )
+        )
 
     def process_ack_timeout(self) -> Result[Transition, InvalidCommStateInput]:
-        return Err(InvalidCommStateInput("", current_state=self.name, transition=TransitionName.response_timeout))
+        return Err(
+            InvalidCommStateInput(
+                "", current_state=self.name, transition=TransitionName.response_timeout
+            )
+        )
 
     def active(self):
         return state_is_active(self.name)
@@ -172,26 +206,37 @@ class State(abc.ABC):
 
 
 class NotStarted(State):
-
     @property
     def name(self) -> StateName:
         return StateName.not_started
 
     def start(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.start_called, self.name, StateName.connecting))
+        return Ok(
+            Transition("", TransitionName.start_called, self.name, StateName.connecting)
+        )
 
 
 class Connecting(State):
-
     @property
     def name(self) -> StateName:
         return StateName.connecting
 
     def process_mqtt_connected(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.mqtt_connected, self.name, StateName.awaiting_setup_and_peer))
+        return Ok(
+            Transition(
+                "",
+                TransitionName.mqtt_connected,
+                self.name,
+                StateName.awaiting_setup_and_peer,
+            )
+        )
 
     def process_mqtt_connect_fail(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.mqtt_connect_failed, self.name, StateName.connecting))
+        return Ok(
+            Transition(
+                "", TransitionName.mqtt_connect_failed, self.name, StateName.connecting
+            )
+        )
 
 
 class AwaitingSetupAndPeer(State):
@@ -200,9 +245,15 @@ class AwaitingSetupAndPeer(State):
         return StateName.awaiting_setup_and_peer
 
     def process_mqtt_disconnected(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.mqtt_disconnected, self.name, StateName.connecting))
+        return Ok(
+            Transition(
+                "", TransitionName.mqtt_disconnected, self.name, StateName.connecting
+            )
+        )
 
-    def process_mqtt_suback(self, num_pending_subscriptions: int) -> Result[Transition, InvalidCommStateInput]:
+    def process_mqtt_suback(
+        self, num_pending_subscriptions: int
+    ) -> Result[Transition, InvalidCommStateInput]:
         if num_pending_subscriptions == 0:
             new_state = StateName.awaiting_peer
         else:
@@ -210,19 +261,31 @@ class AwaitingSetupAndPeer(State):
         return Ok(Transition("", TransitionName.mqtt_suback, self.name, new_state))
 
     def process_mqtt_message(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.message_from_peer, self.name, StateName.awaiting_setup))
+        return Ok(
+            Transition(
+                "",
+                TransitionName.message_from_peer,
+                self.name,
+                StateName.awaiting_setup,
+            )
+        )
 
 
 class AwaitingSetup(State):
-
     @property
     def name(self) -> StateName:
         return StateName.awaiting_setup
 
     def process_mqtt_disconnected(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.mqtt_disconnected, self.name, StateName.connecting))
+        return Ok(
+            Transition(
+                "", TransitionName.mqtt_disconnected, self.name, StateName.connecting
+            )
+        )
 
-    def process_mqtt_suback(self, num_pending_subscriptions: int) -> Result[Transition, InvalidCommStateInput]:
+    def process_mqtt_suback(
+        self, num_pending_subscriptions: int
+    ) -> Result[Transition, InvalidCommStateInput]:
         if num_pending_subscriptions == 0:
             new_state = StateName.active
         else:
@@ -230,7 +293,9 @@ class AwaitingSetup(State):
         return Ok(Transition("", TransitionName.mqtt_suback, self.name, new_state))
 
     def process_mqtt_message(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.message_from_peer, self.name, self.name))
+        return Ok(
+            Transition("", TransitionName.message_from_peer, self.name, self.name)
+        )
 
 
 class AwaitingPeer(State):
@@ -239,10 +304,18 @@ class AwaitingPeer(State):
         return StateName.awaiting_peer
 
     def process_mqtt_disconnected(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.mqtt_disconnected, self.name, StateName.connecting))
+        return Ok(
+            Transition(
+                "", TransitionName.mqtt_disconnected, self.name, StateName.connecting
+            )
+        )
 
     def process_mqtt_message(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.message_from_peer, self.name, StateName.active))
+        return Ok(
+            Transition(
+                "", TransitionName.message_from_peer, self.name, StateName.active
+            )
+        )
 
     def process_ack_timeout(self) -> Result[Transition, InvalidCommStateInput]:
         return Ok(Transition("", TransitionName.response_timeout, self.name, self.name))
@@ -254,13 +327,25 @@ class Active(State):
         return StateName.active
 
     def process_mqtt_disconnected(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.mqtt_disconnected, self.name, StateName.connecting))
+        return Ok(
+            Transition(
+                "", TransitionName.mqtt_disconnected, self.name, StateName.connecting
+            )
+        )
 
     def process_mqtt_message(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.message_from_peer, self.name, StateName.active))
+        return Ok(
+            Transition(
+                "", TransitionName.message_from_peer, self.name, StateName.active
+            )
+        )
 
     def process_ack_timeout(self) -> Result[Transition, InvalidCommStateInput]:
-        return Ok(Transition("", TransitionName.response_timeout, self.name, StateName.awaiting_peer))
+        return Ok(
+            Transition(
+                "", TransitionName.response_timeout, self.name, StateName.awaiting_peer
+            )
+        )
 
 
 class Stopped(State):
@@ -277,7 +362,8 @@ class LinkState:
     def __init__(self, name, curr_state: StateName = StateName.not_started):
         self.name = name
         self.states = {
-            state.name: state for state in [
+            state.name: state
+            for state in [
                 NotStarted(),
                 Connecting(),
                 AwaitingSetupAndPeer(),
@@ -329,8 +415,12 @@ class LinkState:
     def process_mqtt_connect_fail(self) -> Result[Transition, InvalidCommStateInput]:
         return self._handle(self.curr_state.process_mqtt_connect_fail())
 
-    def process_mqtt_suback(self, num_pending_subscriptions: int) -> Result[Transition, InvalidCommStateInput]:
-        return self._handle(self.curr_state.process_mqtt_suback(num_pending_subscriptions))
+    def process_mqtt_suback(
+        self, num_pending_subscriptions: int
+    ) -> Result[Transition, InvalidCommStateInput]:
+        return self._handle(
+            self.curr_state.process_mqtt_suback(num_pending_subscriptions)
+        )
 
     def process_mqtt_message(self) -> Result[Transition, InvalidCommStateInput]:
         return self._handle(self.curr_state.process_mqtt_message())
@@ -367,7 +457,9 @@ class LinkStates:
 
     def add(self, name: str, state: StateName = StateName.not_started) -> LinkState:
         if name in self._links:
-            raise CommLinkAlreadyExists(name, current_state=self._links[name].curr_state.name)
+            raise CommLinkAlreadyExists(
+                name, current_state=self._links[name].curr_state.name
+            )
         self._links[name] = LinkState(name, state)
         return self._links[name]
 
@@ -388,20 +480,32 @@ class LinkStates:
     def stop(self, name: str) -> Result[Transition, InvalidCommStateInput]:
         return self[name].stop()
 
-    def process_mqtt_connected(self, message: Message[MQTTConnectPayload]) -> Result[Transition, InvalidCommStateInput]:
+    def process_mqtt_connected(
+        self, message: Message[MQTTConnectPayload]
+    ) -> Result[Transition, InvalidCommStateInput]:
         return self[message.Payload.client_name].process_mqtt_connected()
 
-    def process_mqtt_disconnected(self, message: Message[MQTTDisconnectPayload]) -> Result[Transition, InvalidCommStateInput]:
+    def process_mqtt_disconnected(
+        self, message: Message[MQTTDisconnectPayload]
+    ) -> Result[Transition, InvalidCommStateInput]:
         return self[message.Payload.client_name].process_mqtt_disconnected()
 
-    def process_mqtt_connect_fail(self, message: Message[MQTTConnectFailPayload]) -> Result[Transition, InvalidCommStateInput]:
+    def process_mqtt_connect_fail(
+        self, message: Message[MQTTConnectFailPayload]
+    ) -> Result[Transition, InvalidCommStateInput]:
         return self[message.Payload.client_name].process_mqtt_connect_fail()
 
-    def process_mqtt_suback(self, name: str, num_pending_subscriptions: int) -> Result[Transition, InvalidCommStateInput]:
+    def process_mqtt_suback(
+        self, name: str, num_pending_subscriptions: int
+    ) -> Result[Transition, InvalidCommStateInput]:
         return self[name].process_mqtt_suback(num_pending_subscriptions)
 
-    def process_mqtt_message(self, message: Message[MQTTReceiptPayload]) -> Result[Transition, InvalidCommStateInput]:
+    def process_mqtt_message(
+        self, message: Message[MQTTReceiptPayload]
+    ) -> Result[Transition, InvalidCommStateInput]:
         return self[message.Payload.client_name].process_mqtt_message()
 
-    def process_ack_timeout(self, name: str) -> Result[Transition, InvalidCommStateInput]:
+    def process_ack_timeout(
+        self, name: str
+    ) -> Result[Transition, InvalidCommStateInput]:
         return self[name].process_ack_timeout()

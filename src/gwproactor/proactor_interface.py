@@ -23,6 +23,7 @@ class MonitoredName:
     name: str
     timeout_seconds: float
 
+
 class CommunicatorInterface(ABC):
     """Pure interface necessary for interaction between a sub-object and the system services proactor"""
 
@@ -65,6 +66,7 @@ class Communicator(CommunicatorInterface, ABC):
     @property
     def monitored_names(self) -> Sequence[MonitoredName]:
         return []
+
 
 class Runnable(ABC):
     """Pure interface to an object which is expected to support starting, stopping and joining."""
@@ -134,4 +136,3 @@ class ServicesInterface(CommunicatorInterface):
     @abstractmethod
     def stats(self) -> ProactorStats:
         raise NotImplementedError
-

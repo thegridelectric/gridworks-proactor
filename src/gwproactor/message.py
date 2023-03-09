@@ -33,10 +33,12 @@ class MessageType(Enum):
     mqtt_suback = "mqtt_suback"
     mqtt_problems = "mqtt_problems"
 
+
 class KnownNames(Enum):
     proactor = "proactor"
     mqtt_clients = "mqtt_clients"
     watchdog_manager = "watchdog_manager"
+
 
 class MQTTClientsPayload(BaseModel):
     client_name: str
@@ -191,35 +193,48 @@ class MQTTProblemsPayload(MQTTCommEventPayload):
 
 
 class MQTTProblemsMessage(MQTTClientMessage[MQTTCommEventPayload]):
-    def __init__(self, client_name: str, problems: Problems, rc: int = MQTT_ERR_UNKNOWN):
+    def __init__(
+        self, client_name: str, problems: Problems, rc: int = MQTT_ERR_UNKNOWN
+    ):
         super().__init__(
             message_type=MessageType.mqtt_problems,
             payload=MQTTProblemsPayload(
-                client_name=client_name,
-                rc=rc,
-                problems=problems
+                client_name=client_name, rc=rc, problems=problems
             ),
         )
+
 
 class PatWatchdog(BaseModel):
     ...
 
+
 class PatInternalWatchdog(PatWatchdog):
-    TypeName: Literal["gridworks.watchdog.pat.internal"] = "gridworks.watchdog.pat.internal"
+    TypeName: Literal[
+        "gridworks.watchdog.pat.internal"
+    ] = "gridworks.watchdog.pat.internal"
+
 
 class PatExternalWatchdog(PatWatchdog):
-    TypeName: Literal["gridworks.watchdog.pat.external"] = "gridworks.watchdog.pat.external"
+    TypeName: Literal[
+        "gridworks.watchdog.pat.external"
+    ] = "gridworks.watchdog.pat.external"
+
 
 class PatInternalWatchdogMessage(Message[PatInternalWatchdog]):
     def __init__(self, src: str):
-        super().__init__(Src=src, Dst=KnownNames.watchdog_manager.value, Payload=PatInternalWatchdog())
+        super().__init__(
+            Src=src,
+            Dst=KnownNames.watchdog_manager.value,
+            Payload=PatInternalWatchdog(),
+        )
+
 
 class PatExternalWatchdogMessage(Message[PatExternalWatchdog]):
     def __init__(self):
         super().__init__(
             Src=KnownNames.watchdog_manager.value,
             Dst=KnownNames.watchdog_manager.value,
-            Payload=PatExternalWatchdog()
+            Payload=PatExternalWatchdog(),
         )
 
 

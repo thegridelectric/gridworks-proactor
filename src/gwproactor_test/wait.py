@@ -15,6 +15,7 @@ Predicate = Callable[[], bool]
 AwaitablePredicate = Callable[[], Awaitable[bool]]
 ErrorStringFunction = Callable[[], str]
 
+
 class StopWatch(object):
     """Measure time with context manager"""
 
@@ -28,6 +29,7 @@ class StopWatch(object):
     def __exit__(self, type_, value, traceback):
         self.end = time.time()
         self.elapsed = self.end - self.start
+
 
 async def await_for(
     f: Union[Predicate, AwaitablePredicate],
@@ -52,11 +54,15 @@ async def await_for(
         "{err_str}"
     )
     if err_str_f is not None:
+
         def err_str_f_() -> str:
             return "\n" + textwrap.indent(err_str_f(), "  ")
+
     else:
+
         def err_str_f_() -> str:
             return ""
+
     f_is_async = inspect.iscoroutinefunction(f)
     result = False
     if now >= until:
@@ -84,7 +90,7 @@ async def await_for(
             line=caller.lineno,
             seconds=time.time() - start,
             f=f,
-            err_str=err_str_f_()
+            err_str=err_str_f_(),
         )
         err_str = err_format.format(**format_dict)
         if error_dict is not None:

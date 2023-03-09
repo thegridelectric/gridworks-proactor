@@ -38,31 +38,45 @@ def test_get_default_logging_config(caplog, capsys):
             file_handler = handler
     assert stream_handler is not None
     assert file_handler is not None
-    assert logging.getLogger("gridworks").getEffectiveLevel() == settings.logging.base_log_level
+    assert (
+        logging.getLogger("gridworks").getEffectiveLevel()
+        == settings.logging.base_log_level
+    )
     # Sub-logger levels
     logger_names = settings.logging.qualified_logger_names()
 
     # Check if loggers have been added or renamed
-    assert set(LoggingSettings().levels.__fields__.keys()) == {"message_summary", "lifecycle", "comm_event"}
+    assert set(LoggingSettings().levels.__fields__.keys()) == {
+        "message_summary",
+        "lifecycle",
+        "comm_event",
+    }
     for field_name in settings.logging.levels.__fields__:
         logger_level = logging.getLogger(logger_names[field_name]).level
         settings_level = getattr(settings.logging.levels, field_name)
         assert logger_level == settings_level
-    assert logging.getLogger(logger_names["base"]).level == settings.logging.base_log_level
+    assert (
+        logging.getLogger(logger_names["base"]).level == settings.logging.base_log_level
+    )
 
     assert len(caplog.records) == 0
 
     # Check logger filter by level and message formatting.
     formatter = settings.logging.formatter.create()
     text = ""
-    for i, logger_name in enumerate([settings.logging.base_log_name] + list(logger_names.values())):
+    for i, logger_name in enumerate(
+        [settings.logging.base_log_name] + list(logger_names.values())
+    ):
         logger = logging.getLogger(logger_name)
         msg = "%d: %s"
         logger.debug(msg, i, logger.name)
         assert len(caplog.records) == 0
         logger.info(msg, i, logger.name)
         assert len(caplog.records) == 1
-        exp_msg = "%s %s\n" % (get_exp_formatted_time(caplog.records[-1], formatter), msg % (i, logger.name))
+        exp_msg = "%s %s\n" % (
+            get_exp_formatted_time(caplog.records[-1], formatter),
+            msg % (i, logger.name),
+        )
         assert capsys.readouterr().err == exp_msg
         text += exp_msg
         caplog.clear()
@@ -79,7 +93,8 @@ def test_rollover():
     paths.mkdirs()
 
     def _log_dir_size() -> int:
-        return sum(f.stat().st_size for f in paths.log_dir.glob('**/*') if f.is_file())
+        return sum(f.stat().st_size for f in paths.log_dir.glob("**/*") if f.is_file())
+
     bytes_per_log_file = 50
     num_log_files = 3
     settings = ProactorSettings(
@@ -98,4 +113,4 @@ def test_rollover():
     for _ in range(300):
         logger.info("12345678901234567890")
     assert _log_dir_size() <= bytes_per_log_file * num_log_files
-    assert len(list(paths.log_dir.glob('**/*'))) == num_log_files
+    assert len(list(paths.log_dir.glob("**/*"))) == num_log_files
