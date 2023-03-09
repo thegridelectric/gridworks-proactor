@@ -12,15 +12,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-#          - { python: "3.11", os: "ubuntu-latest", session: "pre-commit" }
-#          - { python: "3.11", os: "ubuntu-latest", session: "mypy" }
+          #          - { python: "3.11", os: "ubuntu-latest", session: "pre-commit" }
+          #          - { python: "3.11", os: "ubuntu-latest", session: "mypy" }
           - { python: "3.11", os: "ubuntu-latest", session: "tests" }
-#          - { python: "3.10", os: "ubuntu-latest", session: "tests" }
-#          - { python: "3.11", os: "windows-latest", session: "tests" }
-#          - { python: "3.11", os: "macos-latest", session: "tests" }
-#          - { python: "3.11", os: "ubuntu-latest", session: "typeguard" }
-#          - { python: "3.11", os: "ubuntu-latest", session: "xdoctest" }
-#          - { python: "3.11", os: "ubuntu-latest", session: "docs-build" }
+          - { python: "3.10", os: "ubuntu-latest", session: "tests" }
+          - { python: "3.11", os: "windows-latest", session: "tests" }
+          - { python: "3.11", os: "macos-latest", session: "tests" }
+          #          - { python: "3.11", os: "ubuntu-latest", session: "typeguard" }
+          - { python: "3.11", os: "ubuntu-latest", session: "xdoctest" }
+          - { python: "3.11", os: "ubuntu-latest", session: "docs-build" }
 
     env:
       NOXSESSION: ${{ matrix.session }}
@@ -34,10 +34,10 @@ jobs:
       - name: Start 'Local' Mosquitto
         uses: namoshek/mosquitto-github-action@v1
         with:
-          version: '1.6'
-          ports: '1883:1883 8883:8883'
+          version: "1.6"
+          ports: "1883:1883 8883:8883"
           config: ${{ github.workspace }}/tests/config/local_mosquitto.conf
-          container-name: 'local-mqtt'
+          container-name: "local-mqtt"
 
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4.5.0
@@ -121,10 +121,10 @@ jobs:
       - name: Start 'Local' Mosquitto
         uses: namoshek/mosquitto-github-action@v1
         with:
-          version: '1.6'
-          ports: '1883:1883 8883:8883'
+          version: "1.6"
+          ports: "1883:1883 8883:8883"
           config: ${{ github.workspace }}/tests/config/local_mosquitto.conf
-          container-name: 'local-mqtt'
+          container-name: "local-mqtt"
 
       - name: Set up Python
         uses: actions/setup-python@v4.5.0
