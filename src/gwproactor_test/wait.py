@@ -11,6 +11,7 @@ from typing import Callable
 from typing import Optional
 from typing import Union
 
+
 Predicate = Callable[[], bool]
 AwaitablePredicate = Callable[[], Awaitable[bool]]
 ErrorStringFunction = Callable[[], str]

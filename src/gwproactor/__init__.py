@@ -31,6 +31,7 @@ from gwproactor.sync_thread import SyncAsyncInteractionThread
 from gwproactor.sync_thread import SyncAsyncQueueWriter
 from gwproactor.sync_thread import responsive_sleep
 
+
 __all__ = [
     "AsyncQueueWriter",
     "Communicator",

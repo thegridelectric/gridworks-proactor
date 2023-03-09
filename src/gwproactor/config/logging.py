@@ -9,6 +9,7 @@ from pydantic import validator
 
 from .paths import DEFAULT_BASE_NAME
 
+
 DEFAULT_LOGGING_FORMAT = "%(asctime)s %(message)s"
 DEFAULT_FRACTIONAL_SECOND_FORMAT = "%s.%03d"
 DEFAULT_LOG_FILE_NAME = "scada.log"

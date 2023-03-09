@@ -1,11 +1,12 @@
 import asyncio
 import time
-from gwproactor_test import StopWatch
-from gwproactor_test import AwaitablePredicate
-from gwproactor_test import await_for
 from typing import Optional
 
 import pytest
+
+from gwproactor_test import AwaitablePredicate
+from gwproactor_test import StopWatch
+from gwproactor_test import await_for
 
 
 class Delay:

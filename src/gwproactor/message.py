@@ -10,9 +10,9 @@ from typing import Optional
 from typing import TypeVar
 
 from gwproto import as_enum
-from gwproto.message import ensure_arg
 from gwproto.message import Header
 from gwproto.message import Message
+from gwproto.message import ensure_arg
 from gwproto.messages import EventBase
 from paho.mqtt.client import MQTT_ERR_UNKNOWN
 from paho.mqtt.client import MQTTMessage

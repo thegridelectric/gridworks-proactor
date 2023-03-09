@@ -38,16 +38,15 @@ from result import Err
 from result import Ok
 from result import Result
 
-from gwproactor.config.proactor_settings import MQTT_LINK_POLL_SECONDS
-from gwproactor.message import DBGCommands
-from gwproactor.message import DBGEvent
-from gwproactor.message import DBGPayload
-from gwproactor.problems import Problems
-from gwproactor import config
 from gwproactor import ProactorSettings
+from gwproactor import config
+from gwproactor.config.proactor_settings import MQTT_LINK_POLL_SECONDS
 from gwproactor.link_state import LinkStates
 from gwproactor.link_state import Transition
 from gwproactor.logger import ProactorLogger
+from gwproactor.message import DBGCommands
+from gwproactor.message import DBGEvent
+from gwproactor.message import DBGPayload
 from gwproactor.message import Message
 from gwproactor.message import MQTTConnectFailPayload
 from gwproactor.message import MQTTConnectPayload
@@ -57,8 +56,8 @@ from gwproactor.message import MQTTReceiptPayload
 from gwproactor.message import MQTTSubackPayload
 from gwproactor.message import PatWatchdog
 from gwproactor.message import Shutdown
-from gwproactor.mqtt import MQTTClients
 from gwproactor.mqtt import QOS
+from gwproactor.mqtt import MQTTClients
 from gwproactor.persister import JSONDecodingError
 from gwproactor.persister import PersisterInterface
 from gwproactor.persister import StubPersister
@@ -67,6 +66,7 @@ from gwproactor.proactor_interface import CommunicatorInterface
 from gwproactor.proactor_interface import MonitoredName
 from gwproactor.proactor_interface import Runnable
 from gwproactor.proactor_interface import ServicesInterface
+from gwproactor.problems import Problems
 from gwproactor.stats import ProactorStats
 from gwproactor.watchdog import WatchdogManager
 

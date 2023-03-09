@@ -4,18 +4,17 @@ from dataclasses import dataclass
 from dataclasses import field
 from typing import Any
 from typing import Callable
-from typing import cast
 from typing import Optional
 from typing import Tuple
 from typing import Type
 from typing import TypeVar
-
-from gwproto.messages import PingMessage
-from paho.mqtt.client import MQTT_ERR_SUCCESS
+from typing import cast
 
 from gwproto import Message
 from gwproto.messages import CommEvent
 from gwproto.messages import EventT
+from gwproto.messages import PingMessage
+from paho.mqtt.client import MQTT_ERR_SUCCESS
 from paho.mqtt.client import MQTTMessageInfo
 
 from gwproactor import Proactor

@@ -2,9 +2,10 @@
 import shutil
 from pathlib import Path
 
+from pydantic import SecretStr
+
 from gwproactor.config import MQTTClient
 from gwproactor.config import Paths
-from pydantic import SecretStr
 
 
 def test_mqtt_client_settings():

@@ -10,6 +10,7 @@ from gwproto.messages import ProblemEvent
 from result import Result
 
 from gwproactor import ProactorSettings
+from gwproactor import Problems
 from gwproactor.persister import FileExistedWarning
 from gwproactor.persister import FileMissing
 from gwproactor.persister import FileMissingWarning
@@ -21,7 +22,6 @@ from gwproactor.persister import TimedRollingFilePersister
 from gwproactor.persister import TrimFailed
 from gwproactor.persister import UIDExistedWarning
 from gwproactor.persister import UIDMissingWarning
-from gwproactor import Problems
 
 
 def test_problems():

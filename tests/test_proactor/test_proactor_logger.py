@@ -2,12 +2,11 @@ import argparse
 import logging
 import warnings
 
-from gwproactor import ProactorSettings
-from gwproactor_test import LoggerGuards
-
-from gwproactor.config import Paths
-from gwproactor import setup_logging
 from gwproactor import ProactorLogger
+from gwproactor import ProactorSettings
+from gwproactor import setup_logging
+from gwproactor.config import Paths
+from gwproactor_test import LoggerGuards
 
 
 def test_proactor_logger(caplog):

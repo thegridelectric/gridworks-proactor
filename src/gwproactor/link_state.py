@@ -4,11 +4,10 @@ from dataclasses import dataclass
 from typing import Optional
 from typing import Sequence
 
+from gwproto import Message
 from result import Err
 from result import Ok
 from result import Result
-
-from gwproto import Message
 
 from gwproactor.message import MQTTConnectFailPayload
 from gwproactor.message import MQTTConnectPayload

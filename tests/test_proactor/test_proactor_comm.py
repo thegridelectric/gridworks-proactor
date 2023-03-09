@@ -1,10 +1,10 @@
 # """Test communication issues"""
 from gwproactor_test import CommTestHelper
+from gwproactor_test import ProactorCommTests
 from gwproactor_test.dummies import DummyChild
 from gwproactor_test.dummies import DummyChildSettings
 from gwproactor_test.dummies import DummyParent
 from gwproactor_test.dummies import DummyParentSettings
-from gwproactor_test import ProactorCommTests
 
 
 class DummyCommTestHelper(CommTestHelper):

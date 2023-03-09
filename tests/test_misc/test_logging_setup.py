@@ -1,16 +1,15 @@
 import argparse
 import logging
 import logging.handlers
-
-from tests.test_misc.test_logging_config import get_exp_formatted_time
 from typing import Optional
 
 from gwproactor import ProactorSettings
-from gwproactor.config import Paths
+from gwproactor import setup_logging
 from gwproactor.config import DEFAULT_LOG_FILE_NAME
 from gwproactor.config import LoggingSettings
+from gwproactor.config import Paths
 from gwproactor.config import RotatingFileHandlerSettings
-from gwproactor import setup_logging
+from tests.test_misc.test_logging_config import get_exp_formatted_time
 
 
 def test_get_default_logging_config(caplog, capsys):

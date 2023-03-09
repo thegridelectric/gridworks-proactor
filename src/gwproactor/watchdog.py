@@ -7,14 +7,14 @@ from typing import Optional
 from gwproto import Message
 
 from gwproactor.message import InternalShutdownMessage
-from gwproactor.proactor_interface import Communicator
-from gwproactor.proactor_interface import MonitoredName
-from gwproactor.proactor_interface import Runnable
-from gwproactor.proactor_interface import ServicesInterface
 from gwproactor.message import KnownNames
 from gwproactor.message import PatExternalWatchdog
 from gwproactor.message import PatExternalWatchdogMessage
 from gwproactor.message import PatInternalWatchdog
+from gwproactor.proactor_interface import Communicator
+from gwproactor.proactor_interface import MonitoredName
+from gwproactor.proactor_interface import Runnable
+from gwproactor.proactor_interface import ServicesInterface
 
 
 class _MonitoredName(MonitoredName):

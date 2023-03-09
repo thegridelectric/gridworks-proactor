@@ -1,19 +1,19 @@
 from typing import Optional
 
-from gwproto import Message
 from gwproto import Decoders
-from gwproto import create_message_payload_discriminator
+from gwproto import Message
 from gwproto import MQTTCodec
 from gwproto import MQTTTopic
+from gwproto import create_message_payload_discriminator
 
 from gwproactor import ProactorSettings
 from gwproactor.mqtt import QOS
 from gwproactor.persister import TimedRollingFilePersister
 from gwproactor.proactor_implementation import Proactor
-
 from gwproactor_test.dummies.child.config import DummyChildSettings
 from gwproactor_test.dummies.names import DUMMY_CHILD_NAME
 from gwproactor_test.dummies.names import DUMMY_PARENT_NAME
+
 
 ChildMessageDecoder = create_message_payload_discriminator(
     "ChildMessageDecoder",

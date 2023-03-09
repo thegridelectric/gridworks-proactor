@@ -4,6 +4,7 @@ from pydantic import validator
 from gwproactor.config.logging import LoggingSettings
 from gwproactor.config.paths import Paths
 
+
 MQTT_LINK_POLL_SECONDS = 60
 
 

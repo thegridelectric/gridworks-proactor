@@ -2,6 +2,8 @@ import logging
 import time
 
 import pytest
+from pydantic import ValidationError
+
 from gwproactor.config import DEFAULT_BASE_NAME
 from gwproactor.config import DEFAULT_BYTES_PER_LOG_FILE
 from gwproactor.config import DEFAULT_LOG_FILE_NAME
@@ -10,7 +12,6 @@ from gwproactor.config import FormatterSettings
 from gwproactor.config import LoggerLevels
 from gwproactor.config import LoggingSettings
 from gwproactor.config import RotatingFileHandlerSettings
-from pydantic import ValidationError
 
 
 def test_logger_levels():

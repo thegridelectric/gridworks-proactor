@@ -8,14 +8,13 @@ from typing import Optional
 from typing import Type
 from typing import TypeVar
 
+from gwproactor import Proactor
 from gwproactor import ProactorSettings
 from gwproactor import setup_logging
-from gwproactor import Proactor
-
 from gwproactor_test.logger_guard import LoggerGuards
+from gwproactor_test.proactor_recorder import ProactorT
 from gwproactor_test.proactor_recorder import RecorderInterface
 from gwproactor_test.proactor_recorder import make_recorder_class
-from gwproactor_test.proactor_recorder import ProactorT
 
 
 @dataclass

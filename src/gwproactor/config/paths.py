@@ -5,6 +5,7 @@ import xdg
 from pydantic import BaseModel
 from pydantic import validator
 
+
 DEFAULT_BASE_NAME = "gridworks"
 DEFAULT_BASE_DIR = Path(DEFAULT_BASE_NAME)
 DEFAULT_NAME = "scada"

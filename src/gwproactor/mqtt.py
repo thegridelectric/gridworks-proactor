@@ -11,7 +11,6 @@ import enum
 import logging
 import threading
 import uuid
-from typing import cast
 from typing import Dict
 from typing import List
 from typing import NamedTuple
@@ -19,12 +18,12 @@ from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import Union
+from typing import cast
 
 from paho.mqtt.client import MQTT_ERR_SUCCESS
 from paho.mqtt.client import Client as PahoMQTTClient
 from paho.mqtt.client import MQTTMessageInfo
 
-from gwproactor.problems import Problems
 from gwproactor import config
 from gwproactor.message import MQTTConnectFailMessage
 from gwproactor.message import MQTTConnectMessage
@@ -33,6 +32,7 @@ from gwproactor.message import MQTTProblemsMessage
 from gwproactor.message import MQTTReceiptMessage
 from gwproactor.message import MQTTSubackMessage
 from gwproactor.message import MQTTSubackPayload
+from gwproactor.problems import Problems
 from gwproactor.sync_thread import AsyncQueueWriter
 from gwproactor.sync_thread import responsive_sleep
 
