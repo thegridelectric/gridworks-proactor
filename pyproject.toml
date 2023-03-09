@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gridworks-proactor"
-version = "0.1.0"
+version = "0.1.1"
 description = "Gridworks Proactor"
 authors = ["Jessica Millar <jmillar@gridworks-consulting.com>"]
 license = "MIT"
@@ -29,8 +29,8 @@ xdg = "^6.0.0"
 paho-mqtt = "^1.6.1"
 result = "^0.9.0"
 gridworks-protocol = "^0.2.8"
-# TODO: This should be in an 'extra', and noxfile.py should install that 'extra' in the 'tests' session
-pytest-asyncio = "^0.20.3"
+pytest = {version = "^7.2.0", optional = true}
+pytest-asyncio = {version = "^0.20.3", optional = true}
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
@@ -48,7 +48,6 @@ mypy = ">=0.930"
 pep8-naming = ">=0.12.1"
 pre-commit = ">=2.16.0"
 pre-commit-hooks = ">=4.1.0"
-pytest = ">=6.2.5"
 pyupgrade = ">=2.29.1"
 safety = ">=1.10.3"
 sphinx = ">=4.3.2"
@@ -58,8 +57,8 @@ typeguard = ">=2.13.3"
 xdoctest = {extras = ["colors"], version = ">=0.15.10"}
 myst-parser = {version = ">=0.16.1"}
 
-#[tool.poetry.group.dev.dependencies]
-#pytest-asyncio = "^0.20.3"
+[tool.poetry.extras]
+tests = ["pytest", "pytest-asyncio"]
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
