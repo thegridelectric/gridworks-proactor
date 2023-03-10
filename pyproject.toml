@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gridworks-proactor"
-version = "0.1.2"
+version = "0.1.3"
 description = "Gridworks Proactor"
 authors = ["Jessica Millar <jmillar@gridworks-consulting.com>"]
 license = "MIT"
@@ -21,7 +21,6 @@ Changelog = "https://github.com/thegridelectric/gridworks-proactor/releases"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-click = ">=8.0.1"
 pydantic = "^1.10.6"
 python-dotenv = "^1.0.0"
 pendulum = "^2.1.2"
