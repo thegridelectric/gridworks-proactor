@@ -46,6 +46,7 @@ Contributions are very welcome. In order to develop, do this:
 ```console
 $ poetry install --all-extras
 ```
+
 To learn more, see the [Contributor Guide].
 
 ## License
