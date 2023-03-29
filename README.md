@@ -41,7 +41,12 @@ Please see the [Command-line Reference] for details.
 
 ## Contributing
 
-Contributions are very welcome.
+Contributions are very welcome. In order to develop, do this:
+
+```console
+$ poetry install --all-extras
+```
+
 To learn more, see the [Contributor Guide].
 
 ## License

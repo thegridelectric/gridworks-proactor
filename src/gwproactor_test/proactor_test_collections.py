@@ -41,7 +41,7 @@ class ProactorCommTests:
             assert not link.active()
             assert link.state == StateName.awaiting_peer
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 1
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert len(stats.comm_events) == 2
             for comm_event in stats.comm_events:
@@ -55,7 +55,7 @@ class ProactorCommTests:
             # Wait for reconnect
             await await_for(
                 lambda: stats.comm_event_counts[
-                    "gridworks.event.comm.mqtt.fully_subscribed"
+                    "gridworks.event.comm.mqtt.fully.subscribed"
                 ]
                 > 1,
                 3,
@@ -67,7 +67,7 @@ class ProactorCommTests:
             assert not link.active()
             assert link.state == StateName.awaiting_peer
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 2
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 2
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
             assert len(stats.comm_events) == 5
             for comm_event in stats.comm_events:
@@ -99,11 +99,11 @@ class ProactorCommTests:
             assert child_link.state == StateName.awaiting_peer
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
             assert (
-                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"]
                 == 1
             )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
-            assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 0
+            assert child_comm_event_counts["gridworks.event.comm.peer.active"] == 0
             assert len(child_stats.comm_events) == 2
             for comm_event in child_stats.comm_events:
                 assert comm_event.MessageId in child._event_persister
@@ -123,11 +123,11 @@ class ProactorCommTests:
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
             assert (
-                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"]
                 == 1
             )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
-            assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 1
+            assert child_comm_event_counts["gridworks.event.comm.peer.active"] == 1
             assert len(child_stats.comm_events) == 3
 
             # wait for all events to be acked
@@ -146,7 +146,7 @@ class ProactorCommTests:
             # Wait for reconnect
             await await_for(
                 lambda: child_stats.comm_event_counts[
-                    "gridworks.event.comm.peer_active"
+                    "gridworks.event.comm.peer.active"
                 ]
                 > 1,
                 3,
@@ -159,11 +159,11 @@ class ProactorCommTests:
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
             assert (
-                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"]
                 == 2
             )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
-            assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 2
+            assert child_comm_event_counts["gridworks.event.comm.peer.active"] == 2
             assert len(child_stats.comm_events) == 7
 
             # wait for all events to be acked
@@ -242,11 +242,11 @@ class ProactorCommTests:
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
             assert (
-                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"]
                 == 1
             )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
-            assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 1
+            assert child_comm_event_counts["gridworks.event.comm.peer.active"] == 1
             assert len(child_stats.comm_events) == 3
 
             # wait for all events to be acked
@@ -286,11 +286,11 @@ class ProactorCommTests:
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
             assert (
-                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"]
                 == 1
             )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
-            assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 1
+            assert child_comm_event_counts["gridworks.event.comm.peer.active"] == 1
             assert len(child_stats.comm_events) == 3
 
             # wait for all events to be acked
@@ -309,7 +309,7 @@ class ProactorCommTests:
             # Wait for reconnect
             await await_for(
                 lambda: child_stats.comm_event_counts[
-                    "gridworks.event.comm.peer_active"
+                    "gridworks.event.comm.peer.active"
                 ]
                 > 1,
                 3,
@@ -322,11 +322,11 @@ class ProactorCommTests:
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
             assert (
-                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"]
                 == 2
             )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
-            assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 2
+            assert child_comm_event_counts["gridworks.event.comm.peer.active"] == 2
             assert len(child_stats.comm_events) == 7
 
             # wait for all events to be acked
@@ -360,11 +360,11 @@ class ProactorCommTests:
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
             assert (
-                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"]
                 == 2
             )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
-            assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 2
+            assert child_comm_event_counts["gridworks.event.comm.peer.active"] == 2
             assert len(child_stats.comm_events) == 7
             assert child._event_persister.num_pending == 0
 
@@ -379,7 +379,7 @@ class ProactorCommTests:
             # Wait for reconnect
             await await_for(
                 lambda: child_stats.comm_event_counts[
-                    "gridworks.event.comm.peer_active"
+                    "gridworks.event.comm.peer.active"
                 ]
                 > 2,
                 3,
@@ -392,11 +392,11 @@ class ProactorCommTests:
             assert child_link.state == StateName.active
             assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 3
             assert (
-                child_comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"]
+                child_comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"]
                 == 3
             )
             assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 2
-            assert child_comm_event_counts["gridworks.event.comm.peer_active"] == 3
+            assert child_comm_event_counts["gridworks.event.comm.peer.active"] == 3
             assert len(child_stats.comm_events) == 11
 
             # wait for all events to be acked
@@ -439,7 +439,7 @@ class ProactorCommTests:
             assert not link.active()
             assert link.state == StateName.awaiting_setup_and_peer
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 0
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 0
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert len(stats.comm_events) == 1
             for comm_event in stats.comm_events:
@@ -457,7 +457,7 @@ class ProactorCommTests:
             assert not link.active_for_recv()
             assert not link.active()
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 1
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert len(stats.comm_events) == 2
             for comm_event in stats.comm_events:
@@ -479,7 +479,7 @@ class ProactorCommTests:
             assert not link.active()
             assert link.state == StateName.awaiting_setup_and_peer
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 1
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
             assert len(stats.comm_events) == 4
             for comm_event in stats.comm_events:
@@ -506,7 +506,7 @@ class ProactorCommTests:
             assert not link.active_for_recv()
             assert not link.active()
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 3
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 1
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 2
             assert len(stats.comm_events) == 6
             for comm_event in stats.comm_events:
@@ -524,7 +524,7 @@ class ProactorCommTests:
             assert not link.active_for_recv()
             assert not link.active()
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 3
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 2
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 2
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 2
             assert len(stats.comm_events) == 7
             for comm_event in stats.comm_events:
@@ -571,7 +571,7 @@ class ProactorCommTests:
             assert not link.active_for_recv()
             assert not link.active()
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 0
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 0
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert len(stats.comm_events) == 1
             for comm_event in stats.comm_events:
@@ -618,7 +618,7 @@ class ProactorCommTests:
             assert not link.active()
             assert link.active_for_send()
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 1
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert len(stats.comm_events) == 2
             for comm_event in stats.comm_events:
@@ -641,7 +641,7 @@ class ProactorCommTests:
             assert not link.active()
             assert link.state == StateName.awaiting_setup_and_peer
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 1
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
             assert len(stats.comm_events) == 4
             for comm_event in stats.comm_events:
@@ -676,7 +676,7 @@ class ProactorCommTests:
             assert not link.active()
             assert link.state == StateName.awaiting_setup
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 1
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 1
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
             assert len(stats.comm_events) == 4
 
@@ -733,7 +733,7 @@ class ProactorCommTests:
             assert not link.active_for_recv()
             assert not link.active()
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 0
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 0
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert len(stats.comm_events) == 1
             for comm_event in stats.comm_events:
@@ -769,7 +769,7 @@ class ProactorCommTests:
             assert not link.active()
             assert link.state == StateName.awaiting_setup
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 1
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 0
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 0
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 0
             assert len(stats.comm_events) == 1
 
@@ -816,7 +816,7 @@ class ProactorCommTests:
             )
             assert link.state == StateName.awaiting_setup_and_peer
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
-            assert comm_event_counts["gridworks.event.comm.mqtt.fully_subscribed"] == 0
+            assert comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"] == 0
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
             assert len(stats.comm_events) == 3
             for comm_event in stats.comm_events:
