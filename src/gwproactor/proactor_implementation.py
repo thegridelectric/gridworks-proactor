@@ -324,14 +324,10 @@ class Proactor(ServicesInterface, Runnable):
             path_dbg |= 0x00000001
             self.generate_event(ResponseTimeoutEvent(PeerName=transition.link_name))
             self._logger.comm_event(str(transition))
-            if transition.recv_deactivated():
+            self._derived_recv_deactivated(transition)
+            for message_id in list(self._acks.keys()):
                 path_dbg |= 0x00000002
-                self._derived_recv_deactivated(transition)
-                for message_id in list(self._acks.keys()):
-                    path_dbg |= 0x00000004
-                    self._process_ack_result(
-                        message_id, AckWaitSummary.connection_failure
-                    )
+                self._process_ack_result(message_id, AckWaitSummary.connection_failure)
         self._logger.path("--Proactor._apply_ack_timeout path:0x%08X", path_dbg)
         return Ok()
 
