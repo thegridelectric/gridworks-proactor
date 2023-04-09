@@ -292,4 +292,4 @@ class DBGEvent(EventBase):
     Path: str = ""
     Count: int = 0
     Msg: str = ""
-    TypeName: Literal["gridworks.event.scada-dbg"] = "gridworks.event.proactor.dbg"
+    TypeName: Literal["gridworks.event.proactor.dbg"] = "gridworks.event.proactor.dbg"
