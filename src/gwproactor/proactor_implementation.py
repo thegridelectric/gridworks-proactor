@@ -5,10 +5,8 @@ import enum
 import functools
 import json
 import sys
-import time
 import traceback
 from dataclasses import dataclass
-from dataclasses import field
 from typing import Any
 from typing import Awaitable
 from typing import Dict
@@ -40,7 +38,7 @@ from result import Result
 
 from gwproactor import ProactorSettings
 from gwproactor import config
-from gwproactor.config.proactor_settings import MQTT_LINK_POLL_SECONDS
+from gwproactor.link import MessageTimes
 from gwproactor.link_state import LinkStates
 from gwproactor.link_state import Transition
 from gwproactor.logger import ProactorLogger
@@ -97,42 +95,6 @@ class AckWaitResult:
         return self.summary == AckWaitSummary.acked
 
 
-import_time = time.time()
-
-
-@dataclass
-class MessageTimes:
-    last_send: float = field(default_factory=time.time)
-    last_recv: float = field(default_factory=time.time)
-
-    def next_ping_second(self, link_poll_seconds: float) -> float:
-        return self.last_send + link_poll_seconds
-
-    def seconds_until_next_ping(self, link_poll_seconds: float) -> float:
-        return self.next_ping_second(link_poll_seconds) - time.time()
-
-    def time_to_send_ping(self, link_poll_seconds: float) -> bool:
-        return time.time() > self.next_ping_second(link_poll_seconds)
-
-    def get_str(
-        self, link_poll_seconds: float = MQTT_LINK_POLL_SECONDS, relative: bool = True
-    ) -> str:
-        if relative:
-            adjust = import_time
-        else:
-            adjust = 0
-        return (
-            f"n:{time.time() - adjust:5.2f}  lps:{link_poll_seconds:5.2f}  "
-            f"ls:{self.last_send - adjust:5.2f}  lr:{self.last_recv - adjust:5.2f}  "
-            f"nps:{self.next_ping_second(link_poll_seconds) - adjust:5.2f}  "
-            f"snp:{self.next_ping_second(link_poll_seconds):5.2f}  "
-            f"tsp:{int(self.time_to_send_ping(link_poll_seconds))}"
-        )
-
-    def __str__(self) -> str:
-        return self.get_str()
-
-
 class Proactor(ServicesInterface, Runnable):
 
     PERSISTER_ENCODING = "utf-8"
@@ -147,7 +109,7 @@ class Proactor(ServicesInterface, Runnable):
     _mqtt_clients: MQTTClients
     _mqtt_codecs: Dict[str, MQTTCodec]
     _link_states: LinkStates
-    _link_message_times: dict[str, MessageTimes]
+    _link_message_times: MessageTimes
     _acks: dict[str, AckWaitInfo]
     _communicators: Dict[str, CommunicatorInterface]
     _stop_requested: bool
@@ -163,7 +125,7 @@ class Proactor(ServicesInterface, Runnable):
         self._mqtt_clients = MQTTClients()
         self._mqtt_codecs = dict()
         self._link_states = LinkStates()
-        self._link_message_times = dict()
+        self._link_message_times = MessageTimes()
         self._acks = dict()
         self._communicators = dict()
         self._tasks = []
@@ -261,12 +223,12 @@ class Proactor(ServicesInterface, Runnable):
         if codec is not None:
             self._mqtt_codecs[name] = codec
         self._link_states.add(name)
-        self._link_message_times[name] = MessageTimes()
+        self._link_message_times.add_link(name)
         self._stats.add_link(name)
 
     async def _send_ping(self, client: str):
         while not self._stop_requested:
-            message_times = self._link_message_times[client]
+            message_times = self._link_message_times.get_copy(client)
             link_state = self._link_states[client]
             if (
                 message_times.time_to_send_ping(self.settings.mqtt_link_poll_seconds)
@@ -399,7 +361,7 @@ class Proactor(ServicesInterface, Runnable):
             if message.Header.MessageId in self._acks:
                 self._cancel_ack_timer(message.Header.MessageId)
             self._start_ack_timer(client, message.Header.MessageId, context)
-        self._link_message_times[client].last_send = time.time()
+        self._link_message_times.update_send(client)
         return self._mqtt_clients.publish(client, topic, payload, qos)
 
     def _publish_upstream(
@@ -462,8 +424,8 @@ class Proactor(ServicesInterface, Runnable):
         self._tasks = [
             asyncio.create_task(self.process_messages(), name="process_messages"),
         ]
-        for link in self._link_message_times:
-            self._tasks.append(asyncio.create_task(self._send_ping(link)))
+        for link_name in self._link_message_times.link_names():
+            self._tasks.append(asyncio.create_task(self._send_ping(link_name)))
         self._start_derived_tasks()
 
     def _start_derived_tasks(self):
@@ -612,9 +574,9 @@ class Proactor(ServicesInterface, Runnable):
                 match self._link_states.process_mqtt_message(mqtt_receipt_message):
                     case Ok(transition):
                         path_dbg |= 0x00000004
-                        self._link_message_times[
+                        self._link_message_times.update_recv(
                             mqtt_receipt_message.Payload.client_name
-                        ].last_recv = time.time()
+                        )
                         if transition:
                             self._logger.comm_event(transition)
                         if transition.recv_activated():
