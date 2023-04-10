@@ -531,7 +531,7 @@ class ProactorCommTests:
                 assert comm_event.MessageId in child._event_persister
 
     @pytest.mark.asyncio
-    async def test_awaiting_setup_and_peer_corner_cases(self):
+    async def test_awaiting_setup_and_peer_corner_cases(self, request):
         """
         Test corner cases:
          (connecting -> connected -> awaiting_setup_and_peer)
@@ -549,6 +549,14 @@ class ProactorCommTests:
         """
         async with self.CTH(add_child=True, verbose=True) as h:
             child = h.child
+            child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
+            if len(child_subscriptions) < 2:
+                if h.warn_if_multi_subscription_tests_skipped:
+                    warnings.warn(
+                        f"Skipping <{request.node.name}> because configured child proactor <{child.name}> "
+                        f"has < 2 subscriptions. Subscriptions: {child_subscriptions}"
+                    )
+                return
             stats = child.stats.link(child.upstream_client)
             comm_event_counts = stats.comm_event_counts
             link = child._link_states.link(child.upstream_client)
@@ -704,10 +712,11 @@ class ProactorCommTests:
             child = h.child
             child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
             if len(child_subscriptions) < 2:
-                warnings.warn(
-                    f"Skipping <{request.node.name}> because configured child proactor <{child.name}> "
-                    f"has < 2 subscriptions. Subscriptions: {child_subscriptions}"
-                )
+                if h.warn_if_multi_subscription_tests_skipped:
+                    warnings.warn(
+                        f"Skipping <{request.node.name}> because configured child proactor <{child.name}> "
+                        f"has < 2 subscriptions. Subscriptions: {child_subscriptions}"
+                    )
                 return
             stats = child.stats.link(child.upstream_client)
             comm_event_counts = stats.comm_event_counts
