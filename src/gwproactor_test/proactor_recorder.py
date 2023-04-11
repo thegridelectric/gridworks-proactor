@@ -123,7 +123,6 @@ def make_recorder_class(
 
         subacks_paused: bool
         pending_subacks: list[Message]
-        ack_timeout_seconds: float = 5.0
         acks_paused: bool
         needs_ack: list[_PausedAck]
         mqtt_messages_dropped: bool
@@ -216,19 +215,8 @@ def make_recorder_class(
                 s += f"  {link_name:10s}  {self._link_states.link_state(link_name).value}\n"
             return s
 
-        def _start_ack_timer(
-            self: ProactorT,
-            client_name: str,
-            message_id: str,
-            context: Any = None,
-            delay: Optional[float] = None,
-        ) -> None:
-            if delay is None:
-                delay = self.ack_timeout_seconds
-            # noinspection PyProtectedMember
-            super()._start_ack_timer(
-                client_name, message_id, context=context, delay=delay
-            )
+        def set_ack_timeout_seconds(self, timeout_seconds: float):
+            self._link_acks._default_delay_seconds = timeout_seconds
 
         def summarize(self: ProactorT):
             self._logger.info(self.summary_str())

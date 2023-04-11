@@ -1,12 +1,9 @@
 """Proactor implementation"""
 
 import asyncio
-import enum
-import functools
 import json
 import sys
 import traceback
-from dataclasses import dataclass
 from typing import Any
 from typing import Awaitable
 from typing import Dict
@@ -38,6 +35,9 @@ from result import Result
 
 from gwproactor import ProactorSettings
 from gwproactor import config
+from gwproactor.link import AckManager
+from gwproactor.link import AckWaitInfo
+from gwproactor.link import AsyncioTimerManager
 from gwproactor.link import MessageTimes
 from gwproactor.link_state import LinkStates
 from gwproactor.link_state import Transition
@@ -69,32 +69,6 @@ from gwproactor.stats import ProactorStats
 from gwproactor.watchdog import WatchdogManager
 
 
-@dataclass
-class AckWaitInfo:
-    message_id: str
-    timer_handle: asyncio.TimerHandle
-    client_name: str
-    context: Any = None
-
-
-class AckWaitSummary(enum.Enum):
-    acked = "acked"
-    timeout = "timeout"
-    connection_failure = "connection_failure"
-
-
-@dataclass
-class AckWaitResult:
-    summary: AckWaitSummary
-    wait_info: AckWaitInfo
-
-    def __bool__(self) -> bool:
-        return self.ok()
-
-    def ok(self) -> bool:
-        return self.summary == AckWaitSummary.acked
-
-
 class Proactor(ServicesInterface, Runnable):
 
     PERSISTER_ENCODING = "utf-8"
@@ -110,7 +84,7 @@ class Proactor(ServicesInterface, Runnable):
     _mqtt_codecs: Dict[str, MQTTCodec]
     _link_states: LinkStates
     _link_message_times: MessageTimes
-    _acks: dict[str, AckWaitInfo]
+    _link_acks: AckManager
     _communicators: Dict[str, CommunicatorInterface]
     _stop_requested: bool
     _tasks: List[asyncio.Task]
@@ -126,7 +100,7 @@ class Proactor(ServicesInterface, Runnable):
         self._mqtt_codecs = dict()
         self._link_states = LinkStates()
         self._link_message_times = MessageTimes()
-        self._acks = dict()
+        self._link_acks = AckManager(AsyncioTimerManager(), self._process_ack_timeout)
         self._communicators = dict()
         self._tasks = []
         self._stop_requested = False
@@ -241,67 +215,34 @@ class Proactor(ServicesInterface, Runnable):
                 )
             )
 
-    def _start_ack_timer(
-        self,
-        client_name: str,
-        message_id: str,
-        context: Any = None,
-        delay: Optional[float] = None,
-    ) -> None:
-        if delay is None:
-            delay = 5
-        self._acks[message_id] = AckWaitInfo(
-            message_id,
-            asyncio.get_running_loop().call_later(
-                delay,
-                functools.partial(self._process_ack_timeout, message_id),
-            ),
-            client_name=client_name,
-            context=context,
+    def _process_ack_timeout(self, wait_info: AckWaitInfo) -> None:
+        self._logger.message_enter(
+            "++Proactor._process_ack_timeout %s", wait_info.message_id
         )
-
-    def _cancel_ack_timer(self, message_id: str) -> Optional[AckWaitInfo]:
-        self._logger.path("++cancel_ack_timer %s", message_id)
         path_dbg = 0
-        wait_info = self._acks.pop(message_id, None)
-        if wait_info is not None:
+        self.stats.link(wait_info.link_name).timeouts += 1
+        result = self._link_states.process_ack_timeout(wait_info.link_name)
+        if result.is_ok():
             path_dbg |= 0x00000001
-            wait_info.timer_handle.cancel()
-
-        self._logger.path("--cancel_ack_timer path:0x%08X", path_dbg)
-        return wait_info
-
-    def _process_ack_timeout(self, message_id: str):
-        self._logger.message_enter("++Proactor._process_ack_timeout %s", message_id)
-        path_dbg = 0
-        wait_info = self._cancel_ack_timer(message_id)
-        if wait_info is not None:
-            path_dbg |= 0x00000001
-            self.stats.link(wait_info.client_name).timeouts += 1
-            result = self._link_states.process_ack_timeout(wait_info.client_name)
-            if result.is_ok():
+            if result.value.deactivated():
                 path_dbg |= 0x00000002
-                if result.value.deactivated():
-                    path_dbg |= 0x00000004
-                    self.generate_event(
-                        ResponseTimeoutEvent(PeerName=result.value.link_name)
-                    )
-                    self._logger.comm_event(str(result.value))
-                    self._derived_recv_deactivated(result.value)
-                    for message_id in list(self._acks.keys()):
-                        path_dbg |= 0x00000008
-                        self._cancel_ack_timer(message_id)
-            else:
-                path_dbg |= 0x00000010
-                self._report_error(result.err(), msg="Proactor._process_ack_timeout")
+                self.generate_event(
+                    ResponseTimeoutEvent(PeerName=result.value.link_name)
+                )
+                self._logger.comm_event(str(result.value))
+                self._derived_recv_deactivated(result.value)
+                self._link_acks.cancel_ack_timers(wait_info.link_name)
+        else:
+            path_dbg |= 0x00000004
+            self._report_error(result.err(), msg="Proactor._process_ack_timeout")
         self._logger.message_exit(
             "--Proactor._process_ack_timeout path:0x%08X", path_dbg
         )
 
-    def _process_ack(self, message_id: str):
+    def _process_ack(self, link_name: str, message_id: str):
         self._logger.path("++Proactor._process_ack  %s", message_id)
         path_dbg = 0
-        wait_info = self._cancel_ack_timer(message_id)
+        wait_info = self._link_acks.cancel_ack_timer(link_name, message_id)
         if wait_info is not None and message_id in self._event_persister:
             path_dbg |= 0x00000001
             self._event_persister.clear(message_id)
@@ -356,9 +297,9 @@ class Proactor(ServicesInterface, Runnable):
             "OUT mqtt    ", message.Header.Src, topic, message.Payload
         )
         if message.Header.AckRequired:
-            if message.Header.MessageId in self._acks:
-                self._cancel_ack_timer(message.Header.MessageId)
-            self._start_ack_timer(client, message.Header.MessageId, context)
+            self._link_acks.start_ack_timer(
+                client, message.Header.MessageId, context=context
+            )
         self._link_message_times.update_send(client)
         return self._mqtt_clients.publish(client, topic, payload, qos)
 
@@ -592,7 +533,10 @@ class Proactor(ServicesInterface, Runnable):
                 match decoded_message.Payload:
                     case Ack():
                         path_dbg |= 0x00000040
-                        self._process_ack(decoded_message.Payload.AckMessageID)
+                        self._process_ack(
+                            mqtt_receipt_message.Payload.client_name,
+                            decoded_message.Payload.AckMessageID,
+                        )
                     case Ping():
                         path_dbg |= 0x00000080
                     case DBGPayload():
@@ -666,8 +610,7 @@ class Proactor(ServicesInterface, Runnable):
                 if transition.recv_deactivated():
                     result = self._derived_recv_deactivated(transition)
                 if transition.recv_deactivated() or transition.send_deactivated():
-                    for message_id in list(self._acks.keys()):
-                        self._cancel_ack_timer(message_id)
+                    self._link_acks.cancel_ack_timers(message.Payload.client_name)
             case Err(error):
                 result = Err(error)
         return result
