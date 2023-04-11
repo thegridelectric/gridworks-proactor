@@ -7,11 +7,11 @@ import pytest
 from paho.mqtt.client import MQTTMessage
 from result import Result
 
-from gwproactor.link_state import InvalidCommStateInput
-from gwproactor.link_state import LinkStates
-from gwproactor.link_state import StateName
-from gwproactor.link_state import Transition
-from gwproactor.link_state import TransitionName
+from gwproactor.links import InvalidCommStateInput
+from gwproactor.links import LinkStates
+from gwproactor.links import StateName
+from gwproactor.links import Transition
+from gwproactor.links import TransitionName
 from gwproactor.message import MQTTConnectFailMessage
 from gwproactor.message import MQTTConnectMessage
 from gwproactor.message import MQTTDisconnectMessage

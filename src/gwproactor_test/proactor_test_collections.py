@@ -7,7 +7,7 @@ from gwproto import MQTTTopic
 from paho.mqtt.client import MQTT_ERR_CONN_LOST
 
 from gwproactor.config import MQTTClient
-from gwproactor.link_state import StateName
+from gwproactor.links import StateName
 from gwproactor.message import DBGPayload
 from gwproactor_test.comm_test_helper import CommTestHelper
 from gwproactor_test.dummies import DummyChildSettings
@@ -896,7 +896,7 @@ class ProactorCommTests:
             )
 
             # start child
-            child.ack_timeout_seconds = 0.1
+            child.set_ack_timeout_seconds(0.1)
             assert stats.timeouts == 0
             h.start_child()
             await await_for(
@@ -936,7 +936,9 @@ class ProactorCommTests:
             # (active -> response_timeout -> awaiting_peer)
             parent.pause_acks()
             child.ping_peer()
-            exp_timeouts = stats.timeouts + len(child._acks)
+            exp_timeouts = stats.timeouts + len(
+                child._link_acks._acks[child.upstream_client]
+            )
             await await_for(
                 lambda: stats.timeouts == exp_timeouts,
                 1,
@@ -990,7 +992,7 @@ class ProactorCommTests:
 
             child = h.child
             child.suppress_status = True
-            child.ack_timeout_seconds = 0.1
+            child.set_ack_timeout_seconds(0.1)
             link = child._link_states.link(child.upstream_client)
             stats = child.stats.link(child.upstream_client)
             child_ping_topic = MQTTTopic.encode(
