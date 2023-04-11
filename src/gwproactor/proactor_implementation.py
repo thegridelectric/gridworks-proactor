@@ -35,12 +35,12 @@ from result import Result
 
 from gwproactor import ProactorSettings
 from gwproactor import config
-from gwproactor.link import AckManager
-from gwproactor.link import AckWaitInfo
-from gwproactor.link import AsyncioTimerManager
-from gwproactor.link import MessageTimes
-from gwproactor.link_state import LinkStates
-from gwproactor.link_state import Transition
+from gwproactor.links import AckManager
+from gwproactor.links import AckWaitInfo
+from gwproactor.links import AsyncioTimerManager
+from gwproactor.links import LinkStates
+from gwproactor.links import MessageTimes
+from gwproactor.links import Transition
 from gwproactor.logger import ProactorLogger
 from gwproactor.message import DBGCommands
 from gwproactor.message import DBGEvent

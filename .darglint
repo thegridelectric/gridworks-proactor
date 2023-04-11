@@ -1,4 +1,2 @@
 [darglint]
 strictness = long
-# https://github.com/terrencepreilly/darglint/issues/54:
-ignore_regex = start_timer

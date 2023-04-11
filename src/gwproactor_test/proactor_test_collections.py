@@ -7,7 +7,7 @@ from gwproto import MQTTTopic
 from paho.mqtt.client import MQTT_ERR_CONN_LOST
 
 from gwproactor.config import MQTTClient
-from gwproactor.link_state import StateName
+from gwproactor.links import StateName
 from gwproactor.message import DBGPayload
 from gwproactor_test.comm_test_helper import CommTestHelper
 from gwproactor_test.dummies import DummyChildSettings
