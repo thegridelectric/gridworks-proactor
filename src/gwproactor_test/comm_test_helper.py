@@ -48,6 +48,8 @@ class CommTestHelper:
     lifecycle_logging: bool
     logger_guards: LoggerGuards
 
+    warn_if_multi_subscription_tests_skipped: bool = True
+
     @classmethod
     def setup_class(cls):
         if cls.parent_recorder_t is None:
