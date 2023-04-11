@@ -273,41 +273,39 @@ class Proactor(ServicesInterface, Runnable):
 
     def _process_ack_timeout(self, message_id: str):
         self._logger.message_enter("++Proactor._process_ack_timeout %s", message_id)
-        wait_info = self._acks.get(message_id, None)
-        if wait_info is not None:
-            self.stats.link(wait_info.client_name).timeouts += 1
-        self._process_ack_result(message_id, AckWaitSummary.timeout)
-        self._logger.message_exit("--Proactor._process_ack_timeout")
-
-    def _apply_ack_timeout(self, transition: Transition) -> Ok:
-        self._logger.path("++Proactor._apply_ack_timeout")
-        path_dbg = 0
-        if transition.deactivated():
-            path_dbg |= 0x00000001
-            self.generate_event(ResponseTimeoutEvent(PeerName=transition.link_name))
-            self._logger.comm_event(str(transition))
-            self._derived_recv_deactivated(transition)
-            for message_id in list(self._acks.keys()):
-                path_dbg |= 0x00000002
-                self._process_ack_result(message_id, AckWaitSummary.connection_failure)
-        self._logger.path("--Proactor._apply_ack_timeout path:0x%08X", path_dbg)
-        return Ok()
-
-    def _process_ack_result(self, message_id: str, reason: AckWaitSummary):
-        self._logger.path("++Proactor._process_ack_result  %s", message_id)
         path_dbg = 0
         wait_info = self._cancel_ack_timer(message_id)
         if wait_info is not None:
             path_dbg |= 0x00000001
-            if reason == AckWaitSummary.timeout:
+            self.stats.link(wait_info.client_name).timeouts += 1
+            result = self._link_states.process_ack_timeout(wait_info.client_name)
+            if result.is_ok():
                 path_dbg |= 0x00000002
-                self._link_states.process_ack_timeout(wait_info.client_name).and_then(
-                    self._apply_ack_timeout
-                ).or_else(self._report_error)
-            elif reason == AckWaitSummary.acked and message_id in self._event_persister:
-                path_dbg |= 0x00000004
-                self._event_persister.clear(message_id)
-        self._logger.path("--Proactor._process_ack_result path:0x%08X", path_dbg)
+                if result.value.deactivated():
+                    path_dbg |= 0x00000004
+                    self.generate_event(
+                        ResponseTimeoutEvent(PeerName=result.value.link_name)
+                    )
+                    self._logger.comm_event(str(result.value))
+                    self._derived_recv_deactivated(result.value)
+                    for message_id in list(self._acks.keys()):
+                        path_dbg |= 0x00000008
+                        self._cancel_ack_timer(message_id)
+            else:
+                path_dbg |= 0x00000010
+                self._report_error(result.err(), msg="Proactor._process_ack_timeout")
+        self._logger.message_exit(
+            "--Proactor._process_ack_timeout path:0x%08X", path_dbg
+        )
+
+    def _process_ack(self, message_id: str):
+        self._logger.path("++Proactor._process_ack  %s", message_id)
+        path_dbg = 0
+        wait_info = self._cancel_ack_timer(message_id)
+        if wait_info is not None and message_id in self._event_persister:
+            path_dbg |= 0x00000001
+            self._event_persister.clear(message_id)
+        self._logger.path("--Proactor._process_ack path:0x%08X", path_dbg)
 
     def _process_dbg(self, dbg: DBGPayload):
         self._logger.path("++_process_dbg")
@@ -594,9 +592,7 @@ class Proactor(ServicesInterface, Runnable):
                 match decoded_message.Payload:
                     case Ack():
                         path_dbg |= 0x00000040
-                        self._process_ack_result(
-                            decoded_message.Payload.AckMessageID, AckWaitSummary.acked
-                        )
+                        self._process_ack(decoded_message.Payload.AckMessageID)
                     case Ping():
                         path_dbg |= 0x00000080
                     case DBGPayload():
@@ -671,9 +667,7 @@ class Proactor(ServicesInterface, Runnable):
                     result = self._derived_recv_deactivated(transition)
                 if transition.recv_deactivated() or transition.send_deactivated():
                     for message_id in list(self._acks.keys()):
-                        self._process_ack_result(
-                            message_id, AckWaitSummary.connection_failure
-                        )
+                        self._cancel_ack_timer(message_id)
             case Err(error):
                 result = Err(error)
         return result
