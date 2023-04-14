@@ -49,7 +49,7 @@ class DummyChild(Proactor):
             name=name if name else DUMMY_CHILD_NAME,
             settings=DummyChildSettings() if settings is None else settings,
         )
-        self._add_mqtt_client(
+        self._links.add_mqtt_link(
             DummyChild.PARENT_MQTT,
             settings.parent_mqtt,
             ChildMQTTCode(),
@@ -63,8 +63,8 @@ class DummyChild(Proactor):
             MQTTTopic.encode_subscription(Message.type_name(), "1"),
             MQTTTopic.encode_subscription(Message.type_name(), "2"),
         ]:
-            self._mqtt_clients.subscribe(self.PARENT_MQTT, topic, QOS.AtMostOnce)
-        self.log_subscriptions("construction")
+            self._links.subscribe(self.PARENT_MQTT, topic, QOS.AtMostOnce)
+        self._links.log_subscriptions("construction")
 
     @classmethod
     def make_event_persister(

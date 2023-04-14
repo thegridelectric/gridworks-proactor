@@ -63,6 +63,9 @@ class AckManager:
         self._acks[link_name][message_id] = wait_info
         return wait_info
 
+    def add_link(self, link_name: str) -> None:
+        self._acks[link_name] = dict()
+
     def _pop_wait_info(self, link_name: str, message_id: str) -> Optional[AckWaitInfo]:
         if (client_acks := self._acks.get(link_name, None)) is not None:
             return client_acks.pop(message_id, None)

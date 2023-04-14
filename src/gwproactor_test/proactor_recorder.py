@@ -22,6 +22,7 @@ from gwproactor import ProactorSettings
 from gwproactor import Runnable
 from gwproactor import ServicesInterface
 from gwproactor.config import LoggerLevels
+from gwproactor.links import Links
 from gwproactor.message import DBGCommands
 from gwproactor.message import DBGPayload
 from gwproactor.message import MQTTReceiptPayload
@@ -116,6 +117,36 @@ class _PausedAck:
     context: Optional[Any]
 
 
+class RecorderLinks(Links):
+
+    acks_paused: bool
+    needs_ack: list[_PausedAck]
+
+    # noinspection PyMissingConstructor
+    def __init__(self, other: Links):
+        self.__dict__ = other.__dict__
+        self.acks_paused = False
+        self.needs_ack = []
+
+    def publish_message(
+        self, client, message: Message, qos: int = 0, context: Any = None
+    ) -> MQTTMessageInfo:
+        if self.acks_paused:
+            self.needs_ack.append(_PausedAck(client, message, qos, context))
+            return MQTTMessageInfo(-1)
+        else:
+            # noinspection PyProtectedMember
+            return super().publish_message(client, message, qos=qos, context=context)
+
+    def release_acks(self, clear: bool = False):
+        self.acks_paused = False
+        needs_ack = self.needs_ack
+        self.needs_ack = []
+        if not clear:
+            for paused_ack in needs_ack:
+                self.publish_message(**dataclasses.asdict(paused_ack))
+
+
 def make_recorder_class(
     proactor_type: Type[ProactorT],
 ) -> Callable[..., RecorderInterface]:
@@ -123,21 +154,22 @@ def make_recorder_class(
 
         subacks_paused: bool
         pending_subacks: list[Message]
-        acks_paused: bool
-        needs_ack: list[_PausedAck]
         mqtt_messages_dropped: bool
 
         def __init__(self, name: str, settings: ProactorSettings, **kwargs_):
             super().__init__(name=name, settings=settings, **kwargs_)
             self.subacks_paused = False
             self.pending_subacks = []
-            self.acks_paused = False
-            self.needs_ack = []
             self.mqtt_messages_dropped = False
+            self._links = RecorderLinks(self._links)
 
         @classmethod
         def make_stats(cls) -> RecorderStats:
             return RecorderStats()
+
+        @property
+        def needs_ack(self) -> list[_PausedAck]:
+            return self._links.needs_ack
 
         def generate_event(self: ProactorT, event: EventT) -> None:
             if isinstance(event, CommEvent):
@@ -147,7 +179,7 @@ def make_recorder_class(
             super().generate_event(event)
 
         def split_client_subacks(self: ProactorT, client_name: str):
-            client_wrapper = self._mqtt_clients.client_wrapper(client_name)
+            client_wrapper = self.mqtt_client_wrapper(client_name)
 
             def member_split_subscriptions():
                 return split_subscriptions(client_wrapper)
@@ -155,7 +187,7 @@ def make_recorder_class(
             client_wrapper.subscribe_all = member_split_subscriptions
 
         def restore_client_subacks(self: ProactorT, client_name: str):
-            client_wrapper = self._mqtt_clients.client_wrapper(client_name)
+            client_wrapper = self.mqtt_client_wrapper(client_name)
             client_wrapper.subscribe_all = MQTTClientWrapper.subscribe_all
 
         def pause_subacks(self):
@@ -177,27 +209,10 @@ def make_recorder_class(
                 await super().process_message(message)
 
         def pause_acks(self):
-            self.acks_paused = True
+            self._links.acks_paused = True
 
         def release_acks(self, clear: bool = False):
-            self.acks_paused = False
-            needs_ack = self.needs_ack
-            self.needs_ack = []
-            if not clear:
-                for paused_ack in needs_ack:
-                    self._publish_message(**dataclasses.asdict(paused_ack))
-
-        def _publish_message(
-            self, client, message: Message, qos: int = 0, context: Any = None
-        ) -> MQTTMessageInfo:
-            if self.acks_paused:
-                self.needs_ack.append(_PausedAck(client, message, qos, context))
-                return MQTTMessageInfo(-1)
-            else:
-                # noinspection PyProtectedMember
-                return super()._publish_message(
-                    client, message, qos=qos, context=context
-                )
+            self._links.release_acks(clear)
 
         def drop_mqtt(self, drop: bool):
             self.mqtt_messages_dropped = drop
@@ -212,33 +227,31 @@ def make_recorder_class(
             s += f"\nsubacks_paused: {self.subacks_paused}  pending_subacks: {len(self.pending_subacks)}\n"
             s += "Link states:\n"
             for link_name in self.stats.links:
-                s += f"  {link_name:10s}  {self._link_states.link_state(link_name).value}\n"
+                s += f"  {link_name:10s}  {self._links.link_state(link_name).value}\n"
             return s
 
         def set_ack_timeout_seconds(self, timeout_seconds: float):
-            self._link_acks._default_delay_seconds = timeout_seconds
+            self._links._acks._default_delay_seconds = timeout_seconds
 
         def summarize(self: ProactorT):
             self._logger.info(self.summary_str())
 
         def ping_peer(self):
-            self._publish_message(
+            self._links.publish_message(
                 self.primary_peer_client, PingMessage(Src=self.publication_name)
             )
 
         @property
         def mqtt_clients(self) -> MQTTClients:
-            return self._mqtt_clients
+            return self._links._mqtt_clients
 
         def mqtt_client_wrapper(self, client_name: str) -> MQTTClientWrapper:
-            return self._mqtt_clients.client_wrapper(client_name)
+            return self._links._mqtt_clients.client_wrapper(client_name)
 
         def mqtt_subscriptions(self, client_name: str) -> list[str]:
             return [
                 item[0]
-                for item in self._mqtt_clients.client_wrapper(
-                    client_name
-                ).subscription_items()
+                for item in self.mqtt_client_wrapper(client_name).subscription_items()
             ]
 
         def send_dbg_to_peer(
@@ -270,7 +283,7 @@ def make_recorder_class(
                 case DBGPayload():
                     message.Header.Src = self.publication_name
                     message.Header.Dst = self.primary_peer_client
-                    self._publish_message(self.primary_peer_client, message)
+                    self._links.publish_message(self.primary_peer_client, message)
                 case _:
                     # noinspection PyProtectedMember
                     super()._derived_process_message(message)

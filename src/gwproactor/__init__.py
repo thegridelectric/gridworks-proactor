@@ -18,7 +18,6 @@ from gwproactor.config import ProactorSettings
 from gwproactor.logger import ProactorLogger
 from gwproactor.logging_setup import format_exceptions
 from gwproactor.logging_setup import setup_logging
-from gwproactor.proactor_implementation import MQTTCodec
 from gwproactor.proactor_implementation import Proactor
 from gwproactor.proactor_interface import Communicator
 from gwproactor.proactor_interface import CommunicatorInterface
@@ -38,7 +37,6 @@ __all__ = [
     "CommunicatorInterface",
     "format_exceptions",
     "MonitoredName",
-    "MQTTCodec",
     "Proactor",
     "ProactorLogger",
     "ProactorSettings",

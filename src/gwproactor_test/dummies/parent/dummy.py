@@ -45,13 +45,13 @@ class DummyParent(Proactor):
             name=name if name else DUMMY_PARENT_NAME,
             settings=DummyParentSettings() if settings is None else settings,
         )
-        self._add_mqtt_client(
+        self._links.add_mqtt_link(
             self.CHILD_MQTT,
             self.settings.child_mqtt,
             ParentMQTTCodec(),
             primary_peer=True,
         )
-        self._mqtt_clients.subscribe(
+        self._links.subscribe(
             self.CHILD_MQTT,
             MQTTTopic.encode_subscription(Message.type_name(), DUMMY_CHILD_NAME),
             QOS.AtMostOnce,
