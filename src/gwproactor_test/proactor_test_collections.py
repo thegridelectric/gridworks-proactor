@@ -875,7 +875,10 @@ class ProactorCommTests:
             (active -> response_timeout -> awaiting_peer)
         """
 
-        async with self.CTH(add_child=True, add_parent=True, verbose=True) as h:
+        async with self.CTH(
+            add_child=True,
+            add_parent=True,
+        ) as h:
             child = h.child
             link = child._links.link(child.upstream_client)
             stats = child.stats.link(child.upstream_client)

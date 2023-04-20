@@ -3,7 +3,8 @@ from gwproactor.links.acks import AckManager
 from gwproactor.links.acks import AckTimerCallback
 from gwproactor.links.acks import AckWaitInfo
 from gwproactor.links.asyncio_timer_manager import AsyncioTimerManager
-from gwproactor.links.link_manager import Links
+from gwproactor.links.link_manager import LinkManager
+from gwproactor.links.link_manager import LinkManagerTransition
 from gwproactor.links.link_state import CommLinkAlreadyExists
 from gwproactor.links.link_state import CommLinkMissing
 from gwproactor.links.link_state import InvalidCommStateInput
@@ -27,7 +28,8 @@ __all__ = [
     "CommLinkAlreadyExists",
     "CommLinkMissing",
     "InvalidCommStateInput",
-    "Links",
+    "LinkManager",
+    "LinkManagerTransition",
     "LinkState",
     "LinkStates",
     "RuntimeLinkStateError",

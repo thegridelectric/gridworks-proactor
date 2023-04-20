@@ -80,9 +80,12 @@ class AckManager:
             self._timer_mgr.cancel_timer(wait_info.timer_handle)
         return wait_info
 
-    def cancel_ack_timers(self, link_name: str) -> None:
+    def cancel_ack_timers(self, link_name: str) -> list[AckWaitInfo]:
         if link_name in self._acks:
             wait_infos = self._acks[link_name]
             self._acks[link_name] = dict()
             for wait_info in wait_infos.values():
                 self._timer_mgr.cancel_timer(wait_info.timer_handle)
+        else:
+            wait_infos = []
+        return wait_infos

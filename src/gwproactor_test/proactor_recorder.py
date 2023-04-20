@@ -22,7 +22,7 @@ from gwproactor import ProactorSettings
 from gwproactor import Runnable
 from gwproactor import ServicesInterface
 from gwproactor.config import LoggerLevels
-from gwproactor.links import Links
+from gwproactor.links import LinkManager
 from gwproactor.message import DBGCommands
 from gwproactor.message import DBGPayload
 from gwproactor.message import MQTTReceiptPayload
@@ -117,13 +117,13 @@ class _PausedAck:
     context: Optional[Any]
 
 
-class RecorderLinks(Links):
+class RecorderLinks(LinkManager):
 
     acks_paused: bool
     needs_ack: list[_PausedAck]
 
     # noinspection PyMissingConstructor
-    def __init__(self, other: Links):
+    def __init__(self, other: LinkManager):
         self.__dict__ = other.__dict__
         self.acks_paused = False
         self.needs_ack = []
@@ -145,6 +145,13 @@ class RecorderLinks(Links):
         if not clear:
             for paused_ack in needs_ack:
                 self.publish_message(**dataclasses.asdict(paused_ack))
+
+    def generate_event(self, event: EventT) -> None:
+        if isinstance(event, CommEvent):
+            cast(
+                RecorderLinkStats, self._stats.link(event.PeerName)
+            ).comm_events.append(event)
+        super().generate_event(event)
 
 
 def make_recorder_class(
@@ -170,13 +177,6 @@ def make_recorder_class(
         @property
         def needs_ack(self) -> list[_PausedAck]:
             return self._links.needs_ack
-
-        def generate_event(self: ProactorT, event: EventT) -> None:
-            if isinstance(event, CommEvent):
-                cast(
-                    RecorderLinkStats, self.stats.link(event.PeerName)
-                ).comm_events.append(event)
-            super().generate_event(event)
 
         def split_client_subacks(self: ProactorT, client_name: str):
             client_wrapper = self.mqtt_client_wrapper(client_name)
@@ -214,6 +214,9 @@ def make_recorder_class(
         def release_acks(self, clear: bool = False):
             self._links.release_acks(clear)
 
+        def set_ack_timeout_seconds(self, delay: float) -> None:
+            self._links._acks._default_delay_seconds = delay  # noqa
+
         def drop_mqtt(self, drop: bool):
             self.mqtt_messages_dropped = drop
 
@@ -230,9 +233,6 @@ def make_recorder_class(
                 s += f"  {link_name:10s}  {self._links.link_state(link_name).value}\n"
             return s
 
-        def set_ack_timeout_seconds(self, timeout_seconds: float):
-            self._links._acks._default_delay_seconds = timeout_seconds
-
         def summarize(self: ProactorT):
             self._logger.info(self.summary_str())
 
@@ -243,10 +243,10 @@ def make_recorder_class(
 
         @property
         def mqtt_clients(self) -> MQTTClients:
-            return self._links._mqtt_clients
+            return self._links.mqtt_clients()
 
         def mqtt_client_wrapper(self, client_name: str) -> MQTTClientWrapper:
-            return self._links._mqtt_clients.client_wrapper(client_name)
+            return self._links.mqtt_client_wrapper(client_name)
 
         def mqtt_subscriptions(self, client_name: str) -> list[str]:
             return [
