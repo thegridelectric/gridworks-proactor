@@ -39,6 +39,9 @@ from gwproactor.links.link_state import StateName
 from gwproactor.links.link_state import Transition
 from gwproactor.links.message_times import LinkMessageTimes
 from gwproactor.links.message_times import MessageTimes
+from gwproactor.links.mqtt import QOS
+from gwproactor.links.mqtt import MQTTClients
+from gwproactor.links.mqtt import MQTTClientWrapper
 from gwproactor.links.timer_interface import TimerManagerInterface
 from gwproactor.logger import ProactorLogger
 from gwproactor.message import MQTTConnectFailPayload
@@ -46,9 +49,6 @@ from gwproactor.message import MQTTConnectPayload
 from gwproactor.message import MQTTDisconnectPayload
 from gwproactor.message import MQTTReceiptPayload
 from gwproactor.message import MQTTSubackPayload
-from gwproactor.mqtt import QOS
-from gwproactor.mqtt import MQTTClients
-from gwproactor.mqtt import MQTTClientWrapper
 from gwproactor.persister import JSONDecodingError
 from gwproactor.persister import PersisterInterface
 from gwproactor.persister import UIDMissingWarning

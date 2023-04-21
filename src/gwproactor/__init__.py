@@ -15,6 +15,10 @@ Particular questions:
 """
 
 from gwproactor.config import ProactorSettings
+from gwproactor.links.mqtt import QOS
+from gwproactor.links.mqtt import MQTTClients
+from gwproactor.links.mqtt import MQTTClientWrapper
+from gwproactor.links.mqtt import Subscription
 from gwproactor.logger import ProactorLogger
 from gwproactor.logging_setup import format_exceptions
 from gwproactor.logging_setup import setup_logging
@@ -37,14 +41,18 @@ __all__ = [
     "CommunicatorInterface",
     "format_exceptions",
     "MonitoredName",
+    "MQTTClients",
+    "MQTTClientWrapper",
     "Proactor",
     "ProactorLogger",
     "ProactorSettings",
     "Problems",
+    "QOS",
     "responsive_sleep",
     "Runnable",
     "ServicesInterface",
     "setup_logging",
+    "Subscription",
     "SyncAsyncInteractionThread",
     "SyncAsyncQueueWriter",
 ]

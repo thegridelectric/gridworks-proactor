@@ -23,12 +23,12 @@ from gwproactor import Runnable
 from gwproactor import ServicesInterface
 from gwproactor.config import LoggerLevels
 from gwproactor.links import LinkManager
+from gwproactor.links import MQTTClients
+from gwproactor.links import MQTTClientWrapper
 from gwproactor.message import DBGCommands
 from gwproactor.message import DBGPayload
 from gwproactor.message import MQTTReceiptPayload
 from gwproactor.message import MQTTSubackPayload
-from gwproactor.mqtt import MQTTClients
-from gwproactor.mqtt import MQTTClientWrapper
 from gwproactor.stats import LinkStats
 from gwproactor.stats import ProactorStats
 

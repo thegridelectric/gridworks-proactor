@@ -7,8 +7,8 @@ from gwproto import MQTTCodec
 from gwproto import MQTTTopic
 from gwproto import create_message_payload_discriminator
 
+from gwproactor.links import QOS
 from gwproactor.message import Message
-from gwproactor.mqtt import QOS
 from gwproactor.persister import SimpleDirectoryWriter
 from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies.names import DUMMY_CHILD_NAME

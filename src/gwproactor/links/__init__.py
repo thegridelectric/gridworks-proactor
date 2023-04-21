@@ -16,6 +16,10 @@ from gwproactor.links.link_state import Transition
 from gwproactor.links.link_state import TransitionName
 from gwproactor.links.message_times import LinkMessageTimes
 from gwproactor.links.message_times import MessageTimes
+from gwproactor.links.mqtt import QOS
+from gwproactor.links.mqtt import MQTTClients
+from gwproactor.links.mqtt import MQTTClientWrapper
+from gwproactor.links.mqtt import Subscription
 from gwproactor.links.timer_interface import TimerManagerInterface
 
 
@@ -38,5 +42,9 @@ __all__ = [
     "StateName",
     "LinkMessageTimes",
     "MessageTimes",
+    "MQTTClients",
+    "MQTTClientWrapper",
+    "QOS",
+    "Subscription",
     "TimerManagerInterface",
 ]

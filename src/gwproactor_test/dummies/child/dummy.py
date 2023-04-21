@@ -7,7 +7,7 @@ from gwproto import MQTTTopic
 from gwproto import create_message_payload_discriminator
 
 from gwproactor import ProactorSettings
-from gwproactor.mqtt import QOS
+from gwproactor.links import QOS
 from gwproactor.persister import TimedRollingFilePersister
 from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies.child.config import DummyChildSettings
