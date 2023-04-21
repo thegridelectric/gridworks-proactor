@@ -1,11 +1,13 @@
 import asyncio
 import json
+import logging
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Any
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 from gwproto import Message
 from gwproto import MQTTCodec
@@ -104,11 +106,22 @@ class LinkManager:
     def primary_peer_client(self) -> str:
         return self._mqtt_clients.primary_peer_client
 
+    def subscribed(self, link_name: str) -> bool:
+        return self._mqtt_clients.subscribed(link_name)
+
     def mqtt_clients(self) -> MQTTClients:
         return self._mqtt_clients
 
     def mqtt_client_wrapper(self, client_name: str) -> MQTTClientWrapper:
         return self._mqtt_clients.client_wrapper(client_name)
+
+    def enable_mqtt_loggers(
+        self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
+    ):
+        return self._mqtt_clients.enable_loggers(logger)
+
+    def disable_mqtt_loggers(self):
+        return self._mqtt_clients.disable_loggers()
 
     def decoder(self, link_name: str) -> Optional[MQTTCodec]:
         return self._mqtt_codecs.get(link_name, None)

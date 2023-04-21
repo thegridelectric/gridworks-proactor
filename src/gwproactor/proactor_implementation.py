@@ -74,7 +74,7 @@ class Proactor(ServicesInterface, Runnable):
         self._stats = self.make_stats()
         self._event_persister = self.make_event_persister(settings)
         self._links = LinkManager(
-            publication_name=self._name,
+            publication_name=self.publication_name,
             settings=settings,
             logger=self._logger,
             stats=self._stats,
