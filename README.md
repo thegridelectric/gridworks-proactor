@@ -28,7 +28,7 @@ allows the scada code to be more focussed on on application specific details and
 
 - `Proactor`, a single threaded event loop running on asyncio, for exchanging messages between the main application
   object, "live actor" subobjects and MQTT clients.
-- A communications state ("active" or not) for each external communications link is available to the proactor and
+- A [communication state] ("active" or not) for each external communications link is available to the proactor and
   sub-objects. "Active" communications is defined as ALL of the following:
   - The underlying communications mechanism (MQTT) is connected.
   - All input channels of underlying mechanism (MQTT topics) are established.
@@ -94,4 +94,4 @@ This project was generated from [@cjolowicz]'s [Hypermodern Python Cookiecutter]
 
 [license]: https://github.com/thegridelectric/gridworks-proactor/blob/main/LICENSE
 [contributor guide]: https://github.com/thegridelectric/gridworks-proactor/blob/main/CONTRIBUTING.md
-[command-line reference]: https://gridworks-proactor.readthedocs.io/en/latest/usage.html
+[communication state]: https://gridworks-proactor.readthedocs.io/en/latest/comm_state.html

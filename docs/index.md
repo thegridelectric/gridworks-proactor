@@ -6,7 +6,7 @@ end-before: <!-- github-only -->
 
 [license]: license
 [contributor guide]: contributing
-[command-line reference]: usage
+[communication state]: comm_state
 
 ```{toctree}
 ---
@@ -14,6 +14,7 @@ hidden:
 maxdepth: 1
 ---
 
+comm_state
 reference
 contributing
 Code of Conduct <codeofconduct>
