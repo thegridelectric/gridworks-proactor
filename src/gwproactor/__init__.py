@@ -7,6 +7,7 @@ communication / action infrastructure and GridWorks semantics is intended to all
 This package is not polished and the separation is up for debate.
 
 Particular questions:
+
 * Is the programming model still clean after more concrete actors are implemented and more infrastructure are added.
 * Does the separation add value or just complicate analysis.
 * MQTTClients should be made async.
