@@ -11,7 +11,6 @@ end-before: <!-- github-only -->
 ```{toctree}
 ---
 hidden:
-maxdepth: 1
 ---
 
 comm_state

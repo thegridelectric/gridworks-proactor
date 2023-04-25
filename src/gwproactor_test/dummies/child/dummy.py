@@ -24,7 +24,7 @@ ChildMessageDecoder = create_message_payload_discriminator(
 )
 
 
-class ChildMQTTCode(MQTTCodec):
+class ChildMQTTCodec(MQTTCodec):
     def __init__(self):
         super().__init__(
             Decoders.from_objects(message_payload_discriminator=ChildMessageDecoder)
@@ -52,7 +52,7 @@ class DummyChild(Proactor):
         self._links.add_mqtt_link(
             DummyChild.PARENT_MQTT,
             settings.parent_mqtt,
-            ChildMQTTCode(),
+            ChildMQTTCodec(),
             upstream=True,
             primary_peer=True,
         )

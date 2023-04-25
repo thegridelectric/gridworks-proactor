@@ -62,3 +62,35 @@ the peer before the link is considered "active". There could be more than one su
 these and the message from the peer could arrive in any order. This complexity could be reduced by serializing the
 accumulation of these results, at the cost of longer time to re-activate after restore of the underlying communication
 mechanism.
+
+## gwproactor.links.LinkManager
+
+The `gwproactor.links` package implements most of the Proactor's communication infrastructure. `LinkManager` is the
+interface to this package used by `Proactor`. The interaction between them can be seen by searching the code for
+`_links`. This search should produce approximately the following entry points in the message processing loop:
+
+1.  Start on user request.
+2.  Stop on user request (omitted from the diagram for clarity).
+3.  Handle connect of underlying comm mechanism (e.g. broker connect of MQTT).
+4.  Handle disconnect of underlying comm mechanism.
+5.  Handle intermediate connection establishment events from underlying comm mechanism (e.g. subscription ack of MQTT).
+6.  Send acks for incoming messages that require ack.
+7.  Receive acks for outgoing messages that require acks.
+8.  Handle timeouts for ack receipt.
+9.  Update “heard from recently” on message receipt.
+10. Handle timeouts for “heard from recently”.
+
+### LinkManager helpers
+
+The `LinkManager` uses these helpers:
+
+- `MQTTClients`, to manage Paho MQTT clients.
+- `MQTTCodecs`, to contain a message coder/decoder for each MQTT client.
+- `LinkStates`, to manage the communications state machine for each link.
+- `MessageTimes`, to track the times of last send and receive for each link.
+- `TimerManagerInterface`, to start and cancel timers for acknowledgement timeout.
+- `AckManager`, to start, track, handle and cancel timers for pending acknowledgements.
+- `PersisterInterface`, to persist unacknowledged Events on loss of "active" communication and re-upload them when
+  "active" state is restored.
+- `ProactorLogger`, to log communications state tranisitions.
+- `ProactorStats`, to update various statistics about communications.
