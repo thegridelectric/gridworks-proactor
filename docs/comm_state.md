@@ -1,4 +1,4 @@
-# Communications state
+# Communication state
 
 The `Proactor` maintains communication state ("active" or not active) for each external point-to-point communications
 link. The "active" state is intended to indicate that not only is the underlying communications channel (e.g. MQTT)
@@ -63,10 +63,10 @@ these and the message from the peer could arrive in any order. This complexity c
 accumulation of these results, at the cost of longer time to re-activate after restore of the underlying communication
 mechanism.
 
-## gwproactor.links.LinkManager
+## LinkManager
 
-The `gwproactor.links` package implements most of the Proactor's communication infrastructure. `LinkManager` is the
-interface to this package used by `Proactor`. The interaction between them can be seen by searching the code for
+The [](gwproactor.links) package implements most of the Proactor's communication infrastructure. [](LinkManager) is the
+interface to this package used by [](Proactor). The interaction between them can be seen by searching the code for
 `_links`. This search should produce approximately the following entry points in the message processing loop:
 
 1.  Start on user request.
@@ -82,15 +82,16 @@ interface to this package used by `Proactor`. The interaction between them can b
 
 ### LinkManager helpers
 
-The `LinkManager` uses these helpers:
+The [](LinkManager) uses these helpers:
 
-- `MQTTClients`, to manage Paho MQTT clients.
-- `MQTTCodecs`, to contain a message coder/decoder for each MQTT client.
-- `LinkStates`, to manage the communications state machine for each link.
-- `MessageTimes`, to track the times of last send and receive for each link.
-- `TimerManagerInterface`, to start and cancel timers for acknowledgement timeout.
-- `AckManager`, to start, track, handle and cancel timers for pending acknowledgements.
-- `PersisterInterface`, to persist unacknowledged Events on loss of "active" communication and re-upload them when
+- [](MQTTClients), to manage Paho MQTT clients.
+- a dict of [MQTTCodec](https://github.com/thegridelectric/gridworks-protocol/blob/dev/src/gwproto/decoders.py),
+  to contain a message coder/decoder for each MQTT client.
+- [](LinkStates), to manage the communications state machine for each link.
+- [](MessageTimes), to track the times of last send and receive for each link.
+- [](TimerManagerInterface), to start and cancel timers for acknowledgement timeout.
+- [](AckManager), to start, track, handle and cancel timers for pending acknowledgements.
+- [](PersisterInterface), to persist unacknowledged Events on loss of "active" communication and re-upload them when
   "active" state is restored.
-- `ProactorLogger`, to log communications state tranisitions.
-- `ProactorStats`, to update various statistics about communications.
+- [](ProactorLogger), to log communications state tranisitions.
+- [](ProactorStats), to update various statistics about communications.
