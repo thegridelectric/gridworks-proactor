@@ -866,7 +866,7 @@ class ProactorCommTests:
                 )
 
             await await_for(
-                lambda: link.in_state(StateName.stopped),
+                lambda: link.in_state(StateName.active),
                 1,
                 f"ERROR waiting for active",
                 err_str_f=_temp_sum,
