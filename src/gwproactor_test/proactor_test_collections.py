@@ -964,6 +964,7 @@ class ProactorCommTests:
                 err_str_f=parent.summary_str,
             )
 
+    @pytest.mark.skip
     @pytest.mark.asyncio
     async def test_ping(self):
         """

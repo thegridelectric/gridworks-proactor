@@ -171,6 +171,15 @@ def tests(session: Session) -> None:
             session.notify("coverage", posargs=[])
 
 
+@session(python=python_versions)
+def repeat(session: Session) -> None:
+    """Run the test suite."""
+    session.install(".[tests]")
+    session.install("pytest", "pygments", "pytest-repeat")
+    args = session.posargs or ["--count", "5", "-x"]
+    session.run("pytest", *args)
+
+
 @session(python=python_versions[0])
 def coverage(session: Session) -> None:
     """Produce the coverage report."""
