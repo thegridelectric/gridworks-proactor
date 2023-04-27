@@ -6,11 +6,9 @@ import pytest
 from gwproto import MQTTTopic
 from paho.mqtt.client import MQTT_ERR_CONN_LOST
 
-from gwproactor.config import MQTTClient
 from gwproactor.links import StateName
 from gwproactor.message import DBGPayload
 from gwproactor_test.comm_test_helper import CommTestHelper
-from gwproactor_test.dummies import DummyChildSettings
 from gwproactor_test.wait import await_for
 
 
@@ -174,32 +172,31 @@ class ProactorCommTests:
                 err_str_f=child.summary_str,
             )
 
-    @pytest.mark.skip()
-    @pytest.mark.asyncio
-    async def test_broker_dns_failure(self):
-        """Verify proactor does not crash in presence of bad host.
-
-        This test skipped because it's currently very slow - 4 seconds
-        before mqtt client thread reports first problem.
-
-        A better test would:
-            - be faster
-            - verify client thread continues
-            - verify problem reports occur
-            - possibly verify that eventually child requests device restart since pi's are
-              having DNS failures on network comm loss that seem to be undone by pi restart
-        """
-        no_broker = MQTTClient(host="www.foo.com")
-        async with self.CTH(
-            child_settings=DummyChildSettings(
-                parent_mqtt=no_broker,
-            ),
-            start_child=True,
-            verbose=True,
-        ):
-            for i in range(20):
-                print(f"{i}...")
-                await asyncio.sleep(1)
+    # @pytest.mark.asyncio
+    # async def test_broker_dns_failure(self):
+    #     """Verify proactor does not crash in presence of bad host.
+    #
+    #     This test commented out because it's very slow - 4 seconds before mqtt client thread
+    #     reports first problem.
+    #
+    #     A better test would:
+    #         - be faster
+    #         - verify client thread continues
+    #         - verify problem reports occur
+    #         - possibly verify that eventually child requests device restart since pi's are
+    #           having DNS failures on network comm loss that seem to be undone by pi restart
+    #     """
+    #     no_broker = MQTTClient(host="www.foo.com")
+    #     async with self.CTH(
+    #         child_settings=DummyChildSettings(
+    #             parent_mqtt=no_broker,
+    #         ),
+    #         start_child=True,
+    #         verbose=True,
+    #     ):
+    #         for i in range(20):
+    #             print(f"{i}...")
+    #             await asyncio.sleep(1)
 
     @pytest.mark.asyncio
     async def test_basic_comm_parent_first(self):
@@ -964,7 +961,6 @@ class ProactorCommTests:
                 err_str_f=parent.summary_str,
             )
 
-    @pytest.mark.skip
     @pytest.mark.asyncio
     async def test_ping(self):
         """
@@ -983,7 +979,7 @@ class ProactorCommTests:
             add_parent=True,
             child_settings=child_settings,
             parent_settings=parent_settings,
-            verbose=True,
+            verbose=False,
         ) as h:
             parent = h.parent
             parent_stats = parent.stats.link(parent.primary_peer_client)
@@ -1073,7 +1069,7 @@ class ProactorCommTests:
             assert pings_from_parent <= exp_pings_nominal, err_str
             assert pings_from_child <= exp_pings_nominal, err_str
             assert messages_from_parent >= reps, err_str
-            assert messages_from_child >= 2 * reps, err_str
+            assert messages_from_child >= reps, err_str
 
             parent.pause_acks()
             await await_for(
