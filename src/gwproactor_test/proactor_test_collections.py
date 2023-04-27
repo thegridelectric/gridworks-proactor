@@ -688,8 +688,6 @@ class ProactorCommTests:
             assert comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
             assert len(stats.comm_events) == 4
 
-    # @pytest.mark.skip
-
     @pytest.mark.asyncio
     async def test_awaiting_setup2__(self, request):
         """
@@ -966,7 +964,6 @@ class ProactorCommTests:
                 err_str_f=parent.summary_str,
             )
 
-    @pytest.mark.skip
     @pytest.mark.asyncio
     async def test_ping(self):
         """
