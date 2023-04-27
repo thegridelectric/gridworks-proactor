@@ -176,7 +176,7 @@ def repeat(session: Session) -> None:
     """Run the test suite."""
     session.install(".[tests]")
     session.install("pytest", "pygments", "pytest-repeat")
-    args = session.posargs or ["--count", "80", "-x", "-k", "test_awaiting_setup2__"]
+    args = session.posargs or ["--count", "1", "-x"]
     session.run("pytest", *args)
 
 

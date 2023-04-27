@@ -351,19 +351,26 @@ class ProactorCommTests:
                 err_str_f=child.summary_str,
             )
             # verify no child comm state change has occurred.
+            err_str = f"\n{child.summary_str()}\n" f"{parent.summary_str()}\n"
             assert child_link.active_for_send()
             assert child_link.active_for_recv()
             assert child_link.active()
-            assert child_link.state == StateName.active
-            assert child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
+            assert child_link.state == StateName.active, err_str
+            assert (
+                child_comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
+            ), err_str
             assert (
                 child_comm_event_counts["gridworks.event.comm.mqtt.fully.subscribed"]
                 == 2
-            )
-            assert child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
-            assert child_comm_event_counts["gridworks.event.comm.peer.active"] == 2
-            assert len(child_stats.comm_events) == 7
-            assert child._event_persister.num_pending == 0
+            ), err_str
+            assert (
+                child_comm_event_counts["gridworks.event.comm.mqtt.disconnect"] == 1
+            ), err_str
+            assert (
+                child_comm_event_counts["gridworks.event.comm.peer.active"] == 2
+            ), err_str
+            assert len(child_stats.comm_events) == 7, err_str
+            assert child._event_persister.num_pending == 0, err_str
 
             # Tell *both* clients we lost comm.
             parent.mqtt_client_wrapper(
