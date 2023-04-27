@@ -51,7 +51,8 @@ async def await_for(
         "ERROR. [{tag}] wait_for() timed out after {seconds} seconds\n"
         "  [{tag}]\n"
         "  From {file}:{line}\n"
-        "  wait function: {f}"
+        "  wait function: {f}\n"
+        "  wait function VALUE NOW: {p}\n"
         "{err_str}"
     )
     if err_str_f is not None:
@@ -91,6 +92,7 @@ async def await_for(
             line=caller.lineno,
             seconds=time.time() - start,
             f=f,
+            p=f(),
             err_str=err_str_f_(),
         )
         err_str = err_format.format(**format_dict)

@@ -710,7 +710,7 @@ class ProactorCommTests:
         In practice these might be corner cases that rarely or never occur, since by default all subacks will come and
         one message and we should not receive any messages before subscribing.
         """
-        async with self.CTH(add_child=True, add_parent=True, verbose=True) as h:
+        async with self.CTH(add_child=True, add_parent=True, verbose=False) as h:
             child = h.child
             child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
             if len(child_subscriptions) < 2:
@@ -861,17 +861,24 @@ class ProactorCommTests:
 
             # (awaiting_setup -> mqtt_suback -> active)
             # Release all subacks, allowing child to go active
-            child.release_subacks()
             print(
                 f"0 link: {id(link)}  state: {link.state}  active: {link.in_state(StateName.active)}"
+            )
+            child.release_subacks()
+            print(
+                f"1 link: {id(link)}  state: {link.state}  active: {link.in_state(StateName.active)}"
             )
 
             def _temp_sum():
                 return (
-                    f"1 link: {id(link)}  state: {link.state}  active: {link.in_state(StateName.active)}\n"
-                    + child.summary_str()
+                    f"3 link: {id(link)}  {id(child._links.link(child.upstream_client))}  state: {link.state}  active: {link.in_state(StateName.active)}\n"
+                    f"{child.summary_str()}\n"
+                    f"{parent.summary_str()}\n"
                 )
 
+            print(
+                f"2 link: {id(link)}  state: {link.state}  active: {link.in_state(StateName.active)}"
+            )
             await await_for(
                 lambda: link.in_state(StateName.active),
                 1,
