@@ -1066,8 +1066,6 @@ class ProactorCommTests:
                 f"messages_from_child: {messages_from_child}\n"
                 f"exp_pings_nominal: {exp_pings_nominal}\n"
             )
-            print(err_str)
-            print(parent.summary_str())
             assert pings_from_parent <= exp_pings_nominal, err_str
             assert pings_from_child <= exp_pings_nominal, err_str
             assert messages_from_parent >= reps, err_str
