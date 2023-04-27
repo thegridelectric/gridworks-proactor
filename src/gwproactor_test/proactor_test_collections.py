@@ -855,11 +855,21 @@ class ProactorCommTests:
             # (awaiting_setup -> mqtt_suback -> active)
             # Release all subacks, allowing child to go active
             child.release_subacks()
+            print(
+                f"0 link: {id(link)}  state: {link.state}  active: {link.in_state(StateName.active)}"
+            )
+
+            def _temp_sum():
+                return (
+                    f"1 link: {id(link)}  state: {link.state}  active: {link.in_state(StateName.active)}\n"
+                    + child.summary_str()
+                )
+
             await await_for(
-                lambda: link.in_state(StateName.active),
+                lambda: link.in_state(StateName.stopped),
                 1,
                 f"ERROR waiting for active",
-                err_str_f=child.summary_str,
+                err_str_f=_temp_sum,
             )
 
     @pytest.mark.asyncio
