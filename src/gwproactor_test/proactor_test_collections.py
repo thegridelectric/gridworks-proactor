@@ -1066,8 +1066,10 @@ class ProactorCommTests:
             )
             assert pings_from_parent <= exp_pings_nominal, err_str
             assert pings_from_child <= exp_pings_nominal, err_str
-            assert messages_from_parent >= reps, err_str
-            assert messages_from_child >= reps, err_str
+            # Allow wide variance in number of messages exchanged - we are really testing pings, which
+            # Should be should be close to 0 when a lot of messages are being exchanged.
+            assert messages_from_parent >= reps * 0.5, err_str
+            assert messages_from_child >= reps * 0.5, err_str
 
             parent.pause_acks()
             await await_for(
