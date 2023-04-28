@@ -710,7 +710,7 @@ class ProactorCommTests:
         In practice these might be corner cases that rarely or never occur, since by default all subacks will come and
         one message and we should not receive any messages before subscribing.
         """
-        async with self.CTH(add_child=True, add_parent=True, verbose=False) as h:
+        async with self.CTH(add_child=True, add_parent=True, verbose=True) as h:
             child = h.child
             child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
             if len(child_subscriptions) < 2:
@@ -728,6 +728,12 @@ class ProactorCommTests:
             assert stats.num_received == 0
             assert link.state == StateName.not_started
 
+            def _err_str() -> str:
+                return (
+                    f"\nCHILD\n{child.summary_str()}\n"
+                    f"\nPARENT\n{parent.summary_str()}\n"
+                )
+
             # start child
             # (not_started -> started -> connecting)
             # (connecting -> connected -> awaiting_setup_and_peer)
@@ -738,7 +744,7 @@ class ProactorCommTests:
                 lambda: len(child.pending_subacks) == 3,
                 3,
                 "ERROR waiting link reconnect",
-                err_str_f=child.summary_str,
+                err_str_f=_err_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
             assert not link.active_for_recv()
@@ -760,7 +766,7 @@ class ProactorCommTests:
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (1/3)",
-                err_str_f=child.summary_str,
+                err_str_f=_err_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
 
@@ -773,7 +779,7 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.awaiting_setup),
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str,
+                err_str_f=_err_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -792,7 +798,7 @@ class ProactorCommTests:
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (2/3)",
-                err_str_f=child.summary_str,
+                err_str_f=_err_str,
             )
             assert link.state == StateName.awaiting_setup
 
@@ -808,7 +814,7 @@ class ProactorCommTests:
                 lambda: stats.num_received_by_topic[dbg_topic] == 1,
                 1,
                 "ERROR waiting for dbg message",
-                err_str_f=child.summary_str,
+                err_str_f=_err_str,
             )
             assert link.state == StateName.awaiting_setup
 
@@ -823,7 +829,7 @@ class ProactorCommTests:
                 lambda: len(child.pending_subacks) == 3,
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str,
+                err_str_f=_err_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
@@ -843,7 +849,7 @@ class ProactorCommTests:
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (1/3)",
-                err_str_f=child.summary_str,
+                err_str_f=_err_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
 
@@ -856,7 +862,7 @@ class ProactorCommTests:
                 lambda: link.in_state(StateName.awaiting_setup),
                 3,
                 f"ERROR waiting for message from peer",
-                err_str_f=child.summary_str,
+                err_str_f=_err_str,
             )
 
             # (awaiting_setup -> mqtt_suback -> active)
