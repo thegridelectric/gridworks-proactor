@@ -1043,7 +1043,7 @@ class ProactorCommTests:
             ]
             start_messages_from_parent = stats.num_received
             start_messages_from_child = parent_stats.num_received
-            wait_seconds = 0.5
+            wait_seconds = 2.0
             await asyncio.sleep(wait_seconds)
             pings_from_parent = (
                 stats.num_received_by_topic[parent_ping_topic] - start_pings_from_parent
