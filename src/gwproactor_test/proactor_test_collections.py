@@ -1009,7 +1009,7 @@ class ProactorCommTests:
             add_parent=True,
             child_settings=child_settings,
             parent_settings=parent_settings,
-            verbose=False,
+            verbose=True,
         ) as h:
             parent = h.parent
             parent_stats = parent.stats.link(parent.primary_peer_client)
