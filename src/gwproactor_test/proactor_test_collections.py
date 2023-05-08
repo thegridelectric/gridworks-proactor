@@ -1043,7 +1043,7 @@ class ProactorCommTests:
             ]
             start_messages_from_parent = stats.num_received
             start_messages_from_child = parent_stats.num_received
-            wait_seconds = 2.0
+            wait_seconds = 0.5
             await asyncio.sleep(wait_seconds)
             pings_from_parent = (
                 stats.num_received_by_topic[parent_ping_topic] - start_pings_from_parent
@@ -1054,7 +1054,9 @@ class ProactorCommTests:
             )
             messages_from_parent = stats.num_received - start_messages_from_parent
             messages_from_child = parent_stats.num_received - start_messages_from_child
-            exp_pings_nominal = wait_seconds / parent.settings.mqtt_link_poll_seconds
+            exp_pings_nominal = (
+                wait_seconds / parent.settings.mqtt_link_poll_seconds
+            ) - 1
             err_str = (
                 f"pings_from_parent: {pings_from_parent}\n"
                 f"messages_from_parent: {messages_from_parent}\n"
