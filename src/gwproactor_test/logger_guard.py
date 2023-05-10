@@ -77,6 +77,13 @@ class LoggerGuards:
 
 @pytest.fixture
 def restore_loggers() -> LoggerGuards:
+    num_root_handlers = len(logging.getLogger().handlers)
     guards = LoggerGuards()
     yield guards
     guards.restore()
+    new_num_root_handlers = len(logging.getLogger().handlers)
+    if new_num_root_handlers != num_root_handlers:
+        raise ValueError(
+            f"ARRG. root handlers: {num_root_handlers} -> {new_num_root_handlers}  handlers:\n\t"
+            f"{logging.getLogger().handlers}"
+        )
