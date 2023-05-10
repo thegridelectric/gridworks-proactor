@@ -1,6 +1,7 @@
 import argparse
 import logging
 import logging.config
+import sys
 import syslog
 import traceback
 from typing import Optional
@@ -51,6 +52,7 @@ def setup_logging(
     else:
         errors.clear()
     config_finished = False
+    screen_handlers = []
     try:
         # Take any arguments from command line
         try:
@@ -85,12 +87,34 @@ def setup_logging(
             base_logger.propagate = False
         if add_screen_handler:
             try:
-                screen_handler = logging.StreamHandler()
-                if formatter is not None:
-                    screen_handler.setFormatter(formatter)
-                base_logger.addHandler(screen_handler)
+                if not any(
+                    [
+                        h
+                        for h in base_logger.handlers
+                        if isinstance(h, logging.StreamHandler)
+                        and (h.stream is sys.stderr or h.stream is sys.stdout)
+                    ]
+                ):
+                    screen_handler = logging.StreamHandler()
+                    if formatter is not None:
+                        screen_handler.setFormatter(formatter)
+                    base_logger.addHandler(screen_handler)
             except BaseException as e:
                 errors.append(e)
+        screen_handlers = [
+            h
+            for h in base_logger.handlers
+            if isinstance(h, logging.StreamHandler)
+            and (h.stream is sys.stderr or h.stream is sys.stdout)
+        ]
+        if len(screen_handlers) > 1:
+            raise ValueError(
+                "x More than 1 screen handlers  "
+                f"{base_logger.name}  {len(screen_handlers)}  "
+                f"\n\tstream handlers: {screen_handlers},  "
+                f"\n\tstream handlers: {[type(x) for x in screen_handlers]},  "
+                f"from all handlers {base_logger.handlers}"
+            )
         try:
             file_handler = settings.logging.file_handler.create(
                 settings.paths.log_dir, formatter
