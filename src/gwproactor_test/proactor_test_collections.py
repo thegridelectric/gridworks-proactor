@@ -728,6 +728,8 @@ class ProactorCommTests:
             assert stats.num_received == 0
             assert link.state == StateName.not_started
 
+            parent = h.parent
+
             def _err_str() -> str:
                 return (
                     f"\nCHILD\n{child.summary_str()}\n"
@@ -804,7 +806,6 @@ class ProactorCommTests:
 
             # (awaiting_setup -> message_from_peer -> awaiting_setup)
             # Receive another message from peer, remaining in awaiting_setup
-            parent = h.parent
             dbg_topic = MQTTTopic.encode(
                 "gw", parent.publication_name, DBGPayload.__fields__["TypeName"].default
             )
