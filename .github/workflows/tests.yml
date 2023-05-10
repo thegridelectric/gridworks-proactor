@@ -14,8 +14,8 @@ jobs:
         include:
           #          - { python: "3.11", os: "ubuntu-latest", session: "pre-commit" }
           #          - { python: "3.11", os: "ubuntu-latest", session: "mypy" }
-          #          - { python: "3.11", os: "ubuntu-latest", session: "tests" }
-          - { python: "3.11", os: "ubuntu-latest", session: "repeat" }
+          - { python: "3.11", os: "ubuntu-latest", session: "tests" }
+          #          - { python: "3.11", os: "ubuntu-latest", session: "repeat" }
           #          - { python: "3.10", os: "ubuntu-latest", session: "tests" }
           #           - { python: "3.11", os: "windows-latest", session: "tests" }
           #           - { python: "3.11", os: "macos-latest", session: "tests" }
@@ -96,7 +96,18 @@ jobs:
 
       - name: Run Nox
         run: |
-          nox --python=${{ matrix.python }}
+          for i in {1..2}
+          do
+                  echo "<< $i <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+                  echo ""
+                  nox --python=${{ matrix.python }} -s tests -x
+                  if [[ $? != '0' ]]
+                  then
+                      exit $i
+                  fi
+                  echo ">> $i >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+                  echo ""
+          done
 
       - name: Upload coverage data
         if: always() && matrix.session == 'tests'
