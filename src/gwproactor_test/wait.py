@@ -72,17 +72,23 @@ async def await_for(
             result = await f()
         else:
             result = f()
-    while now < until and result is False:
+    while now < until and not result:
         if f_is_async:
             result = await f()
         else:
             result = f()
-        if result is False:
+        if not result:
             now = time.time()
             if now < until:
                 await asyncio.sleep(min(retry_duration, until - now))
                 now = time.time()
-    if result is True:
+                # oops! we overslept
+                if now >= until:
+                    if f_is_async:
+                        result = await f()
+                    else:
+                        result = f()
+    if result:
         return True
     else:
         caller = getframeinfo(stack()[1][0])
