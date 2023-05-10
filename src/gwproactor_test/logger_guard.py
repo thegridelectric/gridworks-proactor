@@ -7,7 +7,6 @@ import pytest
 
 from gwproactor.config import DEFAULT_BASE_NAME
 from gwproactor.config import LoggerLevels
-from gwproactor.config import LoggingSettings
 
 
 class LoggerGuard:
@@ -63,9 +62,10 @@ class LoggerGuard:
 class LoggerGuards:
     guards: dict[str, LoggerGuard]
 
-    def __init__(self, logger_names: Optional[Sequence[str]] = None):
-        if logger_names is None:
-            logger_names = self.default_logger_names()
+    def __init__(self, extra_logger_names: Optional[Sequence[str]] = None):
+        logger_names = self.default_logger_names()
+        if extra_logger_names is not None:
+            logger_names = logger_names.union(set(extra_logger_names))
         self.guards = {
             logger_name: LoggerGuard(logging.getLogger(logger_name))
             for logger_name in logger_names
@@ -83,9 +83,11 @@ class LoggerGuards:
         return True
 
     @classmethod
-    def default_logger_names(cls) -> list[str]:
-        return ["root", LoggingSettings().base_log_name] + list(
-            LoggerLevels().qualified_logger_names(DEFAULT_BASE_NAME).values()
+    def default_logger_names(cls) -> set[str]:
+        return (
+            {"root"}
+            .union(LoggerLevels().qualified_logger_names(DEFAULT_BASE_NAME).values())
+            .union(logging.root.manager.loggerDict.keys())
         )
 
 
