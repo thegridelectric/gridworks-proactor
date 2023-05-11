@@ -980,7 +980,7 @@ class ProactorCommTests:
                 lambda: len(parent.needs_ack) == 2,
                 1,
                 "ERROR waiting for child to timeout",
-                err_str_f=child.summary_str,
+                err_str_f=parent.summary_str,
             )
 
             # (awaiting_peer -> message_from_peer -> active)

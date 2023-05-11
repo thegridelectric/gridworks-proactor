@@ -97,7 +97,6 @@ def setup_logging(
                     screen_handler = logging.StreamHandler()
                     if formatter is not None:
                         screen_handler.setFormatter(formatter)
-                    print(f"Adding screen handler to {base_logger.name}")
                     base_logger.addHandler(screen_handler)
             except BaseException as e:
                 errors.append(e)
