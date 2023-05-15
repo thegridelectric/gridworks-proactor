@@ -5,13 +5,15 @@ from gwproactor.config.logging import LoggingSettings
 from gwproactor.config.paths import Paths
 
 
-MQTT_LINK_POLL_SECONDS = 60
+MQTT_LINK_POLL_SECONDS = 60.0
+ACK_TIMEOUT_SECONDS = 5.0
 
 
 class ProactorSettings(BaseSettings):
     paths: Paths = None
     logging: LoggingSettings = LoggingSettings()
     mqtt_link_poll_seconds: float = MQTT_LINK_POLL_SECONDS
+    ack_timeout_seconds: float = ACK_TIMEOUT_SECONDS
 
     class Config:
         env_prefix = "PROACTOR_"

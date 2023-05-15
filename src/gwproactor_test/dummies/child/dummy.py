@@ -7,7 +7,7 @@ from gwproto import MQTTTopic
 from gwproto import create_message_payload_discriminator
 
 from gwproactor import ProactorSettings
-from gwproactor.mqtt import QOS
+from gwproactor.links import QOS
 from gwproactor.persister import TimedRollingFilePersister
 from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies.child.config import DummyChildSettings
@@ -24,7 +24,7 @@ ChildMessageDecoder = create_message_payload_discriminator(
 )
 
 
-class ChildMQTTCode(MQTTCodec):
+class ChildMQTTCodec(MQTTCodec):
     def __init__(self):
         super().__init__(
             Decoders.from_objects(message_payload_discriminator=ChildMessageDecoder)
@@ -49,10 +49,10 @@ class DummyChild(Proactor):
             name=name if name else DUMMY_CHILD_NAME,
             settings=DummyChildSettings() if settings is None else settings,
         )
-        self._add_mqtt_client(
+        self._links.add_mqtt_link(
             DummyChild.PARENT_MQTT,
             settings.parent_mqtt,
-            ChildMQTTCode(),
+            ChildMQTTCodec(),
             upstream=True,
             primary_peer=True,
         )
@@ -63,8 +63,8 @@ class DummyChild(Proactor):
             MQTTTopic.encode_subscription(Message.type_name(), "1"),
             MQTTTopic.encode_subscription(Message.type_name(), "2"),
         ]:
-            self._mqtt_clients.subscribe(self.PARENT_MQTT, topic, QOS.AtMostOnce)
-        self.log_subscriptions("construction")
+            self._links.subscribe(self.PARENT_MQTT, topic, QOS.AtMostOnce)
+        self._links.log_subscriptions("construction")
 
     @classmethod
     def make_event_persister(

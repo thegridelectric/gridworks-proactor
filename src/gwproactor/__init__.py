@@ -7,6 +7,7 @@ communication / action infrastructure and GridWorks semantics is intended to all
 This package is not polished and the separation is up for debate.
 
 Particular questions:
+
 * Is the programming model still clean after more concrete actors are implemented and more infrastructure are added.
 * Does the separation add value or just complicate analysis.
 * MQTTClients should be made async.
@@ -15,10 +16,13 @@ Particular questions:
 """
 
 from gwproactor.config import ProactorSettings
+from gwproactor.links.mqtt import QOS
+from gwproactor.links.mqtt import MQTTClients
+from gwproactor.links.mqtt import MQTTClientWrapper
+from gwproactor.links.mqtt import Subscription
 from gwproactor.logger import ProactorLogger
 from gwproactor.logging_setup import format_exceptions
 from gwproactor.logging_setup import setup_logging
-from gwproactor.proactor_implementation import MQTTCodec
 from gwproactor.proactor_implementation import Proactor
 from gwproactor.proactor_interface import Communicator
 from gwproactor.proactor_interface import CommunicatorInterface
@@ -38,15 +42,18 @@ __all__ = [
     "CommunicatorInterface",
     "format_exceptions",
     "MonitoredName",
-    "MQTTCodec",
+    "MQTTClients",
+    "MQTTClientWrapper",
     "Proactor",
     "ProactorLogger",
     "ProactorSettings",
     "Problems",
+    "QOS",
     "responsive_sleep",
     "Runnable",
     "ServicesInterface",
     "setup_logging",
+    "Subscription",
     "SyncAsyncInteractionThread",
     "SyncAsyncQueueWriter",
 ]

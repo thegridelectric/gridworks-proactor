@@ -437,13 +437,16 @@ class LinkStates:
             for name in names:
                 self.add(name)
 
-    def link(self, name) -> Optional[LinkState]:
+    def link(self, name: str) -> Optional[LinkState]:
         return self._links.get(name, None)
 
-    def link_state(self, name) -> Optional[StateName]:
+    def link_state(self, name: str) -> Optional[StateName]:
         if name in self._links:
             return self._links[name].curr_state.name
         return None
+
+    def stopped(self, name: str) -> bool:
+        return self.link_state(name) == StateName.stopped
 
     def __contains__(self, name: str) -> bool:
         return name in self._links
@@ -453,6 +456,9 @@ class LinkStates:
             return self._links[name]
         except KeyError:
             raise CommLinkMissing(name)
+
+    def link_names(self) -> list[str]:
+        return list(self._links.keys())
 
     def add(self, name: str, state: StateName = StateName.not_started) -> LinkState:
         if name in self._links:
