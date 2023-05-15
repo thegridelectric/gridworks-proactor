@@ -7,8 +7,8 @@ from gwproto import MQTTCodec
 from gwproto import MQTTTopic
 from gwproto import create_message_payload_discriminator
 
+from gwproactor.links import QOS
 from gwproactor.message import Message
-from gwproactor.mqtt import QOS
 from gwproactor.persister import SimpleDirectoryWriter
 from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies.names import DUMMY_CHILD_NAME
@@ -45,13 +45,13 @@ class DummyParent(Proactor):
             name=name if name else DUMMY_PARENT_NAME,
             settings=DummyParentSettings() if settings is None else settings,
         )
-        self._add_mqtt_client(
+        self._links.add_mqtt_link(
             self.CHILD_MQTT,
             self.settings.child_mqtt,
             ParentMQTTCodec(),
             primary_peer=True,
         )
-        self._mqtt_clients.subscribe(
+        self._links.subscribe(
             self.CHILD_MQTT,
             MQTTTopic.encode_subscription(Message.type_name(), DUMMY_CHILD_NAME),
             QOS.AtMostOnce,

@@ -95,6 +95,8 @@ class _Case:
         assert link.state == StateName.not_started
         link.curr_state = link.states[self.start]
         assert link.state == self.start
+        if self.ok:
+            print(f"{self}")
         match self.input:
             case TransitionName.start_called:
                 self.assert_case(links, name, links.start(name))

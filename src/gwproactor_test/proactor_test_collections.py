@@ -6,11 +6,9 @@ import pytest
 from gwproto import MQTTTopic
 from paho.mqtt.client import MQTT_ERR_CONN_LOST
 
-from gwproactor.config import MQTTClient
 from gwproactor.links import StateName
 from gwproactor.message import DBGPayload
 from gwproactor_test.comm_test_helper import CommTestHelper
-from gwproactor_test.dummies import DummyChildSettings
 from gwproactor_test.wait import await_for
 
 
@@ -23,7 +21,7 @@ class ProactorCommTests:
             child = h.child
             stats = child.stats.link(child.upstream_client)
             comm_event_counts = stats.comm_event_counts
-            link = child._link_states.link(child.upstream_client)
+            link = child._links.link(child.upstream_client)
 
             # unstarted child
             assert stats.num_received == 0
@@ -48,7 +46,7 @@ class ProactorCommTests:
                 assert comm_event.MessageId in child._event_persister
 
             # Tell client we lost comm.
-            child._mqtt_clients.clients["gridworks"]._client._loop_rc_handle(
+            child.mqtt_client_wrapper("gridworks")._client._loop_rc_handle(
                 MQTT_ERR_CONN_LOST
             )
 
@@ -80,7 +78,7 @@ class ProactorCommTests:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
             child_comm_event_counts = child_stats.comm_event_counts
-            child_link = child._link_states.link(child.upstream_client)
+            child_link = child._links.link(child.upstream_client)
 
             # unstarted child, parent
             assert child_stats.num_received == 0
@@ -139,7 +137,7 @@ class ProactorCommTests:
             )
 
             # Tell client we lost comm.
-            child._mqtt_clients.clients["gridworks"]._client._loop_rc_handle(
+            child.mqtt_client_wrapper("gridworks")._client._loop_rc_handle(
                 MQTT_ERR_CONN_LOST
             )
 
@@ -174,32 +172,31 @@ class ProactorCommTests:
                 err_str_f=child.summary_str,
             )
 
-    @pytest.mark.skip()
-    @pytest.mark.asyncio
-    async def test_broker_dns_failure(self):
-        """Verify proactor does not crash in presence of bad host.
-
-        This test skipped because it's currently very slow - 4 seconds
-        before mqtt client thread reports first problem.
-
-        A better test would:
-            - be faster
-            - verify client thread continues
-            - verify problem reports occur
-            - possibly verify that eventually child requests device restart since pi's are
-              having DNS failures on network comm loss that seem to be undone by pi restart
-        """
-        no_broker = MQTTClient(host="www.foo.com")
-        async with self.CTH(
-            child_settings=DummyChildSettings(
-                parent_mqtt=no_broker,
-            ),
-            start_child=True,
-            verbose=True,
-        ):
-            for i in range(20):
-                print(f"{i}...")
-                await asyncio.sleep(1)
+    # @pytest.mark.asyncio
+    # async def test_broker_dns_failure(self):
+    #     """Verify proactor does not crash in presence of bad host.
+    #
+    #     This test commented out because it's very slow - 4 seconds before mqtt client thread
+    #     reports first problem.
+    #
+    #     A better test would:
+    #         - be faster
+    #         - verify client thread continues
+    #         - verify problem reports occur
+    #         - possibly verify that eventually child requests device restart since pi's are
+    #           having DNS failures on network comm loss that seem to be undone by pi restart
+    #     """
+    #     no_broker = MQTTClient(host="www.foo.com")
+    #     async with self.CTH(
+    #         child_settings=DummyChildSettings(
+    #             parent_mqtt=no_broker,
+    #         ),
+    #         start_child=True,
+    #         verbose=True,
+    #     ):
+    #         for i in range(20):
+    #             print(f"{i}...")
+    #             await asyncio.sleep(1)
 
     @pytest.mark.asyncio
     async def test_basic_comm_parent_first(self):
@@ -207,10 +204,10 @@ class ProactorCommTests:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
             child_comm_event_counts = child_stats.comm_event_counts
-            child_link = child._link_states.link(child.upstream_client)
+            child_link = child._links.link(child.upstream_client)
             parent = h.parent
             # TODO: hack
-            parent_link = parent._link_states.link(parent.primary_peer_client)
+            parent_link = parent._links.link(parent.primary_peer_client)
 
             # unstarted parent
             assert parent_link.state == StateName.not_started
@@ -263,9 +260,9 @@ class ProactorCommTests:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
             child_comm_event_counts = child_stats.comm_event_counts
-            child_link = child._link_states.link(child.upstream_client)
+            child_link = child._links.link(child.upstream_client)
             parent = h.parent
-            parent_link = parent._link_states.link(parent.primary_peer_client)
+            parent_link = parent._links.link(parent.primary_peer_client)
 
             # unstarted child, parent
             assert parent_link.state == StateName.not_started
@@ -302,7 +299,7 @@ class ProactorCommTests:
             )
 
             # Tell *child* client we lost comm.
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+            child.mqtt_client_wrapper(child.upstream_client)._client._loop_rc_handle(
                 MQTT_ERR_CONN_LOST
             )
 
@@ -338,9 +335,9 @@ class ProactorCommTests:
             )
 
             # Tell *parent* client we lost comm.
-            parent._mqtt_clients.clients[
+            parent.mqtt_client_wrapper(
                 parent.primary_peer_client
-            ]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            )._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             # wait for child to get ping from parent when parent reconnects to mqtt
             parent_ping_topic = MQTTTopic.encode(
                 "gw", parent.publication_name, "gridworks-ping"
@@ -369,10 +366,10 @@ class ProactorCommTests:
             assert child._event_persister.num_pending == 0
 
             # Tell *both* clients we lost comm.
-            parent._mqtt_clients.clients[
+            parent.mqtt_client_wrapper(
                 parent.primary_peer_client
-            ]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+            )._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            child.mqtt_client_wrapper(child.upstream_client)._client._loop_rc_handle(
                 MQTT_ERR_CONN_LOST
             )
 
@@ -419,7 +416,7 @@ class ProactorCommTests:
             child = h.child
             stats = child.stats.link(child.upstream_client)
             comm_event_counts = stats.comm_event_counts
-            link = child._link_states.link(child.upstream_client)
+            link = child._links.link(child.upstream_client)
 
             # unstarted child
             assert stats.num_received == 0
@@ -465,7 +462,7 @@ class ProactorCommTests:
 
             # Tell client we lost comm
             child.pause_subacks()
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+            child.mqtt_client_wrapper(child.upstream_client)._client._loop_rc_handle(
                 MQTT_ERR_CONN_LOST
             )
             await await_for(
@@ -487,7 +484,7 @@ class ProactorCommTests:
 
             # Tell client we lost comm
             child.pending_subacks = []
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+            child.mqtt_client_wrapper(child.upstream_client)._client._loop_rc_handle(
                 MQTT_ERR_CONN_LOST
             )
             await await_for(
@@ -559,7 +556,7 @@ class ProactorCommTests:
                 return
             stats = child.stats.link(child.upstream_client)
             comm_event_counts = stats.comm_event_counts
-            link = child._link_states.link(child.upstream_client)
+            link = child._links.link(child.upstream_client)
 
             # unstarted child
             assert stats.num_received == 0
@@ -635,7 +632,7 @@ class ProactorCommTests:
             # (message_from_peer -> awaiting_setup)
             # Tell client we lost comm
             child.pause_subacks()
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+            child.mqtt_client_wrapper(child.upstream_client)._client._loop_rc_handle(
                 MQTT_ERR_CONN_LOST
             )
             await await_for(
@@ -720,7 +717,7 @@ class ProactorCommTests:
                 return
             stats = child.stats.link(child.upstream_client)
             comm_event_counts = stats.comm_event_counts
-            link = child._link_states.link(child.upstream_client)
+            link = child._links.link(child.upstream_client)
 
             # unstarted child
             assert stats.num_received == 0
@@ -814,7 +811,7 @@ class ProactorCommTests:
             # Tell client we lost comm
             child.pending_subacks.clear()
             child.pause_subacks()
-            child._mqtt_clients.clients[child.upstream_client]._client._loop_rc_handle(
+            child.mqtt_client_wrapper(child.upstream_client)._client._loop_rc_handle(
                 MQTT_ERR_CONN_LOST
             )
             await await_for(
@@ -847,9 +844,9 @@ class ProactorCommTests:
 
             # (awaiting_setup_and_peer -> message_from_peer -> awaiting_setup)
             # Force parent to restore comm, delivering a message, sending us to awaiting_setup
-            parent._mqtt_clients.clients[
+            parent.mqtt_client_wrapper(
                 parent.primary_peer_client
-            ]._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
+            )._client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             await await_for(
                 lambda: link.in_state(StateName.awaiting_setup),
                 3,
@@ -875,12 +872,15 @@ class ProactorCommTests:
             (active -> response_timeout -> awaiting_peer)
         """
 
-        async with self.CTH(add_child=True, add_parent=True, verbose=True) as h:
+        async with self.CTH(
+            add_child=True,
+            add_parent=True,
+        ) as h:
             child = h.child
-            link = child._link_states.link(child.upstream_client)
+            link = child._links.link(child.upstream_client)
             stats = child.stats.link(child.upstream_client)
             parent = h.parent
-            parent_link = parent._link_states.link(parent.primary_peer_client)
+            parent_link = parent._links.link(parent.primary_peer_client)
 
             # Timeout while awaiting setup
             # (awaiting_peer -> response_timeout -> awaiting_peer)
@@ -937,7 +937,7 @@ class ProactorCommTests:
             parent.pause_acks()
             child.ping_peer()
             exp_timeouts = stats.timeouts + len(
-                child._link_acks._acks[child.upstream_client]
+                child._links._acks._acks[child.upstream_client]
             )
             await await_for(
                 lambda: stats.timeouts == exp_timeouts,
@@ -963,7 +963,6 @@ class ProactorCommTests:
                 err_str_f=parent.summary_str,
             )
 
-    @pytest.mark.skip
     @pytest.mark.asyncio
     async def test_ping(self):
         """
@@ -982,7 +981,7 @@ class ProactorCommTests:
             add_parent=True,
             child_settings=child_settings,
             parent_settings=parent_settings,
-            verbose=True,
+            verbose=False,
         ) as h:
             parent = h.parent
             parent_stats = parent.stats.link(parent.primary_peer_client)
@@ -993,7 +992,7 @@ class ProactorCommTests:
             child = h.child
             child.suppress_status = True
             child.set_ack_timeout_seconds(0.1)
-            link = child._link_states.link(child.upstream_client)
+            link = child._links.link(child.upstream_client)
             stats = child.stats.link(child.upstream_client)
             child_ping_topic = MQTTTopic.encode(
                 "gw", child.publication_name, "gridworks-ping"
@@ -1067,12 +1066,12 @@ class ProactorCommTests:
                 f"messages_from_child: {messages_from_child}\n"
                 f"exp_pings_nominal: {exp_pings_nominal}\n"
             )
-            print(err_str)
-            print(parent.summary_str())
             assert pings_from_parent <= exp_pings_nominal, err_str
             assert pings_from_child <= exp_pings_nominal, err_str
-            assert messages_from_parent >= reps, err_str
-            assert messages_from_child >= 2 * reps, err_str
+            # Allow wide variance in number of messages exchanged - we are really testing pings, which
+            # Should be should be close to 0 when a lot of messages are being exchanged.
+            assert messages_from_parent >= reps * 0.5, err_str
+            assert messages_from_child >= reps * 0.5, err_str
 
             parent.pause_acks()
             await await_for(

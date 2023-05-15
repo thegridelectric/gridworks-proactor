@@ -4,17 +4,9 @@ end-before: <!-- github-only -->
 ---
 ```
 
-[license]: license
-[contributor guide]: contributing
-[command-line reference]: usage
-
 ```{toctree}
----
-hidden:
-maxdepth: 1
----
 
-usage
+comm_state
 reference
 contributing
 Code of Conduct <codeofconduct>

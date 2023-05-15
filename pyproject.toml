@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gridworks-proactor"
-version = "0.1.8"
+version = "0.2.0"
 description = "Gridworks Proactor"
 authors = ["Jessica Millar <jmillar@gridworks-consulting.com>"]
 license = "MIT"
@@ -55,6 +55,7 @@ sphinx-click = ">=3.0.2"
 typeguard = ">=2.13.3"
 xdoctest = {extras = ["colors"], version = ">=0.15.10"}
 myst-parser = {version = ">=0.16.1"}
+sphinxcontrib-mermaid = "^0.8.1"
 
 [tool.poetry.extras]
 tests = ["pytest", "pytest-asyncio"]

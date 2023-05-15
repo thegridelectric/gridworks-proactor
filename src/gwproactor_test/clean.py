@@ -136,12 +136,13 @@ def default_test_env(request, tmp_path) -> Generator[MonkeyPatch, None, None]:
         1. Modifying the contents of tests/.env-gwproactor-test.
         2. Changing the the path to the test dotenv file via the GWPROACTOR_TEST_DOTENV_PATH environment variable.
         3. Explicitly passing and parametrizing this fixture. For example, to run a test with a different hardware
-          layout file, such as DUMMY_TEST_HARDWARE_LAYOUT_PATH:
+            layout file, such as DUMMY_TEST_HARDWARE_LAYOUT_PATH:
 
-            >>> from gwproactor_test.clean import DUMMY_TEST_HARDWARE_LAYOUT_PATH
-            >>> @pytest.mark.parametrize("default_test_env", [(DefaultTestEnv(src_test_layout=DUMMY_TEST_HARDWARE_LAYOUT_PATH)], indirect=True)
-            >>> def test_something(default_test_env):
-            >>>    assert Paths().hardware_layout.open().read() == DUMMY_TEST_HARDWARE_LAYOUT_PATH.open().read()
+        >>> from gwproactor_test.clean import DUMMY_TEST_HARDWARE_LAYOUT_PATH
+        >>> @pytest.mark.parametrize("default_test_env", [(DefaultTestEnv(src_test_layout=DUMMY_TEST_HARDWARE_LAYOUT_PATH)], indirect=True)
+        >>> def test_something(default_test_env):
+        >>>    assert Paths().hardware_layout.open().read() == DUMMY_TEST_HARDWARE_LAYOUT_PATH.open().read()
+
 
     """
     test_env = getattr(request, "param", DefaultTestEnv())
