@@ -158,7 +158,12 @@ class CommTestHelper:
             self.child_helper.settings.logging.levels.lifecycle = logging.WARNING
             self.parent_helper.settings.logging.levels.lifecycle = logging.WARNING
         args = argparse.Namespace(verbose=self.verbose)
-        self.logger_guards = LoggerGuards()
+        self.logger_guards = LoggerGuards(
+            list(self.child_helper.settings.logging.qualified_logger_names().values())
+            + list(
+                self.parent_helper.settings.logging.qualified_logger_names().values()
+            )
+        )
         setup_logging(
             args,
             self.child_helper.settings,
