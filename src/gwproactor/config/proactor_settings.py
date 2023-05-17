@@ -7,6 +7,7 @@ from gwproactor.config.paths import Paths
 
 MQTT_LINK_POLL_SECONDS = 60.0
 ACK_TIMEOUT_SECONDS = 5.0
+NUM_INITIAL_EVENT_REUPLOADS: int = 100
 
 
 class ProactorSettings(BaseSettings):
@@ -14,6 +15,7 @@ class ProactorSettings(BaseSettings):
     logging: LoggingSettings = LoggingSettings()
     mqtt_link_poll_seconds: float = MQTT_LINK_POLL_SECONDS
     ack_timeout_seconds: float = ACK_TIMEOUT_SECONDS
+    num_initial_event_reuploads: int = NUM_INITIAL_EVENT_REUPLOADS
 
     class Config:
         env_prefix = "PROACTOR_"
