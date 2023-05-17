@@ -89,3 +89,8 @@ class AckManager:
         else:
             wait_infos = []
         return wait_infos
+
+    def num_acks(self, link_name: str) -> int:
+        if (client_acks := self._acks.get(link_name, None)) is not None:
+            return len(client_acks)
+        return 0

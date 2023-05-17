@@ -7,6 +7,7 @@ from gwproto import MQTTTopic
 from paho.mqtt.client import MQTT_ERR_CONN_LOST
 
 from gwproactor.links import StateName
+from gwproactor.message import DBGEvent
 from gwproactor.message import DBGPayload
 from gwproactor_test.comm_test_helper import CommTestHelper
 from gwproactor_test.wait import await_for
@@ -1088,4 +1089,96 @@ class ProactorCommTests:
                 1,
                 "ERROR waiting for parent to respond",
                 err_str_f=child.summary_str,
+            )
+
+    @pytest.mark.asyncio
+    async def test_reupload_basic(self):
+        """
+        Test:
+            reupload not requiring flow control
+        """
+        async with self.CTH(
+            start_child=True,
+            add_parent=True,
+            verbose=False,
+        ) as h:
+            child = h.child
+            upstream_link = h.child._links.link(child.upstream_client)
+            await await_for(
+                lambda: upstream_link.active_for_send(),
+                1,
+                "ERROR waiting for child to connect to mqtt",
+                err_str_f=h.summary_str,
+            )
+            # Some events should have been generated, and they should have all been sent
+            assert child._links.num_pending > 0
+            assert child._links.num_reupload_pending == 0
+            assert not child._links.reuploading()
+
+            # Start parent, wait for reconnect.
+            h.start_parent()
+            await await_for(
+                lambda: upstream_link.active(),
+                1,
+                "ERROR waiting for parent",
+                err_str_f=h.summary_str,
+            )
+
+            # All events should have been reuploaded.
+            assert child._links.num_reupload_pending == 0
+            assert not child._links.reuploading()
+
+    @pytest.mark.asyncio
+    async def test_reupload_flow_control_simple(self):
+        """
+        Test:
+            reupload requiring flow control
+        """
+        async with self.CTH(
+            start_child=True,
+            add_parent=True,
+            child_settings=self.CTH.child_settings_t(num_initial_event_reuploads=5),
+            verbose=False,
+        ) as h:
+            child = h.child
+            upstream_link = h.child._links.link(child.upstream_client)
+            await await_for(
+                lambda: upstream_link.active_for_send(),
+                1,
+                "ERROR waiting for child to connect to mqtt",
+                err_str_f=h.summary_str,
+            )
+            # Some events should have been generated, and they should have all been sent
+            base_num_pending = child._links.num_pending
+            assert base_num_pending > 0
+            assert child._links.num_reupload_pending == 0
+            assert not child._links.reuploading()
+
+            # Generate more events than fit in pipe.
+            events_to_generate = child.settings.num_initial_event_reuploads + 1
+            for i in range(events_to_generate):
+                child.generate_event(
+                    DBGEvent(
+                        Command=DBGPayload(), Msg=f"event {i+1} / {events_to_generate}"
+                    )
+                )
+            child.logger.info(
+                f"Generated {events_to_generate} events. Total pending events: {child._links.num_pending}"
+            )
+
+            # Start parent, wait for connect.
+            h.start_parent()
+            await await_for(
+                lambda: upstream_link.active(),
+                1,
+                "ERROR waiting for parent",
+                err_str_f=h.summary_str,
+            )
+
+            # Wait for reupload to complete
+            await await_for(
+                lambda: not child._links.reuploading(),
+                1,
+                "ERROR waiting for reupload",
+                err_str_f=h.summary_str,
             )

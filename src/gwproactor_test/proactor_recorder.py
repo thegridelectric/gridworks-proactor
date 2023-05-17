@@ -225,18 +225,26 @@ def make_recorder_class(
                 # noinspection PyProtectedMember
                 super()._process_mqtt_message(message)
 
-        def summary_str(self: ProactorT):
+        def summary_str(self: ProactorT) -> str:
             s = str(self.stats)
-            s += f"\nsubacks_paused: {self.subacks_paused}  pending_subacks: {len(self.pending_subacks)}\n"
-            s += "Link states:\n"
+            s += "\nLink states:\n"
             for link_name in self.stats.links:
                 s += f"  {link_name:10s}  {self._links.link_state(link_name).value}\n"
+            s += "Pending acks:\n"
+            for link_name in self.stats.links:
+                s += f"  {link_name:10s}  {self._links.num_acks(link_name):3d}\n"
+            s += (
+                f"pending events: {self._links.num_pending}  "
+                f"pending upload events: {self._links.num_reupload_pending}  "
+                f"reuploading: {self._links.reuploading()}\n"
+            )
+            s += f"subacks_paused: {self.subacks_paused}  pending_subacks: {len(self.pending_subacks)}\n"
             return s
 
-        def summarize(self: ProactorT):
+        def summarize(self: ProactorT) -> None:
             self._logger.info(self.summary_str())
 
-        def ping_peer(self):
+        def ping_peer(self) -> None:
             self._links.publish_message(
                 self.primary_peer_client, PingMessage(Src=self.publication_name)
             )

@@ -30,13 +30,29 @@ class Reuploads:
         return reupload_now
 
     def process_ack_for_reupload(self, message_id: str) -> list[str]:
-        reupload_now = ""
+        reupload_now = []
+        self._logger.path(
+            f"++process_ack_for_reupload  reuploading:{self.reuploading()}  num_reupload_pending: {self.num_reupload_pending}"
+        )
+        old_num_dbg = self.num_reupload_pending
+        path_dbg = 0
         if message_id in self._reupload_pending:
+            path_dbg |= 0x00000001
             self._reupload_pending.pop(message_id)
             if self._reupload_pending:
-                reupload_now = next(iter(self._reupload_pending))
-                self._reupload_pending.pop(reupload_now)
-        return [reupload_now]
+                path_dbg |= 0x00000002
+                reupload_now = [next(iter(self._reupload_pending))]
+        self._logger.path(
+            f"--process_ack_for_reupload  path:0x{path_dbg:08X}  "
+            f"reuploading:{self.reuploading()}  "
+            f"num_reupload_pending: {old_num_dbg} -> {self.num_reupload_pending}  "
+            f"num reupload_now: {len(reupload_now)}"
+        )
+        return reupload_now
+
+    @property
+    def num_reupload_pending(self) -> int:
+        return len(self._reupload_pending)
 
     def reuploading(self) -> bool:
         return bool(self._reupload_pending)
