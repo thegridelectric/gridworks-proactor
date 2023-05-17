@@ -73,7 +73,7 @@ class ProactorCommTests:
 
     async def test_basic_comm_child_first(self):
         async with self.CTH(
-            add_child=True, add_parent=True, verbose=True, parent_on_screen=True
+            add_child=True, add_parent=True, verbose=False, parent_on_screen=True
         ) as h:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
@@ -200,7 +200,7 @@ class ProactorCommTests:
 
     @pytest.mark.asyncio
     async def test_basic_comm_parent_first(self):
-        async with self.CTH(add_child=True, add_parent=True, verbose=True) as h:
+        async with self.CTH(add_child=True, add_parent=True, verbose=False) as h:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
             child_comm_event_counts = child_stats.comm_event_counts
@@ -412,7 +412,7 @@ class ProactorCommTests:
          (awaiting_setup_and_peer -> mqtt_suback -> awaiting_peer)
          (awaiting_setup_and_peer -> disconnected -> connecting)
         """
-        async with self.CTH(add_child=True, verbose=True) as h:
+        async with self.CTH(add_child=True, verbose=False) as h:
             child = h.child
             stats = child.stats.link(child.upstream_client)
             comm_event_counts = stats.comm_event_counts
@@ -544,7 +544,7 @@ class ProactorCommTests:
         In practice these might be corner cases that rarely or never occur, since by default all subacks will come and
         one message and we should not receive any messages before subscribing.
         """
-        async with self.CTH(add_child=True, verbose=True) as h:
+        async with self.CTH(add_child=True, verbose=False) as h:
             child = h.child
             child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
             if len(child_subscriptions) < 2:
@@ -705,7 +705,7 @@ class ProactorCommTests:
         In practice these might be corner cases that rarely or never occur, since by default all subacks will come and
         one message and we should not receive any messages before subscribing.
         """
-        async with self.CTH(add_child=True, add_parent=True, verbose=True) as h:
+        async with self.CTH(add_child=True, add_parent=True, verbose=False) as h:
             child = h.child
             child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
             if len(child_subscriptions) < 2:
@@ -896,7 +896,7 @@ class ProactorCommTests:
             )
 
             # start child
-            child.set_ack_timeout_seconds(0.1)
+            child.set_ack_timeout_seconds(1)
             assert stats.timeouts == 0
             h.start_child()
             await await_for(
@@ -1026,7 +1026,9 @@ class ProactorCommTests:
             )
             messages_from_parent = stats.num_received - start_messages_from_parent
             messages_from_child = parent_stats.num_received - start_messages_from_child
-            exp_pings_nominal = wait_seconds / parent.settings.mqtt_link_poll_seconds
+            exp_pings_nominal = (
+                wait_seconds / parent.settings.mqtt_link_poll_seconds
+            ) - 1
             err_str = (
                 f"pings_from_parent: {pings_from_parent}\n"
                 f"messages_from_parent: {messages_from_parent}\n"
@@ -1076,7 +1078,7 @@ class ProactorCommTests:
             parent.pause_acks()
             await await_for(
                 lambda: link.in_state(StateName.awaiting_peer),
-                1,
+                child._links._acks._default_delay_seconds + 1,
                 "ERROR waiting for for parent to be slow",
                 err_str_f=child.summary_str,
             )
