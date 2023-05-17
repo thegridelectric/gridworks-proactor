@@ -1,6 +1,7 @@
 import argparse
 import logging
 import logging.config
+import sys
 import syslog
 import traceback
 from typing import Optional
@@ -85,10 +86,19 @@ def setup_logging(
             base_logger.propagate = False
         if add_screen_handler:
             try:
-                screen_handler = logging.StreamHandler()
-                if formatter is not None:
-                    screen_handler.setFormatter(formatter)
-                base_logger.addHandler(screen_handler)
+                # try not to add more than one screen handler.
+                if not any(
+                    [
+                        h
+                        for h in base_logger.handlers
+                        if isinstance(h, logging.StreamHandler)
+                        and (h.stream is sys.stderr or h.stream is sys.stdout)
+                    ]
+                ):
+                    screen_handler = logging.StreamHandler()
+                    if formatter is not None:
+                        screen_handler.setFormatter(formatter)
+                    base_logger.addHandler(screen_handler)
             except BaseException as e:
                 errors.append(e)
         try:
