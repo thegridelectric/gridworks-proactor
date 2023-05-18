@@ -103,6 +103,7 @@ class Proactor(ServicesInterface, Runnable):
                 message.Header.Src,
                 f"{message.Header.Dst}/{message.Header.MessageType}",
                 message.Payload,
+                message_id=message.Header.MessageId,
             )
         self._receive_queue.put_nowait(message)
 
@@ -313,6 +314,7 @@ class Proactor(ServicesInterface, Runnable):
                 self.name,
                 f"{message.Header.Src}/{message.Header.MessageType}",
                 message.Payload,
+                message_id=message.Header.MessageId,
             )
         self._stats.add_message(message)
         match message.Payload:
@@ -397,6 +399,7 @@ class Proactor(ServicesInterface, Runnable):
                 self.name,
                 mqtt_receipt_message.Payload.message.topic,
                 decoded_message.Payload,
+                message_id=decoded_message.Header.MessageId,
             )
             link_mgr_results = self._links.process_mqtt_message(mqtt_receipt_message)
             if link_mgr_results.is_ok():
