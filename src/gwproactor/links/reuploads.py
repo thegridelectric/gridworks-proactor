@@ -1,5 +1,3 @@
-from types import NoneType
-
 from gwproactor.logger import ProactorLogger
 from gwproactor.persister import PersisterInterface
 
@@ -8,7 +6,7 @@ class Reuploads:
     NUM_INITIAL_EVENTS: int = 100
 
     _event_persister: PersisterInterface
-    _reupload_pending: dict[str, NoneType]
+    _reupload_pending: dict[str, None]
     _num_initial_events: int
     _logger: ProactorLogger
 
@@ -23,10 +21,16 @@ class Reuploads:
         self._num_initial_events = num_initial_events
         self._logger = logger
 
+    def __str__(self):
+        s = f"Reuploads: {len(self._reupload_pending)}"
+        for message_id in self._reupload_pending:
+            s += f"\n  {message_id}"
+        return s
+
     def start_reupload(self) -> list[str]:
         reupload_pending = self._event_persister.pending()
+        self._reupload_pending = dict.fromkeys(reupload_pending)
         reupload_now = reupload_pending[: self._num_initial_events]
-        self._reupload_pending = dict.fromkeys(reupload_pending[len(reupload_now) :])
         return reupload_now
 
     def process_ack_for_reupload(self, message_id: str) -> list[str]:

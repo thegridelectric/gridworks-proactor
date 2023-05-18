@@ -208,7 +208,11 @@ class LinkManager:
         topic = message.mqtt_topic()
         payload = self._mqtt_codecs[client].encode(message)
         self._logger.message_summary(
-            "OUT mqtt    ", message.Header.Src, topic, message.Payload
+            "OUT mqtt    ",
+            message.Header.Src,
+            topic,
+            message.Payload,
+            message_id=message.Header.MessageId,
         )
         if message.Header.AckRequired:
             self._acks.start_ack_timer(
@@ -249,7 +253,7 @@ class LinkManager:
             path_dbg |= 0x00000001
             events_to_reupload = self._reuploads.start_reupload()
             self._reupload_events(events_to_reupload)
-            if self._logger.comm_event_enabled:
+            if self._logger.isEnabledFor(logging.INFO):
                 path_dbg |= 0x00000002
                 if self._reuploads.reuploading():
                     path_dbg |= 0x00000004
@@ -257,7 +261,7 @@ class LinkManager:
                 else:
                     path_dbg |= 0x00000008
                     state_str = "reupload complete."
-                self._logger.comm_event(
+                self._logger.info(
                     f"_start_reupload: reuploaded {len(events_to_reupload)} events. "
                     f"{state_str} "
                     f"Total pending events: {self._event_persister.num_pending}."
@@ -410,7 +414,7 @@ class LinkManager:
                 )
                 if not self._reuploads.reuploading():
                     path_dbg |= 0x00000008
-                    self._logger.comm_event("reupload complete.")
+                    self._logger.info("reupload complete.")
         self._logger.path("--LinkManager.process_ack path:0x%08X", path_dbg)
 
     def send_ack(self, link_name: str, message: Message[Any]) -> None:
@@ -448,9 +452,9 @@ class LinkManager:
         self._message_times.update_recv(link_name)
 
     def _recv_activated(self, transition: Transition):
-        self.generate_event(PeerActiveEvent(PeerName=transition.link_name))
         if transition.link_name == self.upstream_client:
             self._start_reupload()
+        self.generate_event(PeerActiveEvent(PeerName=transition.link_name))
 
     def process_mqtt_suback(
         self, message: Message[MQTTSubackPayload]
@@ -470,9 +474,6 @@ class LinkManager:
                 self._logger.comm_event(str(state_result.value))
             if state_result.value.send_activated():
                 path_dbg |= 0x00000004
-                if message.Payload.client_name == self.upstream_client:
-                    path_dbg |= 0x00000008
-                    self._start_reupload()
                 self.generate_event(
                     MQTTFullySubscribedEvent(PeerName=message.Payload.client_name)
                 )
@@ -481,7 +482,7 @@ class LinkManager:
                     PingMessage(Src=self.publication_name),
                 )
             if state_result.value.recv_activated():
-                path_dbg |= 0x00000010
+                path_dbg |= 0x00000008
                 self._recv_activated(state_result.value)
         self._logger.path(
             "--LinkManager.process_mqtt_suback:%d  path:0x%08X",

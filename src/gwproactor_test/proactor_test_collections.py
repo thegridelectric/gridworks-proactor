@@ -1155,7 +1155,7 @@ class ProactorCommTests:
             assert not child._links.reuploading()
 
             # Generate more events than fit in pipe.
-            events_to_generate = child.settings.num_initial_event_reuploads + 1
+            events_to_generate = child.settings.num_initial_event_reuploads * 2
             for i in range(events_to_generate):
                 child.generate_event(
                     DBGEvent(
