@@ -7,6 +7,7 @@ class Reuploads:
 
     _event_persister: PersisterInterface
     _reupload_pending: dict[str, None]
+    _reuploaded_unacked: dict[str, None]
     _num_initial_events: int
     _logger: ProactorLogger
 
@@ -18,6 +19,7 @@ class Reuploads:
     ):
         self._event_persister = event_persister
         self._reupload_pending = dict()
+        self._reuploaded_unacked = dict()
         self._num_initial_events = num_initial_events
         self._logger = logger
 
@@ -28,38 +30,49 @@ class Reuploads:
         return s
 
     def start_reupload(self) -> list[str]:
-        reupload_pending = self._event_persister.pending()
-        self._reupload_pending = dict.fromkeys(reupload_pending)
-        reupload_now = reupload_pending[: self._num_initial_events]
+        pending_events = self._event_persister.pending()
+        reupload_now = pending_events[: self._num_initial_events]
+        self._reuploaded_unacked = dict.fromkeys(reupload_now)
+        self._reupload_pending = dict.fromkeys(
+            pending_events[self._num_initial_events :]
+        )
         return reupload_now
 
     def process_ack_for_reupload(self, message_id: str) -> list[str]:
         reupload_now = []
-        self._logger.path(
-            f"++process_ack_for_reupload  reuploading:{self.reuploading()}  num_reupload_pending: {self.num_reupload_pending}"
-        )
-        old_num_dbg = self.num_reupload_pending
-        path_dbg = 0
-        if message_id in self._reupload_pending:
-            path_dbg |= 0x00000001
-            self._reupload_pending.pop(message_id)
+        # self._logger.path(
+        #     f"++process_ack_for_reupload  reuploading:{self.reuploading()}  num_reupload_pending: {self.num_reupload_pending}"
+        # )
+        # old_num_dbg = self.num_reupload_pending
+        # path_dbg = 0
+        if message_id in self._reuploaded_unacked:
+            # path_dbg |= 0x00000001
+            self._reuploaded_unacked.pop(message_id)
             if self._reupload_pending:
-                path_dbg |= 0x00000002
-                reupload_now = [next(iter(self._reupload_pending))]
-        self._logger.path(
-            f"--process_ack_for_reupload  path:0x{path_dbg:08X}  "
-            f"reuploading:{self.reuploading()}  "
-            f"num_reupload_pending: {old_num_dbg} -> {self.num_reupload_pending}  "
-            f"num reupload_now: {len(reupload_now)}"
-        )
+                # path_dbg |= 0x00000002
+                reupload_next = next(iter(self._reupload_pending))
+                self._reupload_pending.pop(reupload_next)
+                self._reuploaded_unacked[reupload_next] = None
+                reupload_now = [reupload_next]
+        # self._logger.path(
+        #     f"--process_ack_for_reupload  path:0x{path_dbg:08X}  "
+        #     f"reuploading:{self.reuploading()}  "
+        #     f"num_reupload_pending: {old_num_dbg} -> {self.num_reupload_pending}  "
+        #     f"num reupload_now: {len(reupload_now)}"
+        # )
         return reupload_now
 
     @property
     def num_reupload_pending(self) -> int:
         return len(self._reupload_pending)
 
+    @property
+    def num_reuploaded_unacked(self) -> int:
+        return len(self._reuploaded_unacked)
+
     def reuploading(self) -> bool:
-        return bool(self._reupload_pending)
+        return bool(self._reuploaded_unacked)
 
     def clear(self) -> None:
         self._reupload_pending.clear()
+        self._reuploaded_unacked.clear()

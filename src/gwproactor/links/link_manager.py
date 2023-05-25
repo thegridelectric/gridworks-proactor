@@ -121,6 +121,10 @@ class LinkManager:
     def num_reupload_pending(self) -> int:
         return self._reuploads.num_reupload_pending
 
+    @property
+    def num_reuploaded_unacked(self) -> int:
+        return self._reuploads.num_reuploaded_unacked
+
     def reuploading(self) -> bool:
         return self._reuploads.reuploading()
 

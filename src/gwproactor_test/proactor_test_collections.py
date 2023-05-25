@@ -1,4 +1,5 @@
 import asyncio
+import time
 import warnings
 from typing import Type
 
@@ -1113,6 +1114,7 @@ class ProactorCommTests:
             # Some events should have been generated, and they should have all been sent
             assert child._links.num_pending > 0
             assert child._links.num_reupload_pending == 0
+            assert child._links.num_reuploaded_unacked == 0
             assert not child._links.reuploading()
 
             # Start parent, wait for reconnect.
@@ -1126,6 +1128,7 @@ class ProactorCommTests:
 
             # All events should have been reuploaded.
             assert child._links.num_reupload_pending == 0
+            assert child._links.num_reuploaded_unacked == 0
             assert not child._links.reuploading()
 
     @pytest.mark.asyncio
@@ -1152,6 +1155,7 @@ class ProactorCommTests:
             base_num_pending = child._links.num_pending
             assert base_num_pending > 0
             assert child._links.num_reupload_pending == 0
+            assert child._links.num_reuploaded_unacked == 0
             assert not child._links.reuploading()
 
             # Generate more events than fit in pipe.
@@ -1182,3 +1186,163 @@ class ProactorCommTests:
                 "ERROR waiting for reupload",
                 err_str_f=h.summary_str,
             )
+
+    @pytest.mark.asyncio
+    async def test_reupload_flow_control_detail(self):
+        """
+        Test:
+            reupload requiring flow control
+        """
+        async with self.CTH(
+            start_child=True,
+            add_parent=True,
+            child_settings=self.CTH.child_settings_t(num_initial_event_reuploads=5),
+            verbose=False,
+            # parent_on_screen=True,
+        ) as h:
+            child = h.child
+            child_links = h.child._links
+            upstream_link = child_links.link(child.upstream_client)
+            await await_for(
+                lambda: upstream_link.active_for_send(),
+                1,
+                "ERROR waiting for child to connect to mqtt",
+                err_str_f=h.summary_str,
+            )
+            # Some events should have been generated, and they should have all been sent
+            base_num_pending = child_links.num_pending
+            assert base_num_pending > 0
+            assert child_links.num_reupload_pending == 0
+            assert child_links.num_reuploaded_unacked == 0
+            assert not child_links.reuploading()
+
+            # Generate more events than fit in pipe.
+            events_to_generate = child.settings.num_initial_event_reuploads * 2
+            for i in range(events_to_generate):
+                child.generate_event(
+                    DBGEvent(
+                        Command=DBGPayload(), Msg=f"event {i+1} / {events_to_generate}"
+                    )
+                )
+            child.logger.info(
+                f"Generated {events_to_generate} events. Total pending events: {child_links.num_pending}"
+            )
+            assert child_links.num_reupload_pending == 0
+            assert child_links.num_reuploaded_unacked == 0
+            assert not child_links.reuploading()
+
+            # pause parent acks so that we watch flow control
+            h.parent.pause_acks()
+
+            # Start parent, wait for parent to be subscribed.
+            h.start_parent()
+            await await_for(
+                lambda: h.parent._links.link_state(h.parent.primary_peer_client)
+                == StateName.awaiting_peer,
+                1,
+                "ERROR waiting for parent awaiting_peer",
+                err_str_f=h.summary_str,
+            )
+
+            # Wait for parent to have ping waiting to be sent
+            await await_for(
+                lambda: len(h.parent._links.needs_ack) > 0,  # noqa
+                1,
+                "ERROR waiting for parent awaiting_peer",
+                err_str_f=h.summary_str,
+            )
+
+            # release the ping
+            h.parent.release_acks(num_to_release=1)
+
+            # wait for child to receive ping
+            await await_for(
+                lambda: upstream_link.active(),
+                1,
+                "ERROR waiting for child peer_active",
+                err_str_f=h.summary_str,
+            )
+            # There are 3 non-generated events: startup, mqtt connect, mqtt subscribed.
+            # A "PeerActive" event is also pending but that is _not_ part of re-upload because it is
+            # generated _after_ the peer is active (and therefore has its own ack timeout running, so does not need to
+            # be managed by reupload).
+            last_num_to_reupload = events_to_generate + 3
+            last_num_reuploaded_unacked = child.settings.num_initial_event_reuploads
+            last_num_repuload_pending = (
+                last_num_to_reupload - child_links.num_reuploaded_unacked
+            )
+            assert child_links.num_reuploaded_unacked == last_num_reuploaded_unacked
+            assert child_links.num_reupload_pending == last_num_repuload_pending
+            assert child_links.num_pending == last_num_to_reupload + 1
+            assert child_links.reuploading()
+
+            parent_ack_topic = MQTTTopic.encode(
+                "gw", h.parent.publication_name, "gridworks-ack"
+            )
+            acks_received_by_child = child.stats.num_received_by_topic[parent_ack_topic]
+
+            # Release acks one by one.
+            #
+            #   Bound this loop by time, not by total number of acks since at least one non-reupload ack should arrive
+            #   (for the PeerActive event) and others could arrive if, for example, a duplicate MQTT message appeared.
+            #
+            end_time = time.time() + 5
+            # loop_count_dbg = 0
+            acks_released = 0
+            while child_links.reuploading() and time.time() < end_time:
+                # loop_path_dbg = 0
+                # loop_count_dbg += 1
+
+                # release one ack
+                acks_released += h.parent.release_acks(num_to_release=1)
+
+                # Wait for child to receive an ack
+                await await_for(
+                    lambda: child.stats.num_received_by_topic[parent_ack_topic]
+                    == acks_received_by_child + acks_released,
+                    1,
+                    f"ERROR waiting for child to receive ack (acks_released: {acks_released})",
+                    err_str_f=h.summary_str,
+                )
+                curr_num_reuploaded_unacked = child_links.num_reuploaded_unacked
+                curr_num_repuload_pending = child_links.num_reupload_pending
+                curr_num_to_reuplad = (
+                    curr_num_reuploaded_unacked + curr_num_repuload_pending
+                )
+                if curr_num_to_reuplad == last_num_to_reupload:
+                    # loop_path_dbg |= 0x00000001
+                    assert curr_num_reuploaded_unacked == last_num_reuploaded_unacked
+                    assert curr_num_repuload_pending == last_num_repuload_pending
+                elif curr_num_to_reuplad == last_num_to_reupload - 1:
+                    # loop_path_dbg |= 0x00000002
+                    if curr_num_reuploaded_unacked == last_num_reuploaded_unacked:
+                        assert (
+                            curr_num_repuload_pending == last_num_repuload_pending - 1
+                        )
+                    else:
+                        assert (
+                            curr_num_reuploaded_unacked
+                            == last_num_reuploaded_unacked - 1
+                        )
+                        assert curr_num_repuload_pending == last_num_repuload_pending
+                    assert child_links.reuploading() == bool(
+                        curr_num_reuploaded_unacked > 0
+                    )
+                else:
+                    raise ValueError(
+                        "Unexpected change in reupload counts: "
+                        f"({last_num_reuploaded_unacked}, {last_num_repuload_pending}) -> "
+                        f"({curr_num_reuploaded_unacked}, {curr_num_repuload_pending})"
+                    )
+
+                # child.logger.info(
+                #     f"ack loop: {loop_count_dbg} / {acks_released}:"
+                #     f"({last_num_reuploaded_unacked}, {last_num_repuload_pending}) -> "
+                #     f"({curr_num_reuploaded_unacked}, {curr_num_repuload_pending})"
+                #     f" loop_path_dbg: 0x{loop_path_dbg:08X}")
+
+                last_num_to_reupload = curr_num_to_reuplad
+                last_num_reuploaded_unacked = curr_num_reuploaded_unacked
+                last_num_repuload_pending = curr_num_repuload_pending
+
+            assert not child_links.reuploading()

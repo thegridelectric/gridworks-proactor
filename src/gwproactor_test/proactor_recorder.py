@@ -138,13 +138,32 @@ class RecorderLinks(LinkManager):
             # noinspection PyProtectedMember
             return super().publish_message(client, message, qos=qos, context=context)
 
-    def release_acks(self, clear: bool = False):
-        self.acks_paused = False
-        needs_ack = self.needs_ack
-        self.needs_ack = []
+    def release_acks(self, clear: bool = False, num_to_release: int = -1) -> int:
+        # self._logger.info(
+        #     f"++release_acks: clear:{clear}  num_to_release:{num_to_release}"
+        # )
+        # path_dbg = 0
+        if clear or num_to_release < 1:
+            # path_dbg |= 0x00000001
+            self.acks_paused = False
+            needs_ack = self.needs_ack
+            self.needs_ack = []
+        else:
+            # path_dbg |= 0x00000002
+            num_to_release = min(num_to_release, len(self.needs_ack))
+            needs_ack = self.needs_ack[:num_to_release]
+            self.needs_ack = self.needs_ack[num_to_release:]
+            # self._logger.info(f"needs_ack: {needs_ack}")
+            # self._logger.info(f"self.needs_ack: {self.needs_ack}")
         if not clear:
+            # path_dbg |= 0x00000004
             for paused_ack in needs_ack:
-                self.publish_message(**dataclasses.asdict(paused_ack))
+                # path_dbg |= 0x00000008
+                super().publish_message(**dataclasses.asdict(paused_ack))
+        # self._logger.info(
+        #     f"--release_acks: clear:{clear}  num_to_release:{num_to_release}  path:0x{path_dbg:08X}"
+        # )
+        return len(needs_ack)
 
     def generate_event(self, event: EventT) -> None:
         if isinstance(event, CommEvent):
@@ -211,8 +230,8 @@ def make_recorder_class(
         def pause_acks(self):
             self._links.acks_paused = True
 
-        def release_acks(self, clear: bool = False):
-            self._links.release_acks(clear)
+        def release_acks(self, clear: bool = False, num_to_release: int = -1) -> int:
+            return self._links.release_acks(clear, num_to_release=num_to_release)
 
         def set_ack_timeout_seconds(self, delay: float) -> None:
             self._links._acks._default_delay_seconds = delay  # noqa
