@@ -50,7 +50,7 @@ A private, written request from GridWorks to change or edit a comment, commit, o
 
 ### 2. Warning
 
-With a warning, GridWorks may remove your comments, commits or issues. She may also
+With a warning, GridWorks may remove your comments, commits or issues. They may also
 freeze a conversation.
 
 ### 3. Temporary Ban
