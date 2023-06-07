@@ -864,14 +864,14 @@ test = ["objgraph", "psutil"]
 
 [[package]]
 name = "gridworks"
-version = "0.2.5"
+version = "0.2.6"
 description = "Gridworks"
 category = "main"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "gridworks-0.2.5-py3-none-any.whl", hash = "sha256:8ddccfa4d857479fba2455344ec8d66235ad2acb261d77d2d81fe9cc877b884e"},
-    {file = "gridworks-0.2.5.tar.gz", hash = "sha256:270234274051a30e9ab39a7d41681465b7b58a8a776929f2cfcfdaf95cd45fa8"},
+    {file = "gridworks-0.2.6-py3-none-any.whl", hash = "sha256:94629678e609e0df38f416dfefdfdee936d37ddfb421c12edaff7264f65db0bf"},
+    {file = "gridworks-0.2.6.tar.gz", hash = "sha256:2e6499b00b34af1c1bc32f33f5293d93224a866e2eb17c9db804344af3f187c9"},
 ]
 
 [package.dependencies]
@@ -895,19 +895,19 @@ uvicorn = {version = ">=0.19.0,<0.20.0", extras = ["standard"]}
 
 [[package]]
 name = "gridworks-protocol"
-version = "0.5.3"
+version = "0.5.4"
 description = "Gridworks Protocol"
 category = "main"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "gridworks_protocol-0.5.3-py3-none-any.whl", hash = "sha256:63074af2b2c6082fee2797cf9d2b11d0dba78a1486df7d5f3be984b08d543e2f"},
-    {file = "gridworks_protocol-0.5.3.tar.gz", hash = "sha256:831b799d0c71725a87c9a1d0fdd2f5a212d796de854b914a55242750f6ec36a0"},
+    {file = "gridworks_protocol-0.5.4-py3-none-any.whl", hash = "sha256:6f8cb702cbaa3f64ef9b6c33f934d4224ac09c92e8db4e477053339ad53f2f26"},
+    {file = "gridworks_protocol-0.5.4.tar.gz", hash = "sha256:5fcfb6d309f3ad7d47bea09f5663ab04a701e5ee3f2d91be3ee5f2306ad7d818"},
 ]
 
 [package.dependencies]
 fastapi-utils = ">=0.2.1,<0.3.0"
-gridworks = "0.2.5"
+gridworks = ">=0.2.6,<0.3.0"
 pendulum = ">=2.1.2,<3.0.0"
 pydantic = ">=1.10.2,<2.0.0"
 
@@ -3151,4 +3151,4 @@ tests = ["pytest", "pytest-asyncio"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "b2f9e99319420355d34abdb04295fcfd23bcc86efc8c68723ee59c1914a8aab3"
+content-hash = "adf7ea848b750b0da71432091bc4d42aeac31eb2caf2ca2e5ad3e95f08f3a7bc"
