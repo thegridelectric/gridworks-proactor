@@ -108,6 +108,18 @@ class RecorderInterface(ServicesInterface, Runnable):
     def mqtt_subscriptions(self, client_name: str) -> list[str]:
         ...
 
+    @abstractmethod
+    def disable_derived_events(self) -> None:
+        ...
+
+    @abstractmethod
+    def enable_derived_events(self) -> None:
+        ...
+
+    @abstractmethod
+    def mqtt_quiescent(self) -> bool:
+        ...
+
 
 @dataclass
 class _PausedAck:
@@ -314,5 +326,20 @@ def make_recorder_class(
                 case _:
                     # noinspection PyProtectedMember
                     super()._derived_process_message(message)
+
+        def mqtt_quiescent(self) -> bool:
+            if hasattr(super(), "mqtt_quiescent"):
+                return getattr(super(), "mqtt_quiescent")()
+            return self._links.link(self.upstream_client).active_for_send()
+
+        def _call_super_if_present(self, function_name: str) -> None:
+            if hasattr(super(), function_name):
+                getattr(super(), function_name)()
+
+        def disable_derived_events(self) -> None:
+            self._call_super_if_present("disable_dervived_events")
+
+        def enable_derived_events(self) -> None:
+            self._call_super_if_present("enable_dervived_events")
 
     return Recorder

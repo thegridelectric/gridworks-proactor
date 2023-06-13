@@ -992,7 +992,7 @@ class ProactorCommTests:
             )
 
             child = h.child
-            child.suppress_status = True
+            child.disable_derived_events()
             child.set_ack_timeout_seconds(0.1)
             link = child._links.link(child.upstream_client)
             stats = child.stats.link(child.upstream_client)
@@ -1104,9 +1104,10 @@ class ProactorCommTests:
             verbose=False,
         ) as h:
             child = h.child
+            child.disable_derived_events()
             upstream_link = h.child._links.link(child.upstream_client)
             await await_for(
-                lambda: upstream_link.active_for_send(),
+                lambda: child.mqtt_quiescent(),
                 1,
                 "ERROR waiting for child to connect to mqtt",
                 err_str_f=h.summary_str,
@@ -1144,9 +1145,10 @@ class ProactorCommTests:
             verbose=False,
         ) as h:
             child = h.child
+            child.disable_derived_events()
             upstream_link = h.child._links.link(child.upstream_client)
             await await_for(
-                lambda: upstream_link.active_for_send(),
+                lambda: child.mqtt_quiescent(),
                 1,
                 "ERROR waiting for child to connect to mqtt",
                 err_str_f=h.summary_str,
@@ -1201,15 +1203,18 @@ class ProactorCommTests:
             # parent_on_screen=True,
         ) as h:
             child = h.child
+            child.disable_derived_events()
             child_links = h.child._links
             upstream_link = child_links.link(child.upstream_client)
             await await_for(
-                lambda: upstream_link.active_for_send(),
+                lambda: child.mqtt_quiescent(),
                 1,
                 "ERROR waiting for child to connect to mqtt",
                 err_str_f=h.summary_str,
             )
-            # Some events should have been generated, and they should have all been sent
+            # Some events should happened already, through the startup and mqtt connect process, and they should have
+            # all been sent.
+            # These events include: There are at least 3 non-generated events: startup, (mqtt connect, mqtt subscribed)/mqtt client.
             base_num_pending = child_links.num_pending
             assert base_num_pending > 0
             assert child_links.num_reupload_pending == 0
@@ -1266,13 +1271,22 @@ class ProactorCommTests:
             # A "PeerActive" event is also pending but that is _not_ part of re-upload because it is
             # generated _after_ the peer is active (and therefore has its own ack timeout running, so does not need to
             # be managed by reupload).
-            last_num_to_reupload = events_to_generate + 3
+            last_num_to_reupload = events_to_generate + base_num_pending
             last_num_reuploaded_unacked = child.settings.num_initial_event_reuploads
             last_num_repuload_pending = (
                 last_num_to_reupload - child_links.num_reuploaded_unacked
             )
-            assert child_links.num_reuploaded_unacked == last_num_reuploaded_unacked
-            assert child_links.num_reupload_pending == last_num_repuload_pending
+            err_s = (
+                f"child_links.num_reuploaded_unacked: {child_links.num_reuploaded_unacked}\n"
+                f"last_num_reuploaded_unacked:        {last_num_reuploaded_unacked}\n"
+                f"child_links.num_reupload_pending:   {child_links.num_reupload_pending}\n"
+                f"last_num_repuload_pending:          {last_num_repuload_pending}\n"
+                f"{child.summary_str()}"
+            )
+            assert (
+                child_links.num_reuploaded_unacked == last_num_reuploaded_unacked
+            ), err_s
+            assert child_links.num_reupload_pending == last_num_repuload_pending, err_s
             assert child_links.num_pending == last_num_to_reupload + 1
             assert child_links.reuploading()
 
