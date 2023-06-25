@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gridworks-proactor"
-version = "0.2.1"
+version = "0.2.2"
 description = "Gridworks Proactor"
 authors = ["Jessica Millar <jmillar@gridworks-consulting.com>"]
 license = "MIT"
@@ -29,7 +29,7 @@ paho-mqtt = "^1.6.1"
 result = "^0.9.0"
 pytest = {version = "^7.2.0", optional = true}
 pytest-asyncio = {version = "^0.20.3", optional = true}
-gridworks-protocol = ">=0.3.6"
+gridworks-protocol = ">=0.5.5"
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
