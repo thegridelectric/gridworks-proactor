@@ -864,14 +864,14 @@ test = ["objgraph", "psutil"]
 
 [[package]]
 name = "gridworks"
-version = "0.2.6"
+version = "0.2.7"
 description = "Gridworks"
 category = "main"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "gridworks-0.2.6-py3-none-any.whl", hash = "sha256:94629678e609e0df38f416dfefdfdee936d37ddfb421c12edaff7264f65db0bf"},
-    {file = "gridworks-0.2.6.tar.gz", hash = "sha256:2e6499b00b34af1c1bc32f33f5293d93224a866e2eb17c9db804344af3f187c9"},
+    {file = "gridworks-0.2.7-py3-none-any.whl", hash = "sha256:8ce5b35597934e00fe7bcf9a0652661c4cb48b618f9d588416590ac4cca556b6"},
+    {file = "gridworks-0.2.7.tar.gz", hash = "sha256:cad8cc45199a3ad87256466b9b601956e332dee6d83e89b5169f6dcb7bbe0258"},
 ]
 
 [package.dependencies]
@@ -895,19 +895,19 @@ uvicorn = {version = ">=0.19.0,<0.20.0", extras = ["standard"]}
 
 [[package]]
 name = "gridworks-protocol"
-version = "0.5.4"
+version = "0.5.5"
 description = "Gridworks Protocol"
 category = "main"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "gridworks_protocol-0.5.4-py3-none-any.whl", hash = "sha256:6f8cb702cbaa3f64ef9b6c33f934d4224ac09c92e8db4e477053339ad53f2f26"},
-    {file = "gridworks_protocol-0.5.4.tar.gz", hash = "sha256:5fcfb6d309f3ad7d47bea09f5663ab04a701e5ee3f2d91be3ee5f2306ad7d818"},
+    {file = "gridworks_protocol-0.5.5-py3-none-any.whl", hash = "sha256:be7c2a695c9b0f77747728d106ab72f9827f3a360d41f44067ee1c5918ba33c0"},
+    {file = "gridworks_protocol-0.5.5.tar.gz", hash = "sha256:da5215c32aca2c2f4ce78d94c4fed0d60602ed560bafc8432373c658b55a862f"},
 ]
 
 [package.dependencies]
 fastapi-utils = ">=0.2.1,<0.3.0"
-gridworks = ">=0.2.6,<0.3.0"
+gridworks = ">=0.2.7,<0.3.0"
 pendulum = ">=2.1.2,<3.0.0"
 pydantic = ">=1.10.2,<2.0.0"
 
@@ -3151,4 +3151,4 @@ tests = ["pytest", "pytest-asyncio"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "adf7ea848b750b0da71432091bc4d42aeac31eb2caf2ca2e5ad3e95f08f3a7bc"
+content-hash = "c8296fd48cafcc8bf0765bb50605956533ed8f1fa32715d2f44cfe38fb8c7940"
