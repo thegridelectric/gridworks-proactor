@@ -1,11 +1,20 @@
 """Test config module"""
 import shutil
+import ssl
 from pathlib import Path
 
 from pydantic import SecretStr
 
 from gwproactor.config import MQTTClient
 from gwproactor.config import Paths
+
+
+def test_tls_paths():
+    pass
+
+
+def test_tls_info():
+    pass
 
 
 def test_mqtt_client_settings():
@@ -19,6 +28,17 @@ def test_mqtt_client_settings():
         bind_port=2,
         username="c",
         password=SecretStr(password),
+        tls=dict(
+            use_tls=True,
+            paths=dict(
+                ca_cert_path=None,
+                cert_path=None,
+                private_key_path=None,
+            ),
+            cert_reqs=ssl.CERT_REQUIRED,
+            ciphers=None,
+            keyfile_password=SecretStr(""),
+        ),
     )
     settings = MQTTClient(**exp)
     d = settings.dict()

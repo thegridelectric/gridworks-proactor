@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Dict
+from typing import Optional
 
 import xdg
 from pydantic import BaseModel
@@ -11,6 +12,25 @@ DEFAULT_BASE_DIR = Path(DEFAULT_BASE_NAME)
 DEFAULT_NAME = "scada"
 DEFAULT_NAME_DIR = Path(DEFAULT_NAME)
 DEFAULT_LAYOUT_FILE = Path("hardware-layout.json")
+
+
+class TLSPaths(BaseModel):
+    ca_cert_path: Optional[str | Path] = None
+    cert_path: Optional[str | Path] = None
+    private_key_path: Optional[str | Path] = None
+
+    @classmethod
+    def defaults(cls, config_dir: Path) -> "TLSPaths":
+        return TLSPaths(
+            ca_cert_path=config_dir / "ca_certificate.pem",
+            cert_path=config_dir / "certificate.pem",
+            private_key_path=config_dir / "private" / "private_key.pem",
+        )
+
+    def effective_paths(self, config_dir: Path) -> "TLSPaths":
+        fields = self.defaults(config_dir).dict()
+        fields.update(self.dict(exclude_unset=True))
+        return TLSPaths(**fields)
 
 
 class Paths(BaseModel):
@@ -84,3 +104,6 @@ class Paths(BaseModel):
         self.config_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
         self.event_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
         self.log_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
+
+    def get_effective_tls_paths(self, tls_paths: TLSPaths) -> TLSPaths:
+        return tls_paths.effective_paths(self.config_dir)
