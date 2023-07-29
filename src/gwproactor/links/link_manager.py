@@ -62,7 +62,6 @@ class LinkManagerTransition(Transition):
 
 
 class LinkManager:
-
     PERSISTER_ENCODING = "utf-8"
     publication_name: str
     _settings: ProactorSettings

@@ -32,7 +32,6 @@ ParentSettingsT = TypeVar("ParentSettingsT", bound=ProactorSettings)
 
 
 class CommTestHelper:
-
     parent_t: Type[ProactorT]
     child_t: Type[Proactor]
     parent_settings_t: Type[ParentSettingsT]

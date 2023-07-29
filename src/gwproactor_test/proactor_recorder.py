@@ -118,7 +118,6 @@ class _PausedAck:
 
 
 class RecorderLinks(LinkManager):
-
     acks_paused: bool
     needs_ack: list[_PausedAck]
 
@@ -158,7 +157,6 @@ def make_recorder_class(
     proactor_type: Type[ProactorT],
 ) -> Callable[..., RecorderInterface]:
     class Recorder(proactor_type):
-
         subacks_paused: bool
         pending_subacks: list[Message]
         mqtt_messages_dropped: bool

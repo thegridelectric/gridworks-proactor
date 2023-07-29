@@ -10,7 +10,6 @@ from gwproactor.config.paths import TLSPaths
 
 
 class TLSInfo(BaseModel):
-
     use_tls: bool = False
     paths: TLSPaths = TLSPaths()
     cert_reqs: Optional[VerifyMode] = ssl.CERT_REQUIRED
