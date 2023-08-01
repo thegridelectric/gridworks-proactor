@@ -3,6 +3,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from dataclasses import field
+from pathlib import Path
 from typing import Callable
 from typing import Optional
 from typing import Type
@@ -11,6 +12,7 @@ from typing import TypeVar
 from gwproactor import Proactor
 from gwproactor import ProactorSettings
 from gwproactor import setup_logging
+from gwproactor.config import Paths
 from gwproactor_test.logger_guard import LoggerGuards
 from gwproactor_test.proactor_recorder import ProactorT
 from gwproactor_test.proactor_recorder import RecorderInterface
@@ -69,18 +71,24 @@ class CommTestHelper:
         parent_on_screen: bool = False,
         child_name: str = "",
         parent_name: str = "",
+        child_paths_name: str = "child",
+        parent_pahts_name: str = "parent",
         child_kwargs: Optional[dict] = None,
         parent_kwargs: Optional[dict] = None,
     ):
         self.setup_class()
         self.child_helper = ProactorTestHelper(
             child_name,
-            self.child_settings_t() if child_settings is None else child_settings,
+            self.child_settings_t(paths=Paths(name=Path(child_paths_name)))
+            if child_settings is None
+            else child_settings,
             dict() if child_kwargs is None else child_kwargs,
         )
         self.parent_helper = ProactorTestHelper(
             parent_name,
-            self.parent_settings_t() if parent_settings is None else parent_settings,
+            self.parent_settings_t(paths=Paths(name=Path(parent_pahts_name)))
+            if parent_settings is None
+            else parent_settings,
             dict() if parent_kwargs is None else parent_kwargs,
         )
         self.verbose = verbose

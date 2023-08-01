@@ -1,6 +1,9 @@
+from pydantic import root_validator
+
 from gwproactor import ProactorSettings
 from gwproactor.config import MQTTClient
 from gwproactor_test.dummies.names import DUMMY_CHILD_ENV_PREFIX
+from gwproactor_test.dummies.names import DUMMY_CHILD_NAME
 
 
 class DummyChildSettings(ProactorSettings):
@@ -10,3 +13,11 @@ class DummyChildSettings(ProactorSettings):
 
     class Config(ProactorSettings.Config):
         env_prefix = DUMMY_CHILD_ENV_PREFIX
+
+    @root_validator(pre=True)
+    def pre_root_validator(cls, values: dict) -> dict:
+        return ProactorSettings.update_paths_name(values, DUMMY_CHILD_NAME)
+
+    @root_validator(skip_on_failure=True)
+    def post_root_validator(cls, values: dict) -> dict:
+        return ProactorSettings.update_tls_paths(values)

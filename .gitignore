@@ -12,3 +12,5 @@ __pycache__/
 .idea
 .env
 tests/.env-gwproactor-test
+tests/certs
+hacking

@@ -160,7 +160,6 @@ class LinkManager:
         self._mqtt_clients.add_client(
             name,
             mqtt_config,
-            self._settings.paths,
             upstream=upstream,
             primary_peer=primary_peer,
         )

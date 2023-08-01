@@ -62,7 +62,6 @@ class MQTTClientWrapper:
         self,
         name: str,
         client_config: config.MQTTClient,
-        paths_config: config.Paths,
         receive_queue: AsyncQueueWriter,
     ):
         self.name = name
@@ -73,7 +72,7 @@ class MQTTClientWrapper:
             username=self._client_config.username,
             password=self._client_config.password.get_secret_value(),
         )
-        tls_config = self._client_config.get_effective_tls(paths_config.config_dir)
+        tls_config = self._client_config.tls
         if tls_config.use_tls:
             self._client.tls_set(
                 ca_certs=tls_config.paths.ca_cert_path,
@@ -262,7 +261,6 @@ class MQTTClients:
         self,
         name: str,
         client_config: config.MQTTClient,
-        paths_config: config.Paths,
         upstream: bool = False,
         primary_peer: bool = False,
     ):
@@ -280,9 +278,7 @@ class MQTTClients:
                     f"ERROR. primary peer client already set as {self.primary_peer_client}. Client {name} may not be set as primary peer."
                 )
             self.primary_peer_client = name
-        self.clients[name] = MQTTClientWrapper(
-            name, client_config, paths_config, self._send_queue
-        )
+        self.clients[name] = MQTTClientWrapper(name, client_config, self._send_queue)
 
     def publish(
         self, client: str, topic: str, payload: bytes, qos: int

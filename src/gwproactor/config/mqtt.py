@@ -10,16 +10,20 @@ from gwproactor.config.paths import TLSPaths
 
 
 class TLSInfo(BaseModel):
+    """TLS settings for a single MQTT client"""
+
     use_tls: bool = False
     paths: TLSPaths = TLSPaths()
     cert_reqs: Optional[VerifyMode] = ssl.CERT_REQUIRED
     ciphers: Optional[str] = None
     keyfile_password: SecretStr = SecretStr("")
 
-    def get_effective_tls_info(self, config_dir: Path) -> "TLSInfo":
-        return TLSInfo(
-            **dict(self.dict(), paths=self.paths.effective_paths(config_dir))
-        )
+    def update_tls_paths(self, certs_dir: Path, client_name: str) -> "TLSInfo":
+        """Calculate non-set paths given a certs_dir and client name. Meant to be called in context where those are
+        known, e.g. a validator on a higher-level model which has access to a Paths object and a named MQTT
+        configuration."""
+        self.paths = self.paths.effective_paths(certs_dir, client_name)
+        return self
 
 
 class MQTTClient(BaseModel):
@@ -34,5 +38,9 @@ class MQTTClient(BaseModel):
     password: SecretStr = SecretStr("")
     tls: TLSInfo = TLSInfo()
 
-    def get_effective_tls(self, config_dir: Path) -> TLSInfo:
-        return self.tls.get_effective_tls_info(config_dir)
+    def update_tls_paths(self, certs_dir: Path, client_name: str) -> "MQTTClient":
+        """Calculate non-set paths given a certs_dir and client name. Meant to be called in context where those are
+        known, e.g. a validator on a higher-level model which has access to a Paths object and a named MQTT
+        configuration."""
+        self.tls.update_tls_paths(certs_dir, client_name)
+        return self
