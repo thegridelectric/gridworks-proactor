@@ -30,9 +30,9 @@ def test_tls_paths():
     certs_dir = Path("foo/certs")
     name = "bar"
     exp = dict(
-        ca_cert_path=certs_dir / name / "ca_certificate.pem",
-        cert_path=certs_dir / name / "certificate.pem",
-        private_key_path=certs_dir / name / "private" / "private_key.pem",
+        ca_cert_path=certs_dir / name / "ca.crt",
+        cert_path=certs_dir / name / f"{name}.crt",
+        private_key_path=certs_dir / name / "private" / f"{name}.pem",
     )
     paths = TLSPaths.defaults(certs_dir, name)
     paths_d = paths.dict()
@@ -58,8 +58,8 @@ def test_tls_paths():
     name = "bar"
     exp = dict(
         ca_cert_path=ca_cert_path,
-        cert_path=certs_dir / name / "certificate.pem",
-        private_key_path=certs_dir / name / "private" / "private_key.pem",
+        cert_path=certs_dir / name / f"{name}.crt",
+        private_key_path=certs_dir / name / "private" / f"{name}.pem",
     )
     paths = paths.effective_paths(certs_dir, name)
     paths_d = paths.dict()
@@ -99,6 +99,7 @@ def test_tls_info():
     # unitialized TLSInfo
     exp: dict = dict(
         use_tls=False,
+        port=8883,
         paths=dict(
             ca_cert_path=None,
             cert_path=None,
@@ -119,9 +120,9 @@ def test_tls_info():
     name = "bar"
     info.update_tls_paths(certs_dir, name)
     exp["paths"] = dict(
-        ca_cert_path=certs_dir / name / "ca_certificate.pem",
-        cert_path=certs_dir / name / "certificate.pem",
-        private_key_path=certs_dir / name / "private" / "private_key.pem",
+        ca_cert_path=certs_dir / name / "ca.crt",
+        cert_path=certs_dir / name / f"{name}.crt",
+        private_key_path=certs_dir / name / "private" / f"{name}.pem",
     )
     info_d = info.dict()
     for k, v in exp.items():
@@ -142,6 +143,7 @@ def test_mqtt_client_settings():
         password=SecretStr(password),
         tls=dict(
             use_tls=True,
+            port=8883,
             paths=dict(
                 ca_cert_path=None,
                 cert_path=None,
@@ -164,15 +166,11 @@ def test_mqtt_client_settings():
     # path updates, given a cert_dir and a name
     certs_dir = Path("foo/certs")
     name = "bar"
-    import rich
-
-    rich.print(settings)
     settings.update_tls_paths(certs_dir, name)
-    rich.print(settings)
     exp["tls"]["paths"] = dict(
-        ca_cert_path=certs_dir / name / "ca_certificate.pem",
-        cert_path=certs_dir / name / "certificate.pem",
-        private_key_path=certs_dir / name / "private" / "private_key.pem",
+        ca_cert_path=certs_dir / name / "ca.crt",
+        cert_path=certs_dir / name / f"{name}.crt",
+        private_key_path=certs_dir / name / "private" / f"{name}.pem",
     )
     d = settings.dict()
     assert d == dict(exp, port=port)
@@ -341,54 +339,41 @@ def test_paths_mkdirs(clean_test_env, tmp_path):  # noqa
 
 def test_proactor_settings_root_validators(clean_test_env) -> None:
     clean_test_env.setenv("XDG_CONFIG_HOME", "/z")
-    # assert_paths(
-    #     paths,
-    #     home=tmp_path,
-    #     data_home="/x",
-    #     state_home="/y",
-    #     config_home="/z",
-    #     data_dir="/x/gridworks/scada",
-    #     log_dir="/y/gridworks/scada/log",
-    #     config_dir="/z/gridworks/scada",
-    #     certs_dir="/z/gridworks/scada/certs",
-    #     event_dir="/x/gridworks/scada/event",
-    #     hardware_layout="/z/gridworks/scada/hardware-layout.json",
-    # )
 
     child = DummyChildSettings()
     assert child.paths.certs_dir == Path("/z/gridworks/child/certs")
     assert child.parent_mqtt.tls.paths.ca_cert_path == Path(
-        "/z/gridworks/child/certs/parent_mqtt/ca_certificate.pem"
+        "/z/gridworks/child/certs/parent_mqtt/ca.crt"
     )
     assert child.parent_mqtt.tls.paths.cert_path == Path(
-        "/z/gridworks/child/certs/parent_mqtt/certificate.pem"
+        "/z/gridworks/child/certs/parent_mqtt/parent_mqtt.crt"
     )
     assert child.parent_mqtt.tls.paths.private_key_path == Path(
-        "/z/gridworks/child/certs/parent_mqtt/private/private_key.pem"
+        "/z/gridworks/child/certs/parent_mqtt/private/parent_mqtt.pem"
     )
 
     child = DummyChildSettings(paths=Paths())
     assert child.paths.certs_dir == Path("/z/gridworks/child/certs")
     assert child.parent_mqtt.tls.paths.ca_cert_path == Path(
-        "/z/gridworks/child/certs/parent_mqtt/ca_certificate.pem"
+        "/z/gridworks/child/certs/parent_mqtt/ca.crt"
     )
     assert child.parent_mqtt.tls.paths.cert_path == Path(
-        "/z/gridworks/child/certs/parent_mqtt/certificate.pem"
+        "/z/gridworks/child/certs/parent_mqtt/parent_mqtt.crt"
     )
     assert child.parent_mqtt.tls.paths.private_key_path == Path(
-        "/z/gridworks/child/certs/parent_mqtt/private/private_key.pem"
+        "/z/gridworks/child/certs/parent_mqtt/private/parent_mqtt.pem"
     )
 
     child = DummyChildSettings(paths=Paths(name="foo"))
     assert child.paths.certs_dir == Path("/z/gridworks/foo/certs")
     assert child.parent_mqtt.tls.paths.ca_cert_path == Path(
-        "/z/gridworks/foo/certs/parent_mqtt/ca_certificate.pem"
+        "/z/gridworks/foo/certs/parent_mqtt/ca.crt"
     )
     assert child.parent_mqtt.tls.paths.cert_path == Path(
-        "/z/gridworks/foo/certs/parent_mqtt/certificate.pem"
+        "/z/gridworks/foo/certs/parent_mqtt/parent_mqtt.crt"
     )
     assert child.parent_mqtt.tls.paths.private_key_path == Path(
-        "/z/gridworks/foo/certs/parent_mqtt/private/private_key.pem"
+        "/z/gridworks/foo/certs/parent_mqtt/private/parent_mqtt.pem"
     )
 
     ca_cert_path = Path("/q/ca_cert.pem")
@@ -399,8 +384,8 @@ def test_proactor_settings_root_validators(clean_test_env) -> None:
     assert child.paths.certs_dir == Path("/z/gridworks/foo/certs")
     assert child.parent_mqtt.tls.paths.ca_cert_path == ca_cert_path
     assert child.parent_mqtt.tls.paths.cert_path == Path(
-        "/z/gridworks/foo/certs/parent_mqtt/certificate.pem"
+        "/z/gridworks/foo/certs/parent_mqtt/parent_mqtt.crt"
     )
     assert child.parent_mqtt.tls.paths.private_key_path == Path(
-        "/z/gridworks/foo/certs/parent_mqtt/private/private_key.pem"
+        "/z/gridworks/foo/certs/parent_mqtt/private/parent_mqtt.pem"
     )

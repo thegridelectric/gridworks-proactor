@@ -9,6 +9,7 @@ Main current limitation: each interaction between asyncio code and the mqtt clie
 import asyncio
 import enum
 import logging
+import ssl
 import threading
 import uuid
 from typing import Dict
@@ -79,7 +80,7 @@ class MQTTClientWrapper:
                 certfile=tls_config.paths.cert_path,
                 keyfile=tls_config.paths.private_key_path,
                 cert_reqs=tls_config.cert_reqs,
-                tls_version=None,
+                tls_version=ssl.PROTOCOL_TLS_CLIENT,
                 ciphers=tls_config.ciphers,
                 keyfile_password=tls_config.keyfile_password.get_secret_value(),
             )
@@ -103,7 +104,7 @@ class MQTTClientWrapper:
         while not self._stop_requested:
             try:
                 self._client.connect(
-                    self._client_config.host, port=self._client_config.port
+                    self._client_config.host, port=self._client_config.effective_port()
                 )
                 self._client.loop_forever(retry_first_connection=True)
             except BaseException as e:

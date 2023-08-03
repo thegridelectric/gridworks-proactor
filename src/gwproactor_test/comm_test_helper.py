@@ -13,6 +13,7 @@ from gwproactor import Proactor
 from gwproactor import ProactorSettings
 from gwproactor import setup_logging
 from gwproactor.config import Paths
+from gwproactor_test import copy_keys
 from gwproactor_test.logger_guard import LoggerGuards
 from gwproactor_test.proactor_recorder import ProactorT
 from gwproactor_test.proactor_recorder import RecorderInterface
@@ -22,6 +23,7 @@ from gwproactor_test.proactor_recorder import make_recorder_class
 @dataclass
 class ProactorTestHelper:
     name: str
+    path_name: str
     settings: ProactorSettings
     kwargs: dict = field(default_factory=dict)
     proactor: Optional[RecorderInterface] = None
@@ -71,22 +73,24 @@ class CommTestHelper:
         parent_on_screen: bool = False,
         child_name: str = "",
         parent_name: str = "",
-        child_paths_name: str = "child",
-        parent_pahts_name: str = "parent",
+        child_path_name: str = "child",
+        parent_path_name: str = "parent",
         child_kwargs: Optional[dict] = None,
         parent_kwargs: Optional[dict] = None,
     ):
         self.setup_class()
         self.child_helper = ProactorTestHelper(
             child_name,
-            self.child_settings_t(paths=Paths(name=Path(child_paths_name)))
+            child_path_name,
+            self.child_settings_t(paths=Paths(name=Path(child_path_name)))
             if child_settings is None
             else child_settings,
             dict() if child_kwargs is None else child_kwargs,
         )
         self.parent_helper = ProactorTestHelper(
             parent_name,
-            self.parent_settings_t(paths=Paths(name=Path(parent_pahts_name)))
+            parent_path_name,
+            self.parent_settings_t(paths=Paths(name=Path(parent_path_name)))
             if parent_settings is None
             else parent_settings,
             dict() if parent_kwargs is None else parent_kwargs,
@@ -108,6 +112,7 @@ class CommTestHelper:
     def _make(
         cls, recorder_t: Callable[..., RecorderInterface], helper: ProactorTestHelper
     ) -> RecorderInterface:
+        copy_keys(helper.path_name, helper.settings)
         return recorder_t(helper.name, helper.settings, **helper.kwargs)
 
     def make_parent(self) -> RecorderInterface:

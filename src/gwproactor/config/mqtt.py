@@ -13,6 +13,7 @@ class TLSInfo(BaseModel):
     """TLS settings for a single MQTT client"""
 
     use_tls: bool = False
+    port: int = 8883
     paths: TLSPaths = TLSPaths()
     cert_reqs: Optional[VerifyMode] = ssl.CERT_REQUIRED
     ciphers: Optional[str] = None
@@ -44,3 +45,8 @@ class MQTTClient(BaseModel):
         configuration."""
         self.tls.update_tls_paths(certs_dir, client_name)
         return self
+
+    def effective_port(self) -> int:
+        if self.tls.use_tls:
+            return self.tls.port
+        return self.port

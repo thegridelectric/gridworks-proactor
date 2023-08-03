@@ -72,9 +72,7 @@ class ProactorCommTests:
                 assert comm_event.MessageId in child._event_persister
 
     async def test_basic_comm_child_first(self):
-        async with self.CTH(
-            add_child=True, add_parent=True, verbose=True, parent_on_screen=True
-        ) as h:
+        async with self.CTH(add_child=True, add_parent=True) as h:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
             child_comm_event_counts = child_stats.comm_event_counts
@@ -200,7 +198,7 @@ class ProactorCommTests:
 
     @pytest.mark.asyncio
     async def test_basic_comm_parent_first(self):
-        async with self.CTH(add_child=True, add_parent=True, verbose=True) as h:
+        async with self.CTH(add_child=True, add_parent=True) as h:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
             child_comm_event_counts = child_stats.comm_event_counts
@@ -412,7 +410,7 @@ class ProactorCommTests:
          (awaiting_setup_and_peer -> mqtt_suback -> awaiting_peer)
          (awaiting_setup_and_peer -> disconnected -> connecting)
         """
-        async with self.CTH(add_child=True, verbose=True) as h:
+        async with self.CTH(add_child=True) as h:
             child = h.child
             stats = child.stats.link(child.upstream_client)
             comm_event_counts = stats.comm_event_counts
@@ -544,7 +542,7 @@ class ProactorCommTests:
         In practice these might be corner cases that rarely or never occur, since by default all subacks will come and
         one message and we should not receive any messages before subscribing.
         """
-        async with self.CTH(add_child=True, verbose=True) as h:
+        async with self.CTH(add_child=True) as h:
             child = h.child
             child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
             if len(child_subscriptions) < 2:
@@ -705,7 +703,7 @@ class ProactorCommTests:
         In practice these might be corner cases that rarely or never occur, since by default all subacks will come and
         one message and we should not receive any messages before subscribing.
         """
-        async with self.CTH(add_child=True, add_parent=True, verbose=True) as h:
+        async with self.CTH(add_child=True, add_parent=True) as h:
             child = h.child
             child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
             if len(child_subscriptions) < 2:

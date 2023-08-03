@@ -26,9 +26,9 @@ class TLSPaths(BaseModel):
         """
         client_dir = Path(certs_dir) / client_name
         return TLSPaths(
-            ca_cert_path=client_dir / "ca_certificate.pem",
-            cert_path=client_dir / "certificate.pem",
-            private_key_path=client_dir / "private" / "private_key.pem",
+            ca_cert_path=client_dir / "ca.crt",
+            cert_path=client_dir / f"{client_name}.crt",
+            private_key_path=client_dir / "private" / f"{client_name}.pem",
         )
 
     def effective_paths(self, certs_dir: Path, client_name: str) -> "TLSPaths":
