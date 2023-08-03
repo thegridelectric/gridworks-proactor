@@ -31,14 +31,6 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
 
-      #      - name: Start 'Local' Mosquitto
-      #        uses: namoshek/mosquitto-github-action@v1
-      #        with:
-      #          version: "1.6"
-      #          ports: "1883:1883 8883:8883"
-      #          config: ${{ github.workspace }}/tests/config/local_mosquitto.conf
-      #          container-name: "local-mqtt"
-
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4.7.0
         with:
@@ -58,23 +50,31 @@ jobs:
           with open(os.environ["GITHUB_ENV"], mode="a") as io:
               print(f"VIRTUALENV_PIP={pip.__version__}", file=io)
 
+      - name: Install gwcert
+        run: |
+          pipx install gridworks-cert
+          gwcert --help
+
+      - name: Generate CA
+        run: |
+          export CA_DIR=/ca
+          export GWPROACTOR_TEST_CA_CERT_PATH=$CA_DIR/ca.crt
+          export GWPROACTOR_TEST_CA_KEY_PATH=$CA_DIR/private/ca_key.pem
+          gwcert ca create --ca-dir $CA_DIR
+          gwcert key add --ca-dir $CA_DIR mosquitto
+          gwcert ca info
+
+      - name: Start 'Local' Mosquitto
+        uses: namoshek/mosquitto-github-action@v1
+        with:
+          version: "1.6"
+          ports: "1883:1883 8883:8883"
+          config: ${{ github.workspace }}/tests/config/local_mosquitto.conf
+          container-name: "local-mqtt"
+
       - name: Install Poetry
         run: |
-          #          echo "home: $HOME"
-          #          echo 1
-          #          /usr/bin/python3 --version
-          #          echo 2
-          #          /usr/bin/python3 -m venv /opt/pipx/venvs/poetry
-          #          echo 3
-          #          /opt/pipx/venvs/poetry/bin/python -c "import sysconfig; print(sysconfig.get_path('purelib'))"
-          #          echo 4
-          #          /opt/pipx/shared/bin/python -c "import sysconfig; print(sysconfig.get_path('purelib'))"
-          #          echo 5
-          #          /opt/pipx/venvs/poetry/bin/python --version
-          #          echo 6
-          #          /opt/pipx/venvs/poetry/bin/python -m pip install --constraint=.github/workflows/constraints.txt poetry
-          #          echo 7
-          pipx install --verbose --pip-args=--constraint=.github/workflows/constraints.txt poetry
+          pipx install --pip-args=--constraint=.github/workflows/constraints.txt poetry
           poetry --version
 
       - name: Install Nox
