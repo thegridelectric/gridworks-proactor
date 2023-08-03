@@ -57,7 +57,7 @@ jobs:
 
       - name: Generate CA
         run: |
-          export CA_DIR=/ca
+          export CA_DIR=$HOME/ca
           export GWPROACTOR_TEST_CA_CERT_PATH=$CA_DIR/ca.crt
           export GWPROACTOR_TEST_CA_KEY_PATH=$CA_DIR/private/ca_key.pem
           gwcert ca create --ca-dir $CA_DIR ci-test-ca
