@@ -14,6 +14,7 @@ from gwproactor import ProactorSettings
 from gwproactor import setup_logging
 from gwproactor.config import Paths
 from gwproactor_test import copy_keys
+from gwproactor_test.certs import uses_tls
 from gwproactor_test.logger_guard import LoggerGuards
 from gwproactor_test.proactor_recorder import ProactorT
 from gwproactor_test.proactor_recorder import RecorderInterface
@@ -112,7 +113,8 @@ class CommTestHelper:
     def _make(
         cls, recorder_t: Callable[..., RecorderInterface], helper: ProactorTestHelper
     ) -> RecorderInterface:
-        copy_keys(helper.path_name, helper.settings)
+        if uses_tls(helper.settings):
+            copy_keys(helper.path_name, helper.settings)
         return recorder_t(helper.name, helper.settings, **helper.kwargs)
 
     def make_parent(self) -> RecorderInterface:

@@ -103,6 +103,15 @@ def _copy_keys(test_cert_dir: Path, dst_paths: TLSPaths) -> None:
     shutil.copy2(src_paths.private_key_path, dst_paths.private_key_path)
 
 
+def uses_tls(model: BaseModel | BaseSettings) -> bool:
+    """Check whether any MQTTClient in the model have MQTTClient.tls.use_tls == True."""
+    for k, v in model._iter():  # noqa
+        if isinstance(v, MQTTClient):
+            if v.tls.use_tls:
+                return True
+    return False
+
+
 def copy_keys(
     model_tag: str,
     model: BaseModel | BaseSettings,
