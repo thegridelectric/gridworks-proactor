@@ -60,21 +60,21 @@ jobs:
 
       - name: Install Poetry
         run: |
-          echo "home: $HOME"
-          echo 1
-          /usr/bin/python3 --version
-          echo 2
-          /usr/bin/python3 -m venv /opt/pipx/venvs/poetry
-          echo 3
-          /opt/pipx/venvs/poetry/bin/python -c "import sysconfig; print(sysconfig.get_path('purelib'))"
-          echo 4
-          /opt/pipx/shared/bin/python -c "import sysconfig; print(sysconfig.get_path('purelib'))"
-          echo 5
-          /opt/pipx/venvs/poetry/bin/python --version
-          echo 6
-          /opt/pipx/venvs/poetry/bin/python -m pip install --constraint=.github/workflows/constraints.txt poetry
-          echo 7
-          #pipx install --verbose --pip-args=--constraint=.github/workflows/constraints.txt poetry
+          #          echo "home: $HOME"
+          #          echo 1
+          #          /usr/bin/python3 --version
+          #          echo 2
+          #          /usr/bin/python3 -m venv /opt/pipx/venvs/poetry
+          #          echo 3
+          #          /opt/pipx/venvs/poetry/bin/python -c "import sysconfig; print(sysconfig.get_path('purelib'))"
+          #          echo 4
+          #          /opt/pipx/shared/bin/python -c "import sysconfig; print(sysconfig.get_path('purelib'))"
+          #          echo 5
+          #          /opt/pipx/venvs/poetry/bin/python --version
+          #          echo 6
+          #          /opt/pipx/venvs/poetry/bin/python -m pip install --constraint=.github/workflows/constraints.txt poetry
+          #          echo 7
+          pipx install --verbose --pip-args=--constraint=.github/workflows/constraints.txt poetry
           poetry --version
 
       - name: Install Nox
