@@ -56,18 +56,10 @@ jobs:
 
       - name: Generate CA
         run: |
-          export CA_DIR=$HOME/ca
-          export GWPROACTOR_TEST_CA_CERT_PATH=$CA_DIR/ca.crt
-          export GWPROACTOR_TEST_CA_KEY_PATH=$CA_DIR/private/ca_key.pem
-          echo 1
-          gwcert ca create --ca-dir $CA_DIR ci-test-ca
-          echo 2
-          gwcert ca info --ca-dir $CA_DIR
-          echo 3
-          gwcert key add --ca-dir $CA_DIR --dns localhost mosquitto
-          echo 4
-          gwcert ca info --ca-dir $CA_DIR
-          echo 5
+          gwcert ca create ci-test-ca
+          gwcert ca info
+          gwcert key add --dns localhost mosquitto
+          gwcert ca info
 
       - name: Start 'Local' Mosquitto
         uses: namoshek/mosquitto-github-action@v1
