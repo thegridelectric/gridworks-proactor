@@ -60,13 +60,11 @@ jobs:
 
       - name: Install Poetry
         run: |
-          echo $HOME
-          which python
-          python --version
+          echo "home: $HOME"
           /usr/bin/python3 --version
           /usr/bin/python3 -m venv --without-pip /opt/pipx/venvs/poetry
-          /opt/pipx/venvs/poetry/bin/python -c import sysconfig; print(sysconfig.get_path('purelib'))
-          /opt/pipx/shared/bin/python -c import sysconfig; print(sysconfig.get_path('purelib'))
+          /opt/pipx/venvs/poetry/bin/python -c "import sysconfig; print(sysconfig.get_path('purelib'))"
+          /opt/pipx/shared/bin/python -c "import sysconfig; print(sysconfig.get_path('purelib'))"
           /opt/pipx/venvs/poetry/bin/python --version
           /opt/pipx/venvs/poetry/bin/python -m pip install --constraint=.github/workflows/constraints.txt poetry
           #pipx install --verbose --pip-args=--constraint=.github/workflows/constraints.txt poetry
