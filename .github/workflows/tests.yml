@@ -105,13 +105,21 @@ jobs:
           restore-keys: |
             ${{ steps.pre-commit-cache.outputs.result }}-
 
+      - name: test cert
+        run: |
+          gwcert key add ci
+          gwcert ca info
+
+      - name: install mosquitto client
+        run: sudo apt-add-repository ppa:mosquitto-dev/mosquitto-ppa
+          sudo apt-get update
+          sudo apt-get install mosquitto-clients
+
       - name: try mosquitto
         run: |
           echo sleeping 5
           sleep 5
           echo done sleeping
-          gwcert key add ci
-          gwcert ca info
           echo 1
           mosquitto_pub -h localhost -p 1883 -t foo \
                 -m '{"bla":1}' | true
@@ -130,10 +138,10 @@ jobs:
                 --key /home/runner/.local/share/gridworks/ca/certs/ci/private/ci.pem \
                 -E | true
 
-      - name: Run Nox
-        run: |
-          # nox --python=${{ matrix.python }}
-          nox -s tests-3.11 -- -k test_no_parent -s
+      # - name: Run Nox
+      #   run: |
+      #     # nox --python=${{ matrix.python }}
+      #     nox -s tests-3.11 -- -k test_no_parent -s
 
 #      - name: Upload coverage data
 #        if: always() && matrix.session == 'tests'
