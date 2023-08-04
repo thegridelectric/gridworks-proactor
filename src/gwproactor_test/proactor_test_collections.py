@@ -26,7 +26,10 @@ class ProactorCommTests:
             # unstarted child
             assert stats.num_received == 0
             assert link.state == StateName.not_started
+            child.logger.info(child.settings.json(sort_keys=True, indent=2))
+            import rich
 
+            rich.print(child.settings)
             # start child
             h.start_child()
             await await_for(

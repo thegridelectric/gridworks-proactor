@@ -105,6 +105,31 @@ jobs:
           restore-keys: |
             ${{ steps.pre-commit-cache.outputs.result }}-
 
+      - name: try mosquitto
+        run: |
+          echo sleeping 5
+          sleep 5
+          echo done sleeping
+          gwcert key add ci
+          gwcert ca info
+          echo 1
+          mosquitto_pub -h localhost -p 1883 -t foo \
+                -m '{"bla":1}' | true
+          echo 2
+          mosquitto_pub -h localhost -p 8883 -t foo \
+                --cafile /home/runner/.local/share/gridworks/ca/ca.crt \
+                --cert /home/runner/.local/share/gridworks/ca/certs/ci/ci.crt \
+                --key /home/runner/.local/share/gridworks/ca/certs/ci/private/ci.pem \
+                -m '{"bar":1}' | true
+          echo 3
+          mosquitto_sub -h localhost -p 1883 -t foo -E | true
+          echo 4
+          mosquitto_sub -h localhost -p 8883 -t foo \
+                --cafile /home/runner/.local/share/gridworks/ca/ca.crt \
+                --cert /home/runner/.local/share/gridworks/ca/certs/ci/ci.crt \
+                --key /home/runner/.local/share/gridworks/ca/certs/ci/private/ci.pem \
+                -E | true
+
       - name: Run Nox
         run: |
           # nox --python=${{ matrix.python }}
