@@ -31,6 +31,11 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
 
+      - name: install mosquitto client
+        run: sudo apt-add-repository ppa:mosquitto-dev/mosquitto-ppa
+          sudo apt-get update
+          sudo apt-get install mosquitto-clients
+
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4.7.0
         with:
@@ -109,11 +114,6 @@ jobs:
         run: |
           gwcert key add ci
           gwcert ca info
-
-      - name: install mosquitto client
-        run: sudo apt-add-repository ppa:mosquitto-dev/mosquitto-ppa
-          sudo apt-get update
-          sudo apt-get install mosquitto-clients
 
       - name: try mosquitto
         run: |
