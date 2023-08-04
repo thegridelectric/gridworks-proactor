@@ -53,6 +53,7 @@ jobs:
       - name: Install gwcert
         run: |
           pipx install gridworks-cert
+          gwcert --version
 
       - name: Generate CA
         run: |
