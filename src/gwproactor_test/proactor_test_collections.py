@@ -17,7 +17,7 @@ class ProactorCommTests:
     CTH: Type[CommTestHelper]
 
     async def test_no_parent(self):
-        async with self.CTH(add_child=True, verbose=True) as h:
+        async with self.CTH(add_child=True, verbose=True, lifecycle_logging=True) as h:
             child = h.child
             stats = child.stats.link(child.upstream_client)
             comm_event_counts = stats.comm_event_counts
