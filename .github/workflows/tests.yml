@@ -103,16 +103,17 @@ jobs:
           #                --cert /home/runner/.local/share/gridworks/ca/certs/ci/ci.crt \
           #                --key /home/runner/.local/share/gridworks/ca/certs/ci/private/ci.pem \
           #                -E | true
-      #      - name: Install Poetry
-      #        run: |
-      #          pipx install --pip-args=--constraint=.github/workflows/constraints.txt poetry
-      #          poetry --version
-      #
-      #      - name: Install Nox
-      #        run: |
-      #          pipx install --pip-args=--constraint=.github/workflows/constraints.txt nox
-      #          pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
-      #          nox --version
+
+      - name: Install Poetry
+        run: |
+          pipx install --pip-args=--constraint=.github/workflows/constraints.txt poetry
+          poetry --version
+
+      - name: Install Nox
+        run: |
+          pipx install --pip-args=--constraint=.github/workflows/constraints.txt nox
+          pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
+          nox --version
 
       - name: Compute pre-commit cache key
         if: matrix.session == 'pre-commit'
