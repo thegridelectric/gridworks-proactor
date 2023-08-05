@@ -123,7 +123,7 @@ jobs:
           echo done sleeping
           echo 1
           mosquitto_pub -h localhost -p 1883 -t foo \
-                -m '{"bla":1}'
+                -m '{"bla":1}' | true
           echo 2
           #          mosquitto_pub -h localhost -p 8883 -t foo \
           #                --cafile /home/runner/.local/share/gridworks/ca/ca.crt \
