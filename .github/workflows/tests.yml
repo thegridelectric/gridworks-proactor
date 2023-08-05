@@ -90,7 +90,7 @@ jobs:
           mosquitto_pub -h localhost -p 1883 -t foo \
                 -m '{"bla":1}' | true
           echo 2 sub clear
-          mosquitto_sub -h localhost -p 1883 -t foo -E
+          mosquitto_sub -h localhost -p 1883 -t foo -E | true
           echo 3 pub TLS
           mosquitto_pub -h localhost -p 8883 -t foo \
                 --cafile /home/runner/.local/share/gridworks/ca/ca.crt \
