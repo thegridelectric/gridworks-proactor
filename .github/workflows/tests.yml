@@ -68,7 +68,7 @@ jobs:
         with:
           ports: "1883:1883 8883:8883"
           config: ${{ github.workspace }}/tests/config/local_mosquitto.conf
-          #          certificates: /home/runner/.local/share/gridworks/ca
+          certificates: /home/runner/.local/share/gridworks/ca
           container-name: "local-mqtt"
 
       #      - name: Install Mosquitto Clients
