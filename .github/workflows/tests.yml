@@ -74,9 +74,9 @@ jobs:
           certificates: /home/runner/.local/share/gridworks/ca
           container-name: "local-mqtt"
 
-      #      - name: Install Mosquitto Clients
-      #        run: |
-      #          sudo apt-get install mosquitto-clients
+      - name: Install Mosquitto Clients
+        run: |
+          sudo apt-get install mosquitto-clients
 
       - name: Wait for Mosquitto
         uses: iFaxity/wait-on-action@v1.1.0
@@ -84,24 +84,24 @@ jobs:
           resource: tcp:localhost:1883
           timeout: 5000
 
-      #      - name: try mosquitto
-      #        run: |
-      #          echo pub clear
-      #          mosquitto_pub -h localhost -p 1883 -t foo -m '{"bla":1}'
-      #          echo sub clear
-      #          mosquitto_sub -h localhost -p 1883 -t foo -E
-      #          echo pub TLS
-      #          mosquitto_pub -h localhost -p 8883 -t foo \
-      #                --cafile /home/runner/.local/share/gridworks/ca/ca.crt \
-      #                --cert /home/runner/.local/share/gridworks/ca/certs/ci/ci.crt \
-      #                --key /home/runner/.local/share/gridworks/ca/certs/ci/private/ci.pem \
-      #                -m '{"bar":1}'
-      #          echo sub TLS
-      #          mosquitto_sub -h localhost -p 8883 -t foo \
-      #                --cafile /home/runner/.local/share/gridworks/ca/ca.crt \
-      #                --cert /home/runner/.local/share/gridworks/ca/certs/ci/ci.crt \
-      #                --key /home/runner/.local/share/gridworks/ca/certs/ci/private/ci.pem \
-      #                -E
+      - name: Try Mosquitto Clients
+        run: |
+          echo pub clear
+          mosquitto_pub -h localhost -p 1883 -t foo -m '{"bla":1}'
+          echo sub clear
+          mosquitto_sub -h localhost -p 1883 -t foo -E
+          echo pub TLS
+          mosquitto_pub -h localhost -p 8883 -t foo \
+                --cafile /home/runner/.local/share/gridworks/ca/ca.crt \
+                --cert /home/runner/.local/share/gridworks/ca/certs/ci/ci.crt \
+                --key /home/runner/.local/share/gridworks/ca/certs/ci/private/ci.pem \
+                -m '{"bar":1}'
+          echo sub TLS
+          mosquitto_sub -h localhost -p 8883 -t foo \
+                --cafile /home/runner/.local/share/gridworks/ca/ca.crt \
+                --cert /home/runner/.local/share/gridworks/ca/certs/ci/ci.crt \
+                --key /home/runner/.local/share/gridworks/ca/certs/ci/private/ci.pem \
+                -E
 
       - name: Mosquitto Log
         if: always()
