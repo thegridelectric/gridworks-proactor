@@ -108,45 +108,45 @@ jobs:
         run: |
           docker logs local-mqtt
 
-#      - name: Install Poetry
-#        run: |
-#          pipx install --pip-args=--constraint=.github/workflows/constraints.txt poetry
-#          poetry --version
-#
-#      - name: Install Nox
-#        run: |
-#          pipx install --pip-args=--constraint=.github/workflows/constraints.txt nox
-#          pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
-#          nox --version
-#
-#      - name: Compute pre-commit cache key
-#        if: matrix.session == 'pre-commit'
-#        id: pre-commit-cache
-#        shell: python
-#        run: |
-#          import hashlib
-#          import sys
-#
-#          python = "py{}.{}".format(*sys.version_info[:2])
-#          payload = sys.version.encode() + sys.executable.encode()
-#          digest = hashlib.sha256(payload).hexdigest()
-#          result = "${{ runner.os }}-{}-{}-pre-commit".format(python, digest[:8])
-#
-#          print("::set-output name=result::{}".format(result))
-#
-#      - name: Restore pre-commit cache
-#        uses: actions/cache@v3
-#        if: matrix.session == 'pre-commit'
-#        with:
-#          path: ~/.cache/pre-commit
-#          key: ${{ steps.pre-commit-cache.outputs.result }}-${{ hashFiles('.pre-commit-config.yaml') }}
-#          restore-keys: |
-#            ${{ steps.pre-commit-cache.outputs.result }}-
-#
-#      - name: Run Nox
-#        run: |
-#          # nox --python=${{ matrix.python }}
-#          nox -s tests-3.11 -- -k test_no_parent -s
+      - name: Install Poetry
+        run: |
+          pipx install --pip-args=--constraint=.github/workflows/constraints.txt poetry
+          poetry --version
+
+      - name: Install Nox
+        run: |
+          pipx install --pip-args=--constraint=.github/workflows/constraints.txt nox
+          pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
+          nox --version
+
+      - name: Compute pre-commit cache key
+        if: matrix.session == 'pre-commit'
+        id: pre-commit-cache
+        shell: python
+        run: |
+          import hashlib
+          import sys
+
+          python = "py{}.{}".format(*sys.version_info[:2])
+          payload = sys.version.encode() + sys.executable.encode()
+          digest = hashlib.sha256(payload).hexdigest()
+          result = "${{ runner.os }}-{}-{}-pre-commit".format(python, digest[:8])
+
+          print("::set-output name=result::{}".format(result))
+
+      - name: Restore pre-commit cache
+        uses: actions/cache@v3
+        if: matrix.session == 'pre-commit'
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ steps.pre-commit-cache.outputs.result }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ steps.pre-commit-cache.outputs.result }}-
+
+      - name: Run Nox
+        run: |
+          # nox --python=${{ matrix.python }}
+          nox -s tests-3.11 -- -k test_no_parent -s
 
 #      - name: Upload coverage data
 #        if: always() && matrix.session == 'tests'
