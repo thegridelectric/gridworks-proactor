@@ -146,6 +146,8 @@ jobs:
       - name: Run Nox
         run: |
           # nox --python=${{ matrix.python }}
+          cp ${{ github.workspace }}/tests/config/.env-gwproactor-test-ci ${{ github.workspace }}/tests/.env-gwproactor-test
+          cat ${{ github.workspace }}/tests/.env-gwproactor-test
           nox -s tests-3.11 -- -k test_no_parent -s
 
 #      - name: Upload coverage data
