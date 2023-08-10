@@ -12,6 +12,7 @@ from typing import TypeVar
 from gwproactor import Proactor
 from gwproactor import ProactorSettings
 from gwproactor import setup_logging
+from gwproactor.config import MQTTClient
 from gwproactor.config import Paths
 from gwproactor_test import copy_keys
 from gwproactor_test.certs import uses_tls
@@ -163,6 +164,37 @@ class CommTestHelper:
     def remove_parent(self) -> "CommTestHelper":
         self.parent_helper.proactor = None
         return self
+
+    @classmethod
+    def _get_clients_supporting_tls(
+        cls, settings: ProactorSettings
+    ) -> list[MQTTClient]:
+        clients = []
+        for _, v in settings._iter():  # noqa
+            if isinstance(v, MQTTClient):
+                clients.append(v)
+        return clients
+
+    def _get_child_clients_supporting_tls(self) -> list[MQTTClient]:
+        """Overide to filter which MQTT clients of ChildSettingsT are treated as supporting TLS"""
+        return self._get_clients_supporting_tls(self.child_helper.settings)
+
+    def _get_parent_clients_supporting_tls(self) -> list[MQTTClient]:
+        """Overide to filter which MQTT clients of ParentSettingsT are treated as supporting TLS"""
+        return self._get_clients_supporting_tls(self.parent_helper.settings)
+
+    @classmethod
+    def _set_settings_use_tls(cls, use_tls: bool, clients: list[MQTTClient]) -> None:
+        for client in clients:
+            client.tls.use_tls = use_tls
+
+    def set_use_tls(self, use_tls: bool) -> None:
+        """Set MQTTClients which support TLS in parent and child settings to use TLS per use_tls. Clients supporting TLS
+        is determined by _get_child_clients_supporting_tls() and _get_parent_clients_supporting_tls() which may be
+        overriden in derived class.
+        """
+        self._set_settings_use_tls(use_tls, self._get_child_clients_supporting_tls())
+        self._set_settings_use_tls(use_tls, self._get_parent_clients_supporting_tls())
 
     def setup_logging(self):
         self.child_helper.settings.paths.mkdirs(parents=True)
