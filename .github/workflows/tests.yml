@@ -63,7 +63,7 @@ jobs:
           gwcert key add ci
           gwcert ca info
           ls -lR /home/runner/.local/share/gridworks/ca/
-          sudo chmod a+r ls -lR /home/runner/.local/share/gridworks/ca/certs/mosquitto/private/mosquitto.pem
+          sudo chmod a+r /home/runner/.local/share/gridworks/ca/certs/mosquitto/private/mosquitto.pem
           ls -lR /home/runner/.local/share/gridworks/ca/
 
       - name: Start 'Local' Mosquitto
