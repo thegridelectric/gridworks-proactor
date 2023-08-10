@@ -103,6 +103,7 @@ jobs:
       - name: Mosquitto Log
         if: always()
         run: |
+          docker ps
           docker logs mosquitto
 
 #      - name: Install Poetry
