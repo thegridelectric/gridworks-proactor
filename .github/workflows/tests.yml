@@ -62,6 +62,9 @@ jobs:
           gwcert key add --dns localhost mosquitto
           gwcert key add ci
           gwcert ca info
+          ls -lR /home/runner/.local/share/gridworks/ca/
+          sudo chmod a+r ls -lR /home/runner/.local/share/gridworks/ca/certs/mosquitto/private/mosquitto.pem
+          ls -lR /home/runner/.local/share/gridworks/ca/
 
       - name: Start 'Local' Mosquitto
         uses: namoshek/mosquitto-github-action@v1.1.0
