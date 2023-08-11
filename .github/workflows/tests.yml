@@ -144,8 +144,7 @@ jobs:
           nox --python=${{ matrix.python }}
 
       - name: Mosquitto Log
-        runs-on: unbuntu-latest
-        if: ${{ failure() }}
+        if: ${{ failure() }} && matrix.os == "ubuntu-latest"
         run: |
           docker logs local-mqtt
 
