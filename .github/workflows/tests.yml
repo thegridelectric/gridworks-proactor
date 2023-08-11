@@ -58,9 +58,13 @@ jobs:
 
       - name: Generate CA
         run: |
+          echo Creating CA
           gwcert ca create --ca-dir ${{ github.workspace }}/tests/.ci-ca ci-test-ca
+          echo "\nCA info:"
           gwcert ca info --ca-dir ${{ github.workspace }}/tests/.ci-ca
-          gwcert key add --ca-dir ${{ github.workspace }}/tests/.ci-ca --dns localhost mosquitto
+          echo "\nAdding mosquitto key:"
+          gwcert key add --ca-dir ${{ github.workspace }}/tests/.ci-ca --certs-dir ${{ github.workspace }}/tests/.ci-ca/certs --dns localhost mosquitto
+          echo "\nCA info:"
           gwcert ca info --ca-dir ${{ github.workspace }}/tests/.ci-ca
           sudo chmod a+r ${{ github.workspace }}/tests/.ci-ca/certs/mosquitto/private/mosquitto.pem
           ls -lR ${{ github.workspace }}/tests/.ci-ca
