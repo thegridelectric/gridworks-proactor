@@ -21,7 +21,3 @@ class DummyParentSettings(ProactorSettings):
     @root_validator(pre=True)
     def pre_root_validator(cls, values: dict) -> dict:
         return ProactorSettings.update_paths_name(values, DUMMY_PARENT_NAME)
-
-    @root_validator(skip_on_failure=True)
-    def update_tls_paths(cls, values: dict) -> dict:
-        return ProactorSettings.update_tls_paths(values)

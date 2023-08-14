@@ -1,4 +1,5 @@
 from pydantic import BaseSettings
+from pydantic import root_validator
 from pydantic import validator
 
 from gwproactor.config.logging import LoggingSettings
@@ -38,12 +39,9 @@ class ProactorSettings(BaseSettings):
             values["paths"] = values["paths"].copy(name=name)
         return values
 
-    @classmethod
-    def update_tls_paths(cls, values: dict, proactor_name: str = "") -> dict:
-        """Update unset paths of any member MQTTClient's TLS paths based on ProactorSettings 'paths' member.
-
-        This is meant to be called in a root validator of a derived class.
-        """
+    @root_validator(skip_on_failure=True)
+    def post_root_validator(cls, values: dict) -> dict:
+        """Update unset paths of any member MQTTClient's TLS paths based on ProactorSettings 'paths' member."""
         if not isinstance(values["paths"], Paths):
             raise ValueError(
                 f"ERROR. 'paths' member must be instance of Paths. Got: {type(values['paths'])}"
