@@ -98,7 +98,7 @@ def test_tls_paths_mkdirs(clean_test_env, tmp_path) -> None:
 def test_tls_info():
     # unitialized TLSInfo
     exp: dict = dict(
-        use_tls=False,
+        use_tls=True,
         port=8883,
         paths=dict(
             ca_cert_path=None,

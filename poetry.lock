@@ -520,7 +520,7 @@ toml = ["tomli"]
 name = "cryptography"
 version = "3.4.8"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "cryptography-3.4.8-cp36-abi3-macosx_10_10_x86_64.whl", hash = "sha256:a00cf305f07b26c351d8d4e1af84ad7501eca8a342dedf24a7acb0e7b7406e14"},
@@ -901,13 +901,13 @@ uvicorn = {version = ">=0.19.0,<0.20.0", extras = ["standard"]}
 
 [[package]]
 name = "gridworks-cert"
-version = "0.4.0"
+version = "0.4.1"
 description = "TLS certificate management tools for GridWorks"
-optional = true
+optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "gridworks_cert-0.4.0-py3-none-any.whl", hash = "sha256:e59bab27c560ac40436ad3768d6f09198ccd56918757906d3a224236a29070a9"},
-    {file = "gridworks_cert-0.4.0.tar.gz", hash = "sha256:b254f12131e4b254fad5df23b5f0a0400ebc552d22b158c3d3ff65da5c3037df"},
+    {file = "gridworks_cert-0.4.1-py3-none-any.whl", hash = "sha256:363e5424f331aadd7997e631d05fd0f85b1b1f7ea354db87501bd99860f8a58a"},
+    {file = "gridworks_cert-0.4.1.tar.gz", hash = "sha256:f87a5406679f22b92a25d20a49b79607580f268b82c730c7b9091b740ce045a7"},
 ]
 
 [package.dependencies]
@@ -1185,7 +1185,7 @@ files = [
 name = "importlib-metadata"
 version = "6.8.0"
 description = "Read metadata from Python packages"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "importlib_metadata-6.8.0-py3-none-any.whl", hash = "sha256:3ebb78df84a805d7698245025b975d9d67053cd94c79245ba4b3eb694abe68bb"},
@@ -1249,7 +1249,7 @@ i18n = ["Babel (>=2.7)"]
 name = "linkify-it-py"
 version = "2.0.2"
 description = "Links recognition library with FULL unicode support."
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "linkify-it-py-2.0.2.tar.gz", hash = "sha256:19f3060727842c254c808e99d465c80c49d2c7306788140987a1a7a29b0d6ad2"},
@@ -1579,7 +1579,7 @@ setuptools = "*"
 name = "ownca"
 version = "0.4.0"
 description = "Python Own Certificate Authority"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "OwnCA-0.4.0-py2.py3-none-any.whl", hash = "sha256:fd18990d19404cfed49e2ab31d85039d24f1be44c4c5b74658616983320c279a"},
@@ -2736,7 +2736,7 @@ pbr = ">=2.0.0,<2.1.0 || >2.1.0"
 name = "textual"
 version = "0.32.0"
 description = "Modern Text User Interface framework"
-optional = true
+optional = false
 python-versions = ">=3.7,<4.0"
 files = [
     {file = "textual-0.32.0-py3-none-any.whl", hash = "sha256:81fc68406c8806bc864e2f035874a868b4ff0cf466289dce5f7b31869949383b"},
@@ -2795,7 +2795,7 @@ files = [
 name = "trogon"
 version = "0.5.0"
 description = "Automatically generate a Textual TUI for your Click CLI"
-optional = true
+optional = false
 python-versions = ">=3.7,<4.0"
 files = [
     {file = "trogon-0.5.0-py3-none-any.whl", hash = "sha256:987d2195c1dd2f93c50e555063a9de57edbc5906ce20ee39081343ff194952c1"},
@@ -2828,7 +2828,7 @@ test = ["mypy (>=1.2.0)", "pytest (>=7)"]
 name = "typer"
 version = "0.9.0"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "typer-0.9.0-py3-none-any.whl", hash = "sha256:5d96d986a21493606a358cae4461bd8cdf83cbf33a5aa950ae629ca3b51467ee"},
@@ -2885,7 +2885,7 @@ files = [
 name = "uc-micro-py"
 version = "1.0.2"
 description = "Micro subset of unicode data files for linkify-it-py projects."
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "uc-micro-py-1.0.2.tar.gz", hash = "sha256:30ae2ac9c49f39ac6dce743bd187fcd2b574b16ca095fa74cd9396795c954c54"},
@@ -3005,7 +3005,7 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 name = "voluptuous"
 version = "0.13.1"
 description = ""
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "voluptuous-0.13.1-py3-none-any.whl", hash = "sha256:4b838b185f5951f2d6e8752b68fcf18bd7a9c26ded8f143f92d6d28f3921a3e6"},
@@ -3169,7 +3169,7 @@ tests-strict = ["codecov (==2.0.15)", "pytest (==4.6.0)", "pytest (==4.6.0)", "p
 name = "zipp"
 version = "3.16.2"
 description = "Backport of pathlib-compatible object wrapper for zip files"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "zipp-3.16.2-py3-none-any.whl", hash = "sha256:679e51dd4403591b2d6838a48de3d283f3d188412a9782faadf845f298736ba0"},
@@ -3186,4 +3186,4 @@ tests = ["gridworks-cert", "pytest", "pytest-asyncio"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "f28c48ee5cee3f388a29b610dbc970b1fcf9a8692c0543b18a56920e535796a7"
+content-hash = "6ba288ef6bc720538babfc81d34186afe956c46dc648f090c278acede56e41ad"

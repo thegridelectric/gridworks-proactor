@@ -12,7 +12,7 @@ from gwproactor.config.paths import TLSPaths
 class TLSInfo(BaseModel):
     """TLS settings for a single MQTT client"""
 
-    use_tls: bool = False
+    use_tls: bool = True
     port: int = 8883
     paths: TLSPaths = TLSPaths()
     cert_reqs: Optional[VerifyMode] = ssl.CERT_REQUIRED
