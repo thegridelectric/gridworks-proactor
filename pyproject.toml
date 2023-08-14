@@ -71,7 +71,7 @@ source = ["gwproactor", "gwproactor_test", "tests"]
 
 [tool.coverage.report]
 show_missing = false
-fail_under = 10
+fail_under = 80
 
 [tool.isort]
 profile = "black"
