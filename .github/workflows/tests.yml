@@ -12,13 +12,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - { python: "3.11", os: "ubuntu-latest", session: "pre-commit" }
+          - { python: "3.11", os: "ubuntu-latest", session: "pre-commit" }
           - { python: "3.11", os: "ubuntu-latest", session: "tests" }
-          # - { python: "3.10", os: "ubuntu-latest", session: "tests" }
-          - { python: "3.11", os: "windows-latest", session: "tests" }
-          - { python: "3.11", os: "macos-latest", session: "tests" }
-          # - { python: "3.11", os: "ubuntu-latest", session: "xdoctest" }
-          # - { python: "3.11", os: "ubuntu-latest", session: "docs-build" }
+          - { python: "3.10", os: "ubuntu-latest", session: "tests" }
+          - { python: "3.11", os: "ubuntu-latest", session: "xdoctest" }
+          - { python: "3.11", os: "ubuntu-latest", session: "docs-build" }
 
           # - { python: "3.11", os: "ubuntu-latest", session: "typeguard" }
           # - { python: "3.11", os: "ubuntu-latest", session: "mypy" }
@@ -69,7 +67,7 @@ jobs:
           sudo chmod a+r ${{ github.workspace }}/tests/.ci-ca/certs/mosquitto/private/mosquitto.pem
           ls -lR ${{ github.workspace }}/tests/.ci-ca
 
-      - name: Start 'Local' Mosquitto
+      - name: Start Mosquitto
         uses: namoshek/mosquitto-github-action@v1.1.0
         with:
           ports: "1883:1883 8883:8883"
@@ -147,7 +145,7 @@ jobs:
           nox --python=${{ matrix.python }}
 
       - name: Mosquitto Log
-        if: ${{ failure() }} && matrix.os == "ubuntu-latest"
+        if: failure()
         run: |
           docker logs local-mqtt
 
