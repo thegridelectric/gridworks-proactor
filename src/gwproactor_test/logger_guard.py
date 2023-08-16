@@ -1,4 +1,5 @@
 import logging
+import sys
 from typing import Optional
 from typing import Sequence
 
@@ -6,7 +7,6 @@ import pytest
 
 from gwproactor.config import DEFAULT_BASE_NAME
 from gwproactor.config import LoggerLevels
-from gwproactor.config import LoggingSettings
 
 
 class LoggerGuard:
@@ -23,6 +23,19 @@ class LoggerGuard:
         self.filters = set(logger.filters)
 
     def restore(self):
+        screen_handlers = [
+            h
+            for h in self.logger.handlers
+            if isinstance(h, logging.StreamHandler)
+            and (h.stream is sys.stderr or h.stream is sys.stdout)
+        ]
+        if len(screen_handlers) > 1:
+            raise ValueError(
+                "More than 1 screen handlers  "
+                f"{self.logger.name}  {len(screen_handlers)}  "
+                f"stream handlers: {screen_handlers},  "
+                f"from all handlers {self.logger.handlers}"
+            )
         self.logger.setLevel(self.level)
         self.logger.propagate = self.propagate
         curr_handlers = set(self.logger.handlers)
@@ -49,9 +62,10 @@ class LoggerGuard:
 class LoggerGuards:
     guards: dict[str, LoggerGuard]
 
-    def __init__(self, logger_names: Optional[Sequence[str]] = None):
-        if logger_names is None:
-            logger_names = self.default_logger_names()
+    def __init__(self, extra_logger_names: Optional[Sequence[str]] = None):
+        logger_names = self.default_logger_names()
+        if extra_logger_names is not None:
+            logger_names = logger_names.union(set(extra_logger_names))
         self.guards = {
             logger_name: LoggerGuard(logging.getLogger(logger_name))
             for logger_name in logger_names
@@ -69,14 +83,23 @@ class LoggerGuards:
         return True
 
     @classmethod
-    def default_logger_names(cls) -> list[str]:
-        return ["root", LoggingSettings().base_log_name] + list(
-            LoggerLevels().qualified_logger_names(DEFAULT_BASE_NAME).values()
+    def default_logger_names(cls) -> set[str]:
+        return (
+            {"root"}
+            .union(LoggerLevels().qualified_logger_names(DEFAULT_BASE_NAME).values())
+            .union(logging.root.manager.loggerDict.keys())
         )
 
 
 @pytest.fixture
 def restore_loggers() -> LoggerGuards:
+    num_root_handlers = len(logging.getLogger().handlers)
     guards = LoggerGuards()
     yield guards
     guards.restore()
+    new_num_root_handlers = len(logging.getLogger().handlers)
+    if new_num_root_handlers != num_root_handlers:
+        raise ValueError(
+            f"ARRG. root handlers: {num_root_handlers} -> {new_num_root_handlers}  handlers:\n\t"
+            f"{logging.getLogger().handlers}"
+        )
