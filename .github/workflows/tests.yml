@@ -71,7 +71,7 @@ jobs:
         uses: namoshek/mosquitto-github-action@v1.1.0
         with:
           ports: "1883:1883 8883:8883"
-          config: ${{ github.workspace }}/tests/config/local_mosquitto.conf
+          config: ${{ github.workspace }}/tests/config/ci-mosquitto.conf
           certificates: ${{ github.workspace }}/tests/.ci-ca
           container-name: "local-mqtt"
 
