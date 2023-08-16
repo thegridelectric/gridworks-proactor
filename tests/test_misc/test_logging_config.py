@@ -15,7 +15,6 @@ from gwproactor.config import RotatingFileHandlerSettings
 
 
 def test_logger_levels():
-
     # Check if fields have been added or renamed
     assert set(LoggerLevels().__fields__.keys()) == {
         "message_summary",
@@ -78,7 +77,6 @@ def test_logger_levels():
 
 
 def test_logging_settings():
-
     # Check if loggers have been added or renamed
     assert set(LoggingSettings().levels.__fields__.keys()) == {
         "message_summary",

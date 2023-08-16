@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import warnings
 from typing import Type
 
@@ -9,6 +10,7 @@ from paho.mqtt.client import MQTT_ERR_CONN_LOST
 from gwproactor.links import StateName
 from gwproactor.message import DBGPayload
 from gwproactor_test import await_for
+from gwproactor_test.certs import uses_tls
 from gwproactor_test.comm_test_helper import CommTestHelper
 
 
@@ -26,6 +28,7 @@ class ProactorCommTests:
             # unstarted child
             assert stats.num_received == 0
             assert link.state == StateName.not_started
+            child.logger.info(child.settings.json(sort_keys=True, indent=2))
 
             # start child
             h.start_child()
@@ -72,9 +75,7 @@ class ProactorCommTests:
                 assert comm_event.MessageId in child._event_persister
 
     async def test_basic_comm_child_first(self):
-        async with self.CTH(
-            add_child=True, add_parent=True, verbose=True, parent_on_screen=True
-        ) as h:
+        async with self.CTH(add_child=True, add_parent=True) as h:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
             child_comm_event_counts = child_stats.comm_event_counts
@@ -199,8 +200,25 @@ class ProactorCommTests:
     #             await asyncio.sleep(1)
 
     @pytest.mark.asyncio
-    async def test_basic_comm_parent_first(self):
-        async with self.CTH(add_child=True, add_parent=True, verbose=True) as h:
+    @pytest.mark.parametrize("suppress_tls", [False, True])
+    async def test_basic_comm_parent_first(self, request, suppress_tls: bool):
+        async with self.CTH() as h:
+            base_logger = logging.getLogger(
+                h.child_helper.settings.logging.base_log_name
+            )
+            base_logger.warning(f"{request.node.name}  suppress_tls: {suppress_tls}")
+            if suppress_tls:
+                if not uses_tls(h.child_helper.settings) and not uses_tls(
+                    h.parent_helper.settings
+                ):
+                    base_logger.warning(
+                        "Skipping test <%s> since TLS has already been suppressed by environment variables",
+                        request.node.name,
+                    )
+                else:
+                    h.set_use_tls(False)
+            h.add_child()
+            h.add_parent()
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
             child_comm_event_counts = child_stats.comm_event_counts
@@ -412,7 +430,7 @@ class ProactorCommTests:
          (awaiting_setup_and_peer -> mqtt_suback -> awaiting_peer)
          (awaiting_setup_and_peer -> disconnected -> connecting)
         """
-        async with self.CTH(add_child=True, verbose=True) as h:
+        async with self.CTH(add_child=True) as h:
             child = h.child
             stats = child.stats.link(child.upstream_client)
             comm_event_counts = stats.comm_event_counts
@@ -544,7 +562,7 @@ class ProactorCommTests:
         In practice these might be corner cases that rarely or never occur, since by default all subacks will come and
         one message and we should not receive any messages before subscribing.
         """
-        async with self.CTH(add_child=True, verbose=True) as h:
+        async with self.CTH(add_child=True) as h:
             child = h.child
             child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
             if len(child_subscriptions) < 2:
@@ -705,7 +723,7 @@ class ProactorCommTests:
         In practice these might be corner cases that rarely or never occur, since by default all subacks will come and
         one message and we should not receive any messages before subscribing.
         """
-        async with self.CTH(add_child=True, add_parent=True, verbose=True) as h:
+        async with self.CTH(add_child=True, add_parent=True) as h:
             child = h.child
             child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
             if len(child_subscriptions) < 2:

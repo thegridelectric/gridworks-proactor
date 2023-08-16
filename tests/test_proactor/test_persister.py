@@ -25,7 +25,6 @@ from gwproactor.persister import UIDMissingWarning
 
 
 def test_problems():
-
     p = Problems()
     assert not p
     assert not str(p)
@@ -290,7 +289,6 @@ def test_persister_max_size():
     event_bytes = event.json().encode()
     num_events_supported = 4
     with pendulum.test(pendulum.today("utc")):
-
         # empty persister
         max_bytes = (num_events_supported + 1) * 1000
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=max_bytes)

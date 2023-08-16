@@ -13,14 +13,13 @@ jobs:
       matrix:
         include:
           - { python: "3.11", os: "ubuntu-latest", session: "pre-commit" }
-          #          - { python: "3.11", os: "ubuntu-latest", session: "mypy" }
           - { python: "3.11", os: "ubuntu-latest", session: "tests" }
           - { python: "3.10", os: "ubuntu-latest", session: "tests" }
-          #           - { python: "3.11", os: "windows-latest", session: "tests" }
-          #           - { python: "3.11", os: "macos-latest", session: "tests" }
-          #           - { python: "3.11", os: "ubuntu-latest", session: "typeguard" }
           - { python: "3.11", os: "ubuntu-latest", session: "xdoctest" }
           - { python: "3.11", os: "ubuntu-latest", session: "docs-build" }
+
+          # - { python: "3.11", os: "ubuntu-latest", session: "typeguard" }
+          # - { python: "3.11", os: "ubuntu-latest", session: "mypy" }
 
     env:
       NOXSESSION: ${{ matrix.session }}
@@ -31,16 +30,8 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
 
-      - name: Start 'Local' Mosquitto
-        uses: namoshek/mosquitto-github-action@v1
-        with:
-          version: "1.6"
-          ports: "1883:1883 8883:8883"
-          config: ${{ github.workspace }}/tests/config/local_mosquitto.conf
-          container-name: "local-mqtt"
-
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4.5.0
+        uses: actions/setup-python@v4.7.0
         with:
           python-version: ${{ matrix.python }}
 
@@ -57,6 +48,59 @@ jobs:
 
           with open(os.environ["GITHUB_ENV"], mode="a") as io:
               print(f"VIRTUALENV_PIP={pip.__version__}", file=io)
+
+      - name: Install gwcert
+        run: |
+          pipx install gridworks-cert
+          gwcert --version
+
+      - name: Generate CA
+        run: |
+          echo Creating CA
+          gwcert ca create --ca-dir ${{ github.workspace }}/tests/.ci-ca ci-test-ca
+          echo "\nCA info:"
+          gwcert ca info --ca-dir ${{ github.workspace }}/tests/.ci-ca
+          echo "\nAdding mosquitto key:"
+          gwcert key add --ca-dir ${{ github.workspace }}/tests/.ci-ca --certs-dir ${{ github.workspace }}/tests/.ci-ca/certs --dns localhost mosquitto
+          echo "\nCA info:"
+          gwcert ca info --ca-dir ${{ github.workspace }}/tests/.ci-ca
+          sudo chmod a+r ${{ github.workspace }}/tests/.ci-ca/certs/mosquitto/private/mosquitto.pem
+          ls -lR ${{ github.workspace }}/tests/.ci-ca
+
+      - name: Start Mosquitto
+        uses: namoshek/mosquitto-github-action@v1.1.0
+        with:
+          ports: "1883:1883 8883:8883"
+          config: ${{ github.workspace }}/tests/config/ci-mosquitto.conf
+          certificates: ${{ github.workspace }}/tests/.ci-ca
+          container-name: "local-mqtt"
+
+      - name: Wait for Mosquitto
+        uses: iFaxity/wait-on-action@v1.1.0
+        with:
+          resource: tcp:localhost:1883
+          timeout: 5000
+
+      # - name: Try Mosquitto Clients
+      #   run: |
+      #     gwcert key add ci
+      #     sudo apt-get install mosquitto-clients
+      #     echo pub clear
+      #     mosquitto_pub -h localhost -p 1883 -t foo -m '{"bla":1}'
+      #     echo sub clear
+      #     mosquitto_sub -h localhost -p 1883 -t foo -E
+      #     echo pub TLS
+      #     mosquitto_pub -h localhost -p 8883 -t foo \
+      #           --cafile /home/runner/.local/share/gridworks/ca/ca.crt \
+      #           --cert /home/runner/.local/share/gridworks/ca/certs/ci/ci.crt \
+      #           --key /home/runner/.local/share/gridworks/ca/certs/ci/private/ci.pem \
+      #           -m '{"bar":1}'
+      #     echo sub TLS
+      #     mosquitto_sub -h localhost -p 8883 -t foo \
+      #           --cafile /home/runner/.local/share/gridworks/ca/ca.crt \
+      #           --cert /home/runner/.local/share/gridworks/ca/certs/ci/ci.crt \
+      #           --key /home/runner/.local/share/gridworks/ca/certs/ci/private/ci.pem \
+      #           -E
 
       - name: Install Poetry
         run: |
@@ -94,8 +138,16 @@ jobs:
             ${{ steps.pre-commit-cache.outputs.result }}-
 
       - name: Run Nox
+        env:
+          GWPROACTOR_TEST_CA_CERT_PATH: ${{ github.workspace }}/tests/.ci-ca/ca.crt
+          GWPROACTOR_TEST_CA_KEY_PATH: ${{ github.workspace }}/tests/.ci-ca/private/ca_key.pem
         run: |
           nox --python=${{ matrix.python }}
+
+      - name: Mosquitto Log
+        if: failure()
+        run: |
+          docker logs local-mqtt
 
       - name: Upload coverage data
         if: always() && matrix.session == 'tests'
@@ -118,16 +170,8 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v3
 
-      - name: Start 'Local' Mosquitto
-        uses: namoshek/mosquitto-github-action@v1
-        with:
-          version: "1.6"
-          ports: "1883:1883 8883:8883"
-          config: ${{ github.workspace }}/tests/config/local_mosquitto.conf
-          container-name: "local-mqtt"
-
       - name: Set up Python
-        uses: actions/setup-python@v4.5.0
+        uses: actions/setup-python@v4.7.0
         with:
           python-version: "3.11"
 
@@ -161,4 +205,4 @@ jobs:
           nox --session=coverage -- xml
 
       - name: Upload coverage report
-        uses: codecov/codecov-action@v3.1.1
+        uses: codecov/codecov-action@v3.1.4
