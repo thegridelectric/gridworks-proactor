@@ -21,7 +21,6 @@ DEFAULT_ACK_DELAY = 5.0
 
 
 class AckManager:
-
     _acks: dict[str, dict[str, AckWaitInfo]]
     _timer_mgr: TimerManagerInterface
     _callback: AckTimerCallback

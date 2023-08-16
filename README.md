@@ -41,14 +41,112 @@ allows the scada code to be more focussed on on application specific details and
 
 ## Requirements
 
-Testing requires an MQTT broker. This can be installed on a mac with:
+### Mosquitto
+
+Testing requires an MQTT broker. The Mosquitto broker can be installed with:
 
 ```shell
 brew install mosquitto
 brew services restart mosquitto
 ```
 
-Alternatively, the MQTT broker used by tests be controlled by .env file as described in [](DefaultTestEnv).
+### TLS
+
+Testing uses TLS by default. The tests require the path to the CA certificate and private key used to sign the certificate
+of the MQTT broker. To set up TLS:
+
+Install gridworks-cert (gwcert):
+
+```shell
+pipx install gridworks-cert
+```
+
+Create a local Certificate Authority:
+
+```shell
+gwcert ca create
+```
+
+Create certificate and key for the Mosquitto MQTT broker:
+
+```shell
+gwcert key add --dns localhost mosquitto
+```
+
+Find the path to `mosquitto.conf` in the output of:
+
+```shell
+brew services info mosquitto -v
+```
+
+Modify `mosquitto.conf` with the TLS configuration in [example-test-mosquitto.conf](tests/config/example-test-mosquitto.conf),
+fixing up the paths with real absolute paths to certificate, key and CA certificate files. These paths can be found with:
+
+```shell
+gwcert ca info
+```
+
+Restart the Mosquitto server:
+
+```shell
+brew services restart mosquitto
+```
+
+Test Mosquitto 'clear' port:
+
+```shell
+# in one window
+mosquitto_sub -h localhost -p 1883 -t foo
+# in another window
+mosquitto_pub -h localhost -p 1883 -t foo -m '{"bla":1}'
+```
+
+Test Mosquitto TLS port:
+
+```shell
+gwcert key add pubsub
+# in one window
+mosquitto_sub -h localhost -p 8883 -t foo \
+     --cafile $HOME/.local/share/gridworks/ca/ca.crt \
+     --cert $HOME/.local/share/gridworks/ca/certs/pubsub/pubsub.crt \
+     --key $HOME/.local/share/gridworks/ca/certs/pubsub/private/pubsub.pem
+# in another window
+mosquitto_pub -h localhost -p 8883 -t foo \
+     --cafile $HOME/.local/share/gridworks/ca/ca.crt \
+     --cert $HOME/.local/share/gridworks/ca/certs/pubsub/pubsub.crt \
+     --key $HOME/.local/share/gridworks/ca/certs/pubsub/private/pubsub.pem \
+     -m '{"bar":1}'
+```
+
+#### Troubleshooting Mosquitto
+
+Mosquitto logging can be enabled in the `mosquitto.conf` file with the lines:
+
+```
+log_dest stderr
+log_type all
+```
+
+To see the console output, stop the Mosquitto service and start it explicitly on the command line:
+
+```shell
+brew services stop mosquitto
+mosquitto -c /opt/homebrew/etc/mosquitto/mosquitto.conf
+```
+
+#### Pre-existing key files
+
+If CA or Mosquito certificate can key files _already_ exist, their paths can be specified in `mosquitto.conf` as above and
+for the tests with there GWPROACTOR_TEST_CA_CERT_PATH and GWPROACTOR_TEST_CA_KEY_PATH environment variables.
+
+#### Disabling TLS
+
+To disable testing of TLS, modify the the file `tests/.env-gwproactor-test` with:
+
+```
+GWCHILD_PARENT_MQTT__TLS__USE_TLS=false
+GWPARENT_CHILD_MQTT__TLS__USE_TLS=false
+```
 
 ## Installation
 

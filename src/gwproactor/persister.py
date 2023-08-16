@@ -146,7 +146,6 @@ class StubPersister(PersisterInterface):
 
 
 class SimpleDirectoryWriter(StubPersister):
-
     _base_dir: Path
 
     def __init__(

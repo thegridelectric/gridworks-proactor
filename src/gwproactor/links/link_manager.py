@@ -62,7 +62,6 @@ class LinkManagerTransition(Transition):
 
 
 class LinkManager:
-
     PERSISTER_ENCODING = "utf-8"
     publication_name: str
     _settings: ProactorSettings
@@ -159,7 +158,10 @@ class LinkManager:
         primary_peer: bool = False,
     ):
         self._mqtt_clients.add_client(
-            name, mqtt_config, upstream=upstream, primary_peer=primary_peer
+            name,
+            mqtt_config,
+            upstream=upstream,
+            primary_peer=primary_peer,
         )
         if codec is not None:
             self._mqtt_codecs[name] = codec
