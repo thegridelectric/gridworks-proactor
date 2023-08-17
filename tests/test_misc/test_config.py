@@ -2,6 +2,7 @@
 import shutil
 import ssl
 from pathlib import Path
+from typing import Any
 
 import pytest
 from pydantic import SecretStr
@@ -337,9 +338,49 @@ def test_paths_mkdirs(clean_test_env, tmp_path):  # noqa
     assert paths.log_dir.exists()
 
 
+def _assert_eq(
+    tag: str,
+    field_name: str,
+    exp: Any,
+    got: Any,
+):
+    assert exp == got, (
+        f"ERROR on field <{field_name}> for test {tag}\n"
+        f"\texp: {exp}\n"
+        f"\tgot: {got}"
+    )
+
+
+def _assert_child_paths_update(
+    child: DummyChildSettings,
+    test_name: str,
+    param_type: str,
+    certs_dir: Path | str,
+    ca_cert_path: Path | str,
+    cert_path: Path | str,
+    private_key_path: Path | str,
+):
+    tag = f"[{test_name}], with param type: {param_type}"
+    _assert_eq(tag, "certs_dir", Path(certs_dir), child.paths.certs_dir)
+    _assert_eq(
+        tag,
+        "ca_cert_path",
+        Path(ca_cert_path),
+        child.parent_mqtt.tls.paths.ca_cert_path,
+    )
+    _assert_eq(tag, "cert_path", Path(cert_path), child.parent_mqtt.tls.paths.cert_path)
+    _assert_eq(
+        tag,
+        "private_key_path",
+        Path(private_key_path),
+        child.parent_mqtt.tls.paths.private_key_path,
+    )
+
+
 def test_proactor_settings_root_validators(clean_test_env) -> None:
     clean_test_env.setenv("XDG_CONFIG_HOME", "/z")
 
+    # no paths specification
     child = DummyChildSettings()
     assert child.paths.certs_dir == Path("/z/gridworks/child/certs")
     assert child.parent_mqtt.tls.paths.ca_cert_path == Path(
@@ -352,40 +393,83 @@ def test_proactor_settings_root_validators(clean_test_env) -> None:
         "/z/gridworks/child/certs/parent_mqtt/private/parent_mqtt.pem"
     )
 
-    child = DummyChildSettings(paths=Paths())
-    assert child.paths.certs_dir == Path("/z/gridworks/child/certs")
-    assert child.parent_mqtt.tls.paths.ca_cert_path == Path(
-        "/z/gridworks/child/certs/parent_mqtt/ca.crt"
-    )
-    assert child.parent_mqtt.tls.paths.cert_path == Path(
-        "/z/gridworks/child/certs/parent_mqtt/parent_mqtt.crt"
-    )
-    assert child.parent_mqtt.tls.paths.private_key_path == Path(
-        "/z/gridworks/child/certs/parent_mqtt/private/parent_mqtt.pem"
-    )
-
-    child = DummyChildSettings(paths=Paths(name="foo"))
-    assert child.paths.certs_dir == Path("/z/gridworks/foo/certs")
-    assert child.parent_mqtt.tls.paths.ca_cert_path == Path(
-        "/z/gridworks/foo/certs/parent_mqtt/ca.crt"
-    )
-    assert child.parent_mqtt.tls.paths.cert_path == Path(
-        "/z/gridworks/foo/certs/parent_mqtt/parent_mqtt.crt"
-    )
-    assert child.parent_mqtt.tls.paths.private_key_path == Path(
-        "/z/gridworks/foo/certs/parent_mqtt/private/parent_mqtt.pem"
-    )
-
-    ca_cert_path = Path("/q/ca_cert.pem")
-    child = DummyChildSettings(
-        paths=Paths(name="foo"),
-        parent_mqtt=MQTTClient(tls=TLSInfo(paths=TLSPaths(ca_cert_path=ca_cert_path))),
-    )
-    assert child.paths.certs_dir == Path("/z/gridworks/foo/certs")
-    assert child.parent_mqtt.tls.paths.ca_cert_path == ca_cert_path
-    assert child.parent_mqtt.tls.paths.cert_path == Path(
-        "/z/gridworks/foo/certs/parent_mqtt/parent_mqtt.crt"
-    )
-    assert child.parent_mqtt.tls.paths.private_key_path == Path(
-        "/z/gridworks/foo/certs/parent_mqtt/private/parent_mqtt.pem"
-    )
+    # Test path parameter setting, using Paths objects and dicts, which happens when variables set in .env files.
+    explicit_ca_cert_path = Path("/q/ca_cert.pem")
+    for (
+        test_name,
+        certs_dir,
+        ca_cert_path,
+        cert_path,
+        private_key_path,
+        children,
+    ) in [
+        [
+            "Defaults",
+            "/z/gridworks/child/certs",
+            "/z/gridworks/child/certs/parent_mqtt/ca.crt",
+            "/z/gridworks/child/certs/parent_mqtt/parent_mqtt.crt",
+            "/z/gridworks/child/certs/parent_mqtt/private/parent_mqtt.pem",
+            [("no params", DummyChildSettings())],
+        ],
+        [
+            "Parameters set, but with defaults",
+            "/z/gridworks/child/certs",
+            "/z/gridworks/child/certs/parent_mqtt/ca.crt",
+            "/z/gridworks/child/certs/parent_mqtt/parent_mqtt.crt",
+            "/z/gridworks/child/certs/parent_mqtt/private/parent_mqtt.pem",
+            [
+                ("obj", DummyChildSettings(paths=Paths())),
+                ("dict", DummyChildSettings(paths={})),  # noqa
+            ],
+        ],
+        [
+            "Path name specified",
+            "/z/gridworks/foo/certs",
+            "/z/gridworks/foo/certs/parent_mqtt/ca.crt",
+            "/z/gridworks/foo/certs/parent_mqtt/parent_mqtt.crt",
+            "/z/gridworks/foo/certs/parent_mqtt/private/parent_mqtt.pem",
+            [
+                ("obj", DummyChildSettings(paths=Paths(name="foo"))),
+                ("dict", DummyChildSettings(paths=dict(name="foo"))),  # noqa
+            ],
+        ],
+        [
+            "Paths with name specified *and* explicit CA cert path",
+            "/z/gridworks/foo/certs",
+            explicit_ca_cert_path,
+            "/z/gridworks/foo/certs/parent_mqtt/parent_mqtt.crt",
+            "/z/gridworks/foo/certs/parent_mqtt/private/parent_mqtt.pem",
+            [
+                (
+                    "obj",
+                    DummyChildSettings(
+                        paths=Paths(name="foo"),
+                        parent_mqtt=MQTTClient(
+                            tls=TLSInfo(
+                                paths=TLSPaths(ca_cert_path=explicit_ca_cert_path)
+                            )
+                        ),
+                    ),
+                ),
+                (
+                    "dict",
+                    DummyChildSettings(
+                        paths=dict(name="foo"),  # noqa
+                        parent_mqtt=dict(  # noqa
+                            tls=dict(paths=dict(ca_cert_path=explicit_ca_cert_path))
+                        ),
+                    ),
+                ),
+            ],
+        ],
+    ]:
+        for param_type, child in children:
+            _assert_child_paths_update(
+                child=child,
+                test_name=test_name,
+                param_type=param_type,
+                certs_dir=certs_dir,
+                ca_cert_path=ca_cert_path,
+                cert_path=cert_path,
+                private_key_path=private_key_path,
+            )
