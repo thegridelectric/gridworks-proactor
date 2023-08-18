@@ -83,8 +83,8 @@ Find the path to `mosquitto.conf` in the output of:
 brew services info mosquitto -v
 ```
 
-Modify `mosquitto.conf` with the TLS configuration in [example-test-mosquitto.conf](tests/config/example-test-mosquitto.conf),
-fixing up the paths with real absolute paths to certificate, key and CA certificate files. These paths can be found with:
+Modify `mosquitto.conf` with the TLS configuration in [example-test-mosquitto.conf], fixing up the paths with real
+absolute paths to certificate, key and CA certificate files. These paths can be found with:
 
 ```shell
 gwcert ca info
@@ -203,6 +203,7 @@ This project was generated from [@cjolowicz]'s [Hypermodern Python Cookiecutter]
 [hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python
 [file an issue]: https://github.com/thegridelectric/gridworks-proactor/issues
 [pip]: https://pip.pypa.io/
+[example-test-mosquitto.conf]: https://github.com/thegridelectric/gridworks-proactor/blob/main/tests/config/example-test-mosquitto.conf
 
 <!-- github-only -->
 
