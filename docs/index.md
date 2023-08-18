@@ -5,6 +5,7 @@ end-before: <!-- github-only -->
 ```
 
 ```{toctree}
+:hidden:
 
 comm_state
 reference
