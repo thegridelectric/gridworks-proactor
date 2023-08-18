@@ -73,9 +73,9 @@ Create certificate and key for the Mosquitto MQTT broker:
 gwcert key add --dns localhost mosquitto
 ```
 
-NOTE: This command will generate a broker certificate that _only_ allow connections to `localhost`. See
-[External connections](#external-connections) below to create a broker certificate which can accept connections from
-external devices.
+- **NOTE**: This command will generate a broker certificate that _only_ allow connections to `localhost`. See
+  [External connections](#external-connections) below to create a broker certificate which can accept connections from
+  external devices.
 
 Find the path to `mosquitto.conf` in the output of:
 
