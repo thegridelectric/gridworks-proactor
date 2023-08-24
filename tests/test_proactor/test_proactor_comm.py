@@ -8,7 +8,6 @@ from gwproactor_test.dummies import DummyParentSettings
 
 
 class DummyCommTestHelper(CommTestHelper):
-
     parent_t = DummyParent
     child_t = DummyChild
     parent_settings_t = DummyParentSettings

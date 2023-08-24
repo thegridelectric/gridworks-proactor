@@ -101,6 +101,20 @@ def setup_logging(
                     base_logger.addHandler(screen_handler)
             except BaseException as e:
                 errors.append(e)
+        screen_handlers = [
+            h
+            for h in base_logger.handlers
+            if isinstance(h, logging.StreamHandler)
+            and (h.stream is sys.stderr or h.stream is sys.stdout)
+        ]
+        if len(screen_handlers) > 1:
+            raise ValueError(
+                "x More than 1 screen handlers  "
+                f"{base_logger.name}  {len(screen_handlers)}  "
+                f"\n\tstream handlers: {screen_handlers},  "
+                f"\n\tstream handlers: {[type(x) for x in screen_handlers]},  "
+                f"from all handlers {base_logger.handlers}"
+            )
         try:
             file_handler = settings.logging.file_handler.create(
                 settings.paths.log_dir, formatter

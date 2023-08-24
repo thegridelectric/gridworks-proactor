@@ -3,6 +3,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from dataclasses import field
+from pathlib import Path
 from typing import Callable
 from typing import Optional
 from typing import Type
@@ -11,6 +12,10 @@ from typing import TypeVar
 from gwproactor import Proactor
 from gwproactor import ProactorSettings
 from gwproactor import setup_logging
+from gwproactor.config import MQTTClient
+from gwproactor.config import Paths
+from gwproactor_test import copy_keys
+from gwproactor_test.certs import uses_tls
 from gwproactor_test.logger_guard import LoggerGuards
 from gwproactor_test.proactor_recorder import ProactorT
 from gwproactor_test.proactor_recorder import RecorderInterface
@@ -20,6 +25,7 @@ from gwproactor_test.proactor_recorder import make_recorder_class
 @dataclass
 class ProactorTestHelper:
     name: str
+    path_name: str
     settings: ProactorSettings
     kwargs: dict = field(default_factory=dict)
     proactor: Optional[RecorderInterface] = None
@@ -32,7 +38,6 @@ ParentSettingsT = TypeVar("ParentSettingsT", bound=ProactorSettings)
 
 
 class CommTestHelper:
-
     parent_t: Type[ProactorT]
     child_t: Type[Proactor]
     parent_settings_t: Type[ParentSettingsT]
@@ -70,18 +75,26 @@ class CommTestHelper:
         parent_on_screen: bool = False,
         child_name: str = "",
         parent_name: str = "",
+        child_path_name: str = "child",
+        parent_path_name: str = "parent",
         child_kwargs: Optional[dict] = None,
         parent_kwargs: Optional[dict] = None,
     ):
         self.setup_class()
         self.child_helper = ProactorTestHelper(
             child_name,
-            self.child_settings_t() if child_settings is None else child_settings,
+            child_path_name,
+            self.child_settings_t(paths=Paths(name=Path(child_path_name)))
+            if child_settings is None
+            else child_settings,
             dict() if child_kwargs is None else child_kwargs,
         )
         self.parent_helper = ProactorTestHelper(
             parent_name,
-            self.parent_settings_t() if parent_settings is None else parent_settings,
+            parent_path_name,
+            self.parent_settings_t(paths=Paths(name=Path(parent_path_name)))
+            if parent_settings is None
+            else parent_settings,
             dict() if parent_kwargs is None else parent_kwargs,
         )
         self.verbose = verbose
@@ -101,6 +114,8 @@ class CommTestHelper:
     def _make(
         cls, recorder_t: Callable[..., RecorderInterface], helper: ProactorTestHelper
     ) -> RecorderInterface:
+        if uses_tls(helper.settings):
+            copy_keys(helper.path_name, helper.settings)
         return recorder_t(helper.name, helper.settings, **helper.kwargs)
 
     def make_parent(self) -> RecorderInterface:
@@ -149,6 +164,37 @@ class CommTestHelper:
     def remove_parent(self) -> "CommTestHelper":
         self.parent_helper.proactor = None
         return self
+
+    @classmethod
+    def _get_clients_supporting_tls(
+        cls, settings: ProactorSettings
+    ) -> list[MQTTClient]:
+        clients = []
+        for _, v in settings._iter():  # noqa
+            if isinstance(v, MQTTClient):
+                clients.append(v)
+        return clients
+
+    def _get_child_clients_supporting_tls(self) -> list[MQTTClient]:
+        """Overide to filter which MQTT clients of ChildSettingsT are treated as supporting TLS"""
+        return self._get_clients_supporting_tls(self.child_helper.settings)
+
+    def _get_parent_clients_supporting_tls(self) -> list[MQTTClient]:
+        """Overide to filter which MQTT clients of ParentSettingsT are treated as supporting TLS"""
+        return self._get_clients_supporting_tls(self.parent_helper.settings)
+
+    @classmethod
+    def _set_settings_use_tls(cls, use_tls: bool, clients: list[MQTTClient]) -> None:
+        for client in clients:
+            client.tls.use_tls = use_tls
+
+    def set_use_tls(self, use_tls: bool) -> None:
+        """Set MQTTClients which support TLS in parent and child settings to use TLS per use_tls. Clients supporting TLS
+        is determined by _get_child_clients_supporting_tls() and _get_parent_clients_supporting_tls() which may be
+        overriden in derived class.
+        """
+        self._set_settings_use_tls(use_tls, self._get_child_clients_supporting_tls())
+        self._set_settings_use_tls(use_tls, self._get_parent_clients_supporting_tls())
 
     def setup_logging(self):
         self.child_helper.settings.paths.mkdirs(parents=True)

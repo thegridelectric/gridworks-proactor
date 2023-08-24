@@ -1,4 +1,5 @@
 import logging
+import sys
 from typing import Optional
 from typing import Sequence
 
@@ -6,7 +7,6 @@ import pytest
 
 from gwproactor.config import DEFAULT_BASE_NAME
 from gwproactor.config import LoggerLevels
-from gwproactor.config import LoggingSettings
 
 
 class LoggerGuard:
@@ -23,6 +23,19 @@ class LoggerGuard:
         self.filters = set(logger.filters)
 
     def restore(self):
+        screen_handlers = [
+            h
+            for h in self.logger.handlers
+            if isinstance(h, logging.StreamHandler)
+            and (h.stream is sys.stderr or h.stream is sys.stdout)
+        ]
+        if len(screen_handlers) > 1:
+            raise ValueError(
+                "More than 1 screen handlers  "
+                f"{self.logger.name}  {len(screen_handlers)}  "
+                f"stream handlers: {screen_handlers},  "
+                f"from all handlers {self.logger.handlers}"
+            )
         self.logger.setLevel(self.level)
         self.logger.propagate = self.propagate
         curr_handlers = set(self.logger.handlers)
@@ -80,6 +93,13 @@ class LoggerGuards:
 
 @pytest.fixture
 def restore_loggers() -> LoggerGuards:
+    num_root_handlers = len(logging.getLogger().handlers)
     guards = LoggerGuards()
     yield guards
     guards.restore()
+    new_num_root_handlers = len(logging.getLogger().handlers)
+    if new_num_root_handlers != num_root_handlers:
+        raise ValueError(
+            f"ARRG. root handlers: {num_root_handlers} -> {new_num_root_handlers}  handlers:\n\t"
+            f"{logging.getLogger().handlers}"
+        )

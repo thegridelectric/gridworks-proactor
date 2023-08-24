@@ -22,7 +22,6 @@ class _MonitoredName(MonitoredName):
 
 
 class WatchdogManager(Communicator, Runnable):
-
     RUNNING_AS_SERIVCE_ENV_NAME = "GRIDWORKS_SCADA_RUNNING_AS_SERVICE"
 
     _watchdog_task: Optional[asyncio.Task] = None

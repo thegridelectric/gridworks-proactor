@@ -53,7 +53,6 @@ from gwproactor.watchdog import WatchdogManager
 
 
 class Proactor(ServicesInterface, Runnable):
-
     _name: str
     _settings: ProactorSettings
     _logger: ProactorLogger
