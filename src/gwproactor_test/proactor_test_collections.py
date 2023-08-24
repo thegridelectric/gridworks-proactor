@@ -1163,6 +1163,14 @@ class ProactorCommTests:
                 err_str_f=h.summary_str,
             )
 
+            # Wait for reuploading to complete
+            await await_for(
+                lambda: not child._links.reuploading(),
+                1,
+                "ERROR waiting for re-upload to complete",
+                err_str_f=h.summary_str,
+            )
+
             # All events should have been reuploaded.
             assert child._links.num_reupload_pending == 0
             assert child._links.num_reuploaded_unacked == 0
