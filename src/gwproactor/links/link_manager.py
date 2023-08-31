@@ -42,6 +42,7 @@ from gwproactor.links.message_times import MessageTimes
 from gwproactor.links.mqtt import QOS
 from gwproactor.links.mqtt import MQTTClients
 from gwproactor.links.mqtt import MQTTClientWrapper
+from gwproactor.links.reuploads import Reuploads
 from gwproactor.links.timer_interface import TimerManagerInterface
 from gwproactor.logger import ProactorLogger
 from gwproactor.message import MQTTConnectFailPayload
@@ -68,6 +69,7 @@ class LinkManager:
     _logger: ProactorLogger
     _stats: ProactorStats
     _event_persister: PersisterInterface
+    _reuploads: Reuploads
     _mqtt_clients: MQTTClients
     _mqtt_codecs: dict[str, MQTTCodec]
     _states: LinkStates
@@ -89,6 +91,11 @@ class LinkManager:
         self._logger = logger
         self._stats = stats
         self._event_persister = event_persister
+        self._reuploads = Reuploads(
+            self._event_persister,
+            self._logger,
+            self._settings.num_initial_event_reuploads,
+        )
         self._mqtt_clients = MQTTClients()
         self._mqtt_codecs = dict()
         self._states = LinkStates()
@@ -104,6 +111,24 @@ class LinkManager:
     @property
     def primary_peer_client(self) -> str:
         return self._mqtt_clients.primary_peer_client
+
+    @property
+    def num_pending(self) -> int:
+        return self._event_persister.num_pending
+
+    @property
+    def num_reupload_pending(self) -> int:
+        return self._reuploads.num_reupload_pending
+
+    @property
+    def num_reuploaded_unacked(self) -> int:
+        return self._reuploads.num_reuploaded_unacked
+
+    def reuploading(self) -> bool:
+        return self._reuploads.reuploading()
+
+    def num_acks(self, link_name: str) -> int:
+        return self._acks.num_acks(link_name)
 
     def subscribed(self, link_name: str) -> bool:
         return self._mqtt_clients.subscribed(link_name)
@@ -189,7 +214,11 @@ class LinkManager:
         topic = message.mqtt_topic()
         payload = self._mqtt_codecs[client].encode(message)
         self._logger.message_summary(
-            "OUT mqtt    ", message.Header.Src, topic, message.Payload
+            "OUT mqtt    ",
+            message.Header.Src,
+            topic,
+            message.Payload,
+            message_id=message.Header.MessageId,
         )
         if message.Header.AckRequired:
             self._acks.start_ack_timer(
@@ -223,14 +252,40 @@ class LinkManager:
             event.json(sort_keys=True, indent=2).encode(self.PERSISTER_ENCODING),
         )
 
-    def upload_pending_events(self) -> Result[bool, BaseException]:
+    def _start_reupload(self) -> None:
+        self._logger.path("++_start_reupload reuploading: %s", self.reuploading())
+        path_dbg = 0
+        if not self._reuploads.reuploading():
+            path_dbg |= 0x00000001
+            events_to_reupload = self._reuploads.start_reupload()
+            self._reupload_events(events_to_reupload)
+            if self._logger.isEnabledFor(logging.INFO):
+                path_dbg |= 0x00000002
+                if self._reuploads.reuploading():
+                    path_dbg |= 0x00000004
+                    state_str = f"{self._reuploads.num_reupload_pending} reupload events pending."
+                else:
+                    path_dbg |= 0x00000008
+                    state_str = "reupload complete."
+                self._logger.info(
+                    f"_start_reupload: reuploaded {len(events_to_reupload)} events. "
+                    f"{state_str} "
+                    f"Total pending events: {self._event_persister.num_pending}."
+                )
+        self._logger.path(
+            "--_start_reupload reuploading: %s  path:0x%08X",
+            self.reuploading(),
+            path_dbg,
+        )
+
+    def _reupload_events(self, event_ids: list[str]) -> Result[bool, BaseException]:
         errors = []
-        for message_id in self._event_persister.pending():
+        for message_id in event_ids:
             match self._event_persister.retrieve(message_id):
                 case Ok(event_bytes):
                     if event_bytes is None:
                         errors.append(
-                            UIDMissingWarning("_upload_pending_events", uid=message_id)
+                            UIDMissingWarning("reupload_events", uid=message_id)
                         )
                     else:
                         try:
@@ -240,9 +295,7 @@ class LinkManager:
                         except BaseException as e:
                             errors.append(e)
                             errors.append(
-                                JSONDecodingError(
-                                    "_upload_pending_events", uid=message_id
-                                )
+                                JSONDecodingError("reupload_events", uid=message_id)
                             )
                         else:
                             self.publish_upstream(event, AckRequired=True)
@@ -297,6 +350,7 @@ class LinkManager:
                 result.value.canceled_acks = self._acks.cancel_ack_timers(
                     message.Payload.client_name
                 )
+                self._reuploads.clear()
         else:
             result = state_result
         return result
@@ -334,6 +388,7 @@ class LinkManager:
             path_dbg |= 0x00000001
             if result.value.deactivated():
                 path_dbg |= 0x00000002
+                self._reuploads.clear()
                 self.generate_event(
                     ResponseTimeoutEvent(PeerName=result.value.link_name)
                 )
@@ -353,6 +408,20 @@ class LinkManager:
         if wait_info is not None and message_id in self._event_persister:
             path_dbg |= 0x00000001
             self._event_persister.clear(message_id)
+            if self._reuploads.reuploading() and link_name == self.upstream_client:
+                path_dbg |= 0x00000002
+                reupload_now = self._reuploads.process_ack_for_reupload(message_id)
+                if reupload_now:
+                    path_dbg |= 0x00000004
+                    self._reupload_events(reupload_now)
+                self._logger.path(
+                    "events pending: %d  reupload pending: %d",
+                    self._event_persister.num_pending,
+                    self._reuploads.num_reupload_pending,
+                )
+                if not self._reuploads.reuploading():
+                    path_dbg |= 0x00000008
+                    self._logger.info("reupload complete.")
         self._logger.path("--LinkManager.process_ack path:0x%08X", path_dbg)
 
     def send_ack(self, link_name: str, message: Message[Any]) -> None:
@@ -390,8 +459,9 @@ class LinkManager:
         self._message_times.update_recv(link_name)
 
     def _recv_activated(self, transition: Transition):
+        if transition.link_name == self.upstream_client:
+            self._start_reupload()
         self.generate_event(PeerActiveEvent(PeerName=transition.link_name))
-        self.upload_pending_events()
 
     def process_mqtt_suback(
         self, message: Message[MQTTSubackPayload]
@@ -411,7 +481,6 @@ class LinkManager:
                 self._logger.comm_event(str(state_result.value))
             if state_result.value.send_activated():
                 path_dbg |= 0x00000004
-                self.upload_pending_events()
                 self.generate_event(
                     MQTTFullySubscribedEvent(PeerName=message.Payload.client_name)
                 )

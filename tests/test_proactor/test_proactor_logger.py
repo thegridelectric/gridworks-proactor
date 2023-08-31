@@ -30,7 +30,12 @@ def test_proactor_logger(caplog):
         assert logger.comm_event_enabled
 
     errors = []
-    setup_logging(argparse.Namespace(verbose=True), settings, errors=errors)
+    setup_logging(
+        argparse.Namespace(verbose=True),
+        settings,
+        errors=errors,
+        add_screen_handler=False,
+    )
     assert len(errors) == 0
     logger = ProactorLogger(**settings.logging.qualified_logger_names())
     assert logger.isEnabledFor(logging.INFO)

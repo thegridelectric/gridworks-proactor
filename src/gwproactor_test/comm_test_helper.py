@@ -259,3 +259,11 @@ class CommTestHelper:
                 self.parent_helper.settings.paths.log_dir,
             )
         self.logger_guards.restore()
+
+    def summary_str(self) -> str:
+        return (
+            "CHILD:\n"
+            f"{self.child.summary_str()}\n"
+            "PARENT:\n"
+            f"{self.parent.summary_str()}"
+        )

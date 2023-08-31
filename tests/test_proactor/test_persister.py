@@ -1,5 +1,6 @@
 import json
 import shutil
+import time
 from pathlib import Path
 from typing import Optional
 from typing import Union
@@ -9,6 +10,7 @@ import pendulum
 from gwproto.messages import ProblemEvent
 from result import Result
 
+from gwproactor import ExternalWatchdogCommandBuilder
 from gwproactor import ProactorSettings
 from gwproactor import Problems
 from gwproactor.persister import FileExistedWarning
@@ -22,6 +24,42 @@ from gwproactor.persister import TimedRollingFilePersister
 from gwproactor.persister import TrimFailed
 from gwproactor.persister import UIDExistedWarning
 from gwproactor.persister import UIDMissingWarning
+from gwproactor.persister import _PersistedItem  # noqa
+
+
+class PatWatchdogWithFile(ExternalWatchdogCommandBuilder):
+    pat_dir: Optional[Path] = None
+    """Explicitly set this path on the class before running tests"""
+
+    @classmethod
+    def default_pat_args(cls, pid: Optional[int] = None) -> list[str]:
+        pat_code = "from pathlib import Path; import time; p = Path(f'"
+        pat_code += str(cls.pat_dir / "pat")
+        pat_code += "{time.time()}.txt'); p.open('w')"
+        return ["python", "-c", pat_code]
+
+
+class SlowIndexer(TimedRollingFilePersister):
+    SLOW_REINDEX_PAT_SECONDS: float = 0.1
+
+    def __init__(
+        self,
+        base_dir: Path | str,
+        max_bytes: int = TimedRollingFilePersister.DEFAULT_MAX_BYTES,
+        pat_watchdog_args: Optional[list[str]] = None,
+    ):
+        super().__init__(
+            base_dir=base_dir,
+            max_bytes=max_bytes,
+            pat_watchdog_args=pat_watchdog_args,
+            reindex_pat_seconds=self.SLOW_REINDEX_PAT_SECONDS,
+        )
+
+    @classmethod
+    def _persisted_item_from_file_path(cls, filepath: Path) -> Optional[_PersistedItem]:
+        sleep_time = cls.SLOW_REINDEX_PAT_SECONDS * 1.1
+        time.sleep(sleep_time)
+        return super()._persisted_item_from_file_path(filepath)
 
 
 def test_problems():
@@ -885,3 +923,56 @@ def test_persister_problems():
 
     finally:
         pendulum.set_test_now()
+
+
+def test_reindex_pat(tmp_path, monkeypatch):
+    PatWatchdogWithFile.pat_dir = tmp_path / "pats"
+    PatWatchdogWithFile.pat_dir.mkdir(parents=True)
+    service_name = "foo"
+    monkeypatch.setenv(PatWatchdogWithFile.service_variable_name(service_name), "1")
+    args = PatWatchdogWithFile.pat_args(service_name=service_name)
+    assert len(args) > 0
+
+    def _num_pats() -> int:
+        return len([x for x in PatWatchdogWithFile.pat_dir.glob("*") if x.is_file()])
+
+    event_dir = tmp_path / "events"
+    event_dir.mkdir(parents=True)
+    events = [
+        ProblemEvent(
+            Src="foo",
+            ProblemType=gwproto.messages.Problems.error,
+            Summary="Problems, I've got a few",
+        ),
+        ProblemEvent(
+            Src="foo",
+            ProblemType=gwproto.messages.Problems.error,
+            Summary="maybe not great",
+        ),
+        ProblemEvent(
+            Src="foo",
+            ProblemType=gwproto.messages.Problems.error,
+            Summary="Don't worry, be happy",
+        ),
+    ]
+
+    # construction
+    p = SlowIndexer(event_dir, pat_watchdog_args=args)
+    assert_contents(p, num_pending=0)
+    assert _num_pats() == 0
+
+    # explicit empty reindex
+    assert p.reindex().is_ok()
+    assert_contents(p, num_pending=0)
+    assert _num_pats() == 0
+
+    # add events
+    for i, event in enumerate(events):
+        result = p.persist(event.MessageId, event.json().encode())
+        assert result.is_ok()
+        assert_contents(p, num_pending=i + 1)
+
+    # reindex
+    assert p.reindex().is_ok()
+    assert_contents(p, num_pending=len(events))
+    assert _num_pats() >= (len(events) - 1)
