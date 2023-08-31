@@ -3,7 +3,7 @@ from gwproactor.persister import PersisterInterface
 
 
 class Reuploads:
-    NUM_INITIAL_EVENTS: int = 100
+    NUM_INITIAL_EVENTS: int = 5
 
     _event_persister: PersisterInterface
     _reupload_pending: dict[str, None]

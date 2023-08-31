@@ -388,6 +388,7 @@ class LinkManager:
             path_dbg |= 0x00000001
             if result.value.deactivated():
                 path_dbg |= 0x00000002
+                self._reuploads.clear()
                 self.generate_event(
                     ResponseTimeoutEvent(PeerName=result.value.link_name)
                 )

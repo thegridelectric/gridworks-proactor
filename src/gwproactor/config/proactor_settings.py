@@ -10,7 +10,7 @@ from gwproactor.config.paths import Paths
 
 MQTT_LINK_POLL_SECONDS = 60.0
 ACK_TIMEOUT_SECONDS = 5.0
-NUM_INITIAL_EVENT_REUPLOADS: int = 100
+NUM_INITIAL_EVENT_REUPLOADS: int = 5
 
 
 class ProactorSettings(BaseSettings):
