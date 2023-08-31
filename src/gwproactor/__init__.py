@@ -16,6 +16,7 @@ Particular questions:
 """
 
 from gwproactor.config import ProactorSettings
+from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
 from gwproactor.links.mqtt import QOS
 from gwproactor.links.mqtt import MQTTClients
 from gwproactor.links.mqtt import MQTTClientWrapper
@@ -40,6 +41,7 @@ __all__ = [
     "AsyncQueueWriter",
     "Communicator",
     "CommunicatorInterface",
+    "ExternalWatchdogCommandBuilder",
     "format_exceptions",
     "MonitoredName",
     "MQTTClients",

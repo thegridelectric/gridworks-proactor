@@ -23,6 +23,8 @@ from result import Ok
 from result import Result
 
 from gwproactor import ProactorSettings
+from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
+from gwproactor.external_watchdog import SystemDWatchdogCommandBuilder
 from gwproactor.links import AckWaitInfo
 from gwproactor.links import AsyncioTimerManager
 from gwproactor.links import LinkManager
@@ -84,7 +86,7 @@ class Proactor(ServicesInterface, Runnable):
         self._communicators = dict()
         self._tasks = []
         self._stop_requested = False
-        self._watchdog = WatchdogManager(10, self)
+        self._watchdog = WatchdogManager(9, self)
         self.add_communicator(self._watchdog)
 
     @classmethod
@@ -135,6 +137,11 @@ class Proactor(ServicesInterface, Runnable):
     @property
     def stats(self) -> ProactorStats:
         return self._stats
+
+    def get_external_watchdog_builder_class(
+        self,
+    ) -> type[ExternalWatchdogCommandBuilder]:
+        return SystemDWatchdogCommandBuilder
 
     @property
     def upstream_client(self) -> str:

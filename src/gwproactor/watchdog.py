@@ -1,5 +1,4 @@
 import asyncio
-import os
 import subprocess
 import time
 from typing import Optional
@@ -22,8 +21,6 @@ class _MonitoredName(MonitoredName):
 
 
 class WatchdogManager(Communicator, Runnable):
-    RUNNING_AS_SERIVCE_ENV_NAME = "GRIDWORKS_SCADA_RUNNING_AS_SERVICE"
-
     _watchdog_task: Optional[asyncio.Task] = None
     _seconds_per_pat: float
     _monitored_names: dict[str, _MonitoredName]
@@ -38,13 +35,12 @@ class WatchdogManager(Communicator, Runnable):
 
     def start(self):
         if self._watchdog_task is None:
-            if os.getenv(self.RUNNING_AS_SERIVCE_ENV_NAME, "").lower() in ["1", "true"]:
-                self._pat_external_watchdog_process_args = [
-                    "systemd-notify",
-                    f"--pid={os.getpid()}",
-                    "WATCHDOG=1",
-                ]
-            self.lg.lifecycle(
+            self._pat_external_watchdog_process_args = (
+                self._services.get_external_watchdog_builder_class().pat_args(
+                    str(self._services.settings.paths.name),
+                )
+            )
+            self.lg.info(
                 f"WatchdogManager: [{' '.join(self._pat_external_watchdog_process_args)}]"
             )
             now = time.time()
@@ -104,13 +100,13 @@ class WatchdogManager(Communicator, Runnable):
             monitored.name, monitored.timeout_seconds
         )
 
-    def _timeout_expired(self) -> Optional[_MonitoredName]:
-        # self.lg.path("++timeout_expired")
-        path_dbg = 0
+    def _check_for_timeout_expired(self) -> Optional[_MonitoredName]:
+        # self.lg.path("++_check_for_timeout_expired")
+        # path_dbg = 0
         expired: Optional[_MonitoredName] = None
         now = time.time()
         for monitored in self._monitored_names.values():
-            path_dbg |= 0x0000001
+            # path_dbg |= 0x0000001
             required_pat_time = monitored.last_pat + monitored.timeout_seconds
             # self.lg.info(
             #     f"  {monitored.name:50s}  "
@@ -121,14 +117,14 @@ class WatchdogManager(Communicator, Runnable):
             #     f"required_pat_time < now ? {int(required_pat_time < now)}"
             # )
             if required_pat_time < now:
-                path_dbg |= 0x0000002
+                # path_dbg |= 0x0000002
                 expired = monitored
                 break
-        # self.lg.path(f"--timeout_expired: {int(expired is not None)}  0x{path_dbg:08X}")
+        # self.lg.path(f"--_check_for_timeout_expired: count:{int(expired is not None)}  0x{path_dbg:08X}")
         return expired
 
     async def _check_pats(self) -> None:
-        while (expired := self._timeout_expired()) is None:
+        while (expired := self._check_for_timeout_expired()) is None:
             self._send(PatExternalWatchdogMessage())
             await asyncio.sleep(self._seconds_per_pat)
         self._send(
