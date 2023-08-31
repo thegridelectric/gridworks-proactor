@@ -105,7 +105,12 @@ def test_rollover():
         )
     )
     errors = []
-    setup_logging(argparse.Namespace(verbose=True), settings, errors=errors)
+    setup_logging(
+        argparse.Namespace(verbose=True),
+        settings,
+        errors=errors,
+        add_screen_handler=False,
+    )
     assert len(errors) == 0
     assert _log_dir_size() == 0
     logger = logging.getLogger("gridworks.general")

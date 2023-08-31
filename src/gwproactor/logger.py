@@ -10,7 +10,7 @@ class MessageSummary:
 
     DEFAULT_FORMAT = (
         "  {direction:15s}  {actor_alias:40s}  {broker_flag}  {arrow:2s}  {topic:90s}"
-        "  {payload_type}"
+        "  {payload_type:40s}  {message_id}"
     )
 
     @classmethod
@@ -23,6 +23,7 @@ class MessageSummary:
         broker_flag: str = " ",
         timestamp: Optional[pendulum.datetime] = None,
         include_timestamp: bool = False,
+        message_id: str = "",
     ) -> str:
         """
         Formats a single line summary of message receipt/publication.
@@ -35,6 +36,7 @@ class MessageSummary:
             broker_flag: "*" for the "gw" broker.
             timestamp: pendulum.now("UTC") by default.
             include_timestamp: whether timestamp is prepended to output.
+            message_id: The message id. Ignored if empty.
 
         Returns:
             Formatted string.
@@ -59,6 +61,9 @@ class MessageSummary:
                 payload_str = payload_object.__class__.__name__
             else:
                 payload_str = type(payload_object)
+            if message_id:
+                if len(message_id) > 11:
+                    message_id = f"{message_id[:8]}..."
             return format_.format(
                 timestamp=timestamp.isoformat(),
                 direction=direction,
@@ -67,6 +72,7 @@ class MessageSummary:
                 arrow=arrow,
                 topic=f"[{topic}]",
                 payload_type=payload_str,
+                message_id=message_id,
             )
         except Exception as e:
             print(f"ouch got {e}")
@@ -123,6 +129,7 @@ class ProactorLogger(logging.LoggerAdapter):
         payload_object: Any = None,
         broker_flag: str = " ",
         timestamp: Optional[pendulum.datetime] = None,
+        message_id: str = "",
     ) -> None:
         if self.message_summary_logger.isEnabledFor(logging.INFO):
             self.message_summary_logger.info(
@@ -133,6 +140,7 @@ class ProactorLogger(logging.LoggerAdapter):
                     payload_object=payload_object,
                     broker_flag=broker_flag,
                     timestamp=timestamp,
+                    message_id=message_id,
                 )
             )
 

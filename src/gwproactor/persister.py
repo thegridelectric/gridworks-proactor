@@ -1,6 +1,8 @@
 import abc
 import re
 import shutil
+import subprocess
+import time
 from abc import abstractmethod
 from pathlib import Path
 from typing import NamedTuple
@@ -188,17 +190,28 @@ class SimpleDirectoryWriter(StubPersister):
 class TimedRollingFilePersister(PersisterInterface):
     DEFAULT_MAX_BYTES: int = 500 * 1024 * 1024
     FILENAME_RGX: re.Pattern = re.compile(r"(?P<dt>.*)\.uid\[(?P<uid>.*)].json$")
+    REINDEX_PAT_SECONDS = 1.0
 
     _base_dir: Path
     _max_bytes: int = DEFAULT_MAX_BYTES
     _pending: dict[str, Path]
     _curr_dir: Path
     _curr_bytes: int
+    _pat_watchdog_args: Optional[list[str]] = None
+    _reindex_pat_seconds: float = REINDEX_PAT_SECONDS
 
-    def __init__(self, base_dir: Path | str, max_bytes: int = DEFAULT_MAX_BYTES):
+    def __init__(
+        self,
+        base_dir: Path | str,
+        max_bytes: int = DEFAULT_MAX_BYTES,
+        pat_watchdog_args: Optional[list[str]] = None,
+        reindex_pat_seconds=REINDEX_PAT_SECONDS,
+    ):
         self._base_dir = Path(base_dir).resolve()
         self._max_bytes = max_bytes
         self._curr_dir = self._today_dir()
+        self._pat_watchdog_args = pat_watchdog_args
+        self._reindex_pat_seconds = reindex_pat_seconds
         self.reindex()
 
     @property
@@ -365,11 +378,17 @@ class TimedRollingFilePersister(PersisterInterface):
         problems = Problems()
         self._curr_bytes = 0
         paths: list[_PersistedItem] = []
+        last_pat = time.time()
         for base_dir_entry in self._base_dir.iterdir():
             # noinspection PyBroadException
             try:
                 if base_dir_entry.is_dir() and self._is_iso_parseable(base_dir_entry):
                     for day_dir_entry in base_dir_entry.iterdir():
+                        if self._pat_watchdog_args is not None:
+                            now = time.time()
+                            if now > last_pat + self._reindex_pat_seconds:
+                                last_pat = now
+                                subprocess.run(self._pat_watchdog_args, check=True)
                         # noinspection PyBroadException
                         try:
                             if persisted_item := self._persisted_item_from_file_path(

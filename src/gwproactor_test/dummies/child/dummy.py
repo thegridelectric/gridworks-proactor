@@ -7,6 +7,7 @@ from gwproto import MQTTTopic
 from gwproto import create_message_payload_discriminator
 
 from gwproactor import ProactorSettings
+from gwproactor.external_watchdog import SystemDWatchdogCommandBuilder
 from gwproactor.links import QOS
 from gwproactor.persister import TimedRollingFilePersister
 from gwproactor.proactor_implementation import Proactor
@@ -70,7 +71,10 @@ class DummyChild(Proactor):
     def make_event_persister(
         cls, settings: ProactorSettings
     ) -> TimedRollingFilePersister:
-        return TimedRollingFilePersister(settings.paths.event_dir)
+        return TimedRollingFilePersister(
+            settings.paths.event_dir,
+            pat_watchdog_args=SystemDWatchdogCommandBuilder.default_pat_args(),
+        )
 
     @property
     def publication_name(self) -> str:

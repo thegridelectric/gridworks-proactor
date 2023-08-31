@@ -14,6 +14,7 @@ from result import Result
 
 from gwproactor import ProactorLogger
 from gwproactor import ProactorSettings
+from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
 from gwproactor.message import Message
 from gwproactor.stats import ProactorStats
 
@@ -135,4 +136,10 @@ class ServicesInterface(CommunicatorInterface):
     @property
     @abstractmethod
     def stats(self) -> ProactorStats:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_external_watchdog_builder_class(
+        self,
+    ) -> type[ExternalWatchdogCommandBuilder]:
         raise NotImplementedError

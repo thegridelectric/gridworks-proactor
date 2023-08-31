@@ -20,6 +20,7 @@ from gwproactor.links.mqtt import QOS
 from gwproactor.links.mqtt import MQTTClients
 from gwproactor.links.mqtt import MQTTClientWrapper
 from gwproactor.links.mqtt import Subscription
+from gwproactor.links.reuploads import Reuploads
 from gwproactor.links.timer_interface import TimerManagerInterface
 
 
@@ -45,6 +46,7 @@ __all__ = [
     "MQTTClients",
     "MQTTClientWrapper",
     "QOS",
+    "Reuploads",
     "Subscription",
     "TimerManagerInterface",
 ]

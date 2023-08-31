@@ -86,6 +86,7 @@ def setup_logging(
             base_logger.propagate = False
         if add_screen_handler:
             try:
+                # try not to add more than one screen handler.
                 if not any(
                     [
                         h

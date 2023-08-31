@@ -108,6 +108,18 @@ class RecorderInterface(ServicesInterface, Runnable):
     def mqtt_subscriptions(self, client_name: str) -> list[str]:
         ...
 
+    @abstractmethod
+    def disable_derived_events(self) -> None:
+        ...
+
+    @abstractmethod
+    def enable_derived_events(self) -> None:
+        ...
+
+    @abstractmethod
+    def mqtt_quiescent(self) -> bool:
+        ...
+
 
 @dataclass
 class _PausedAck:
@@ -137,13 +149,32 @@ class RecorderLinks(LinkManager):
             # noinspection PyProtectedMember
             return super().publish_message(client, message, qos=qos, context=context)
 
-    def release_acks(self, clear: bool = False):
-        self.acks_paused = False
-        needs_ack = self.needs_ack
-        self.needs_ack = []
+    def release_acks(self, clear: bool = False, num_to_release: int = -1) -> int:
+        # self._logger.info(
+        #     f"++release_acks: clear:{clear}  num_to_release:{num_to_release}"
+        # )
+        # path_dbg = 0
+        if clear or num_to_release < 1:
+            # path_dbg |= 0x00000001
+            self.acks_paused = False
+            needs_ack = self.needs_ack
+            self.needs_ack = []
+        else:
+            # path_dbg |= 0x00000002
+            num_to_release = min(num_to_release, len(self.needs_ack))
+            needs_ack = self.needs_ack[:num_to_release]
+            self.needs_ack = self.needs_ack[num_to_release:]
+            # self._logger.info(f"needs_ack: {needs_ack}")
+            # self._logger.info(f"self.needs_ack: {self.needs_ack}")
         if not clear:
+            # path_dbg |= 0x00000004
             for paused_ack in needs_ack:
-                self.publish_message(**dataclasses.asdict(paused_ack))
+                # path_dbg |= 0x00000008
+                super().publish_message(**dataclasses.asdict(paused_ack))
+        # self._logger.info(
+        #     f"--release_acks: clear:{clear}  num_to_release:{num_to_release}  path:0x{path_dbg:08X}"
+        # )
+        return len(needs_ack)
 
     def generate_event(self, event: EventT) -> None:
         if isinstance(event, CommEvent):
@@ -209,8 +240,8 @@ def make_recorder_class(
         def pause_acks(self):
             self._links.acks_paused = True
 
-        def release_acks(self, clear: bool = False):
-            self._links.release_acks(clear)
+        def release_acks(self, clear: bool = False, num_to_release: int = -1) -> int:
+            return self._links.release_acks(clear, num_to_release=num_to_release)
 
         def set_ack_timeout_seconds(self, delay: float) -> None:
             self._links._acks._default_delay_seconds = delay  # noqa
@@ -223,18 +254,26 @@ def make_recorder_class(
                 # noinspection PyProtectedMember
                 super()._process_mqtt_message(message)
 
-        def summary_str(self: ProactorT):
+        def summary_str(self: ProactorT) -> str:
             s = str(self.stats)
-            s += f"\nsubacks_paused: {self.subacks_paused}  pending_subacks: {len(self.pending_subacks)}\n"
-            s += "Link states:\n"
+            s += "\nLink states:\n"
             for link_name in self.stats.links:
                 s += f"  {link_name:10s}  {self._links.link_state(link_name).value}\n"
+            s += "Pending acks:\n"
+            for link_name in self.stats.links:
+                s += f"  {link_name:10s}  {self._links.num_acks(link_name):3d}\n"
+            s += (
+                f"pending events: {self._links.num_pending}  "
+                f"pending upload events: {self._links.num_reupload_pending}  "
+                f"reuploading: {self._links.reuploading()}\n"
+            )
+            s += f"subacks_paused: {self.subacks_paused}  pending_subacks: {len(self.pending_subacks)}\n"
             return s
 
-        def summarize(self: ProactorT):
+        def summarize(self: ProactorT) -> None:
             self._logger.info(self.summary_str())
 
-        def ping_peer(self):
+        def ping_peer(self) -> None:
             self._links.publish_message(
                 self.primary_peer_client, PingMessage(Src=self.publication_name)
             )
@@ -285,5 +324,20 @@ def make_recorder_class(
                 case _:
                     # noinspection PyProtectedMember
                     super()._derived_process_message(message)
+
+        def mqtt_quiescent(self) -> bool:
+            if hasattr(super(), "mqtt_quiescent"):
+                return getattr(super(), "mqtt_quiescent")()
+            return self._links.link(self.upstream_client).active_for_send()
+
+        def _call_super_if_present(self, function_name: str) -> None:
+            if hasattr(super(), function_name):
+                getattr(super(), function_name)()
+
+        def disable_derived_events(self) -> None:
+            self._call_super_if_present("disable_dervived_events")
+
+        def enable_derived_events(self) -> None:
+            self._call_super_if_present("enable_dervived_events")
 
     return Recorder
