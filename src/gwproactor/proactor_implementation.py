@@ -3,6 +3,7 @@
 import asyncio
 import sys
 import traceback
+import uuid
 from typing import Any
 from typing import Awaitable
 from typing import Dict
@@ -12,6 +13,8 @@ from typing import Optional
 from typing import Sequence
 
 import gwproto
+from gwproto.data_classes.hardware_layout import HardwareLayout
+from gwproto.data_classes.sh_node import ShNode
 from gwproto.messages import Ack
 from gwproto.messages import EventBase
 from gwproto.messages import EventT
@@ -25,6 +28,7 @@ from result import Result
 from gwproactor import ProactorSettings
 from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
 from gwproactor.external_watchdog import SystemDWatchdogCommandBuilder
+from gwproactor.io_loop import IOLoop
 from gwproactor.links import AckWaitInfo
 from gwproactor.links import AsyncioTimerManager
 from gwproactor.links import LinkManager
@@ -46,6 +50,7 @@ from gwproactor.message import Shutdown
 from gwproactor.persister import PersisterInterface
 from gwproactor.persister import StubPersister
 from gwproactor.proactor_interface import CommunicatorInterface
+from gwproactor.proactor_interface import IOLoopInterface
 from gwproactor.proactor_interface import MonitoredName
 from gwproactor.proactor_interface import Runnable
 from gwproactor.proactor_interface import ServicesInterface
@@ -55,8 +60,11 @@ from gwproactor.watchdog import WatchdogManager
 
 
 class Proactor(ServicesInterface, Runnable):
+
     _name: str
     _settings: ProactorSettings
+    _node: ShNode
+    _layout: HardwareLayout
     _logger: ProactorLogger
     _stats: ProactorStats
     _event_persister: PersisterInterface
@@ -66,11 +74,33 @@ class Proactor(ServicesInterface, Runnable):
     _communicators: Dict[str, CommunicatorInterface]
     _stop_requested: bool
     _tasks: List[asyncio.Task]
+    _ioloop: IOLoop
     _watchdog: WatchdogManager
 
-    def __init__(self, name: str, settings: ProactorSettings):
+    def __init__(
+        self,
+        name: str,
+        settings: ProactorSettings,
+        hardware_layout: Optional[HardwareLayout] = None,
+    ):
         self._name = name
         self._settings = settings
+        if hardware_layout is None:
+            hardware_layout = HardwareLayout(
+                dict(
+                    ShNodes=[
+                        dict(
+                            ShNodeId=str(uuid.uuid4()),
+                            Alias=self._name,
+                            ActorClassGtEnumSymbol="00000000",
+                            RoleGtEnumSymbol="00000000",
+                            TypeName="spaceheat.node.gt",
+                        )
+                    ]
+                )
+            )
+        self._layout = hardware_layout
+        self._node = self._layout.node(name)
         self._logger = ProactorLogger(**settings.logging.qualified_logger_names())
         self._stats = self.make_stats()
         self._event_persister = self.make_event_persister(settings)
@@ -86,6 +116,8 @@ class Proactor(ServicesInterface, Runnable):
         self._communicators = dict()
         self._tasks = []
         self._stop_requested = False
+        self._ioloop = IOLoop(self)
+        self.add_communicator(self._ioloop)
         self._watchdog = WatchdogManager(9, self)
         self.add_communicator(self._watchdog)
 
@@ -137,6 +169,18 @@ class Proactor(ServicesInterface, Runnable):
     @property
     def stats(self) -> ProactorStats:
         return self._stats
+
+    @property
+    def io_loop_manager(self) -> IOLoopInterface:
+        return self._ioloop
+
+    @property
+    def hardware_layout(self) -> HardwareLayout:
+        return self._layout
+
+    @property
+    def services(self) -> "ServicesInterface":
+        return self
 
     def get_external_watchdog_builder_class(
         self,
@@ -574,7 +618,6 @@ class Proactor(ServicesInterface, Runnable):
                 self._logger.lifecycle(
                     str_tasks(self._loop, "WAITING FOR", tasks=running)
                 )
-                # if not isinstance(e, asyncio.exceptions.CancelledError):
                 done, running = await asyncio.wait(
                     running, return_when="FIRST_COMPLETED"
                 )
