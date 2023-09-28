@@ -7,7 +7,6 @@ import uuid
 from typing import Any
 from typing import Awaitable
 from typing import Dict
-from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -56,6 +55,7 @@ from gwproactor.proactor_interface import Runnable
 from gwproactor.proactor_interface import ServicesInterface
 from gwproactor.problems import Problems
 from gwproactor.stats import ProactorStats
+from gwproactor.str_tasks import str_tasks
 from gwproactor.watchdog import WatchdogManager
 
 
@@ -74,7 +74,7 @@ class Proactor(ServicesInterface, Runnable):
     _communicators: Dict[str, CommunicatorInterface]
     _stop_requested: bool
     _tasks: List[asyncio.Task]
-    _ioloop: IOLoop
+    _io_loop_manager: IOLoop
     _watchdog: WatchdogManager
 
     def __init__(
@@ -116,10 +116,10 @@ class Proactor(ServicesInterface, Runnable):
         self._communicators = dict()
         self._tasks = []
         self._stop_requested = False
-        self._ioloop = IOLoop(self)
-        self.add_communicator(self._ioloop)
         self._watchdog = WatchdogManager(9, self)
         self.add_communicator(self._watchdog)
+        self._io_loop_manager = IOLoop(self)
+        self.add_communicator(self._io_loop_manager)
 
     @classmethod
     def make_stats(cls) -> ProactorStats:
@@ -172,7 +172,7 @@ class Proactor(ServicesInterface, Runnable):
 
     @property
     def io_loop_manager(self) -> IOLoopInterface:
-        return self._ioloop
+        return self._io_loop_manager
 
     @property
     def hardware_layout(self) -> HardwareLayout:
@@ -634,42 +634,3 @@ class Proactor(ServicesInterface, Runnable):
         except:
             self._logger.exception("ERROR in Proactor.join")
         self._logger.lifecycle("--Proactor.join()")
-
-
-def str_tasks(
-    loop_: asyncio.AbstractEventLoop,
-    tag: str = "",
-    tasks: Optional[Iterable[Awaitable]] = None,
-) -> str:
-    s = ""
-    try:
-        if tasks is None:
-            tasks = asyncio.all_tasks(loop_)
-        s += f"Tasks: {len(tasks)}  [{tag}]\n"
-
-        def _get_task_exception(task_):
-            try:
-                exception_ = task_.exception()
-            except asyncio.CancelledError as _e:
-                exception_ = _e
-            except asyncio.InvalidStateError:
-                exception_ = None
-            return exception_
-
-        for i, task in enumerate(tasks):
-            s += (
-                f"\t{i + 1}/{len(tasks)}  "
-                f"{task.get_name():20s}  "
-                f"done:{task.done()}   "
-                f"exception:{_get_task_exception(task)}  "
-                f"{task.get_coro()}\n"
-            )
-    except BaseException as e:
-        # noinspection PyBroadException
-        try:
-            s += f"ERROR in str_tasks:\n"
-            s += "".join(traceback.format_exception(e))
-            s += "\n"
-        except:
-            pass
-    return s
