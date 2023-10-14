@@ -3,7 +3,10 @@ REST commands into a message posted to main processing thread.
 
 """
 import asyncio
-import time
+from dataclasses import dataclass
+from dataclasses import field
+from typing import Awaitable
+from typing import Callable
 from typing import Optional
 
 import aiohttp as aiohttp
@@ -11,25 +14,155 @@ import yarl
 from aiohttp import ClientResponse
 from aiohttp import ClientSession
 from aiohttp import ClientTimeout
-from aiohttp.typedefs import StrOrURL
 from gwproto import Message
 from gwproto.data_classes.components.rest_poller_component import RESTPollerComponent
+from gwproto.types import RESTPollerSettings
 from gwproto.types import URLConfig
 from result import Result
 
 from gwproactor import Actor
 from gwproactor import ServicesInterface
 from gwproactor.proactor_interface import INVALID_IO_TASK_HANDLE
+from gwproactor.proactor_interface import IOLoopInterface
 
 
-class RESTPoller(Actor):
+Converter = Callable[[ClientResponse], Awaitable[Optional[Message]]]
+ThreadSafeForwarder = Callable[[Message], ...]
+
+
+async def null_converter(response: ClientResponse) -> Optional[Message]:  # noqa
+    return None
+
+
+def null_fowarder(message: Message) -> None:  # noqa
+    return None
+
+
+@dataclass
+class SessionArgs:
+    base_url: Optional[yarl.URL] = None
+    kwargs: dict = field(default_factory=dict)
+
+
+@dataclass
+class RequestArgs:
+    method: str = "GET"
+    url: Optional[yarl.URL] = None
+    kwargs: dict = field(default_factory=dict)
+
+
+class RESTPoller:
+    _name: str
+    _rest: RESTPollerSettings
+    _io_loop_manager: IOLoopInterface
     _task_id: int
-    _component: RESTPollerComponent
+    _session_args: Optional[SessionArgs] = None
+    _request_args: Optional[RequestArgs] = None
 
-    def __init__(self, name: str, services: ServicesInterface):
-        super().__init__(name, services)
+    def __init__(
+        self,
+        name: str,
+        rest: RESTPollerSettings,
+        loop_manager: IOLoopInterface,
+        convert: Converter = null_converter,
+        forward: ThreadSafeForwarder = null_fowarder,
+        cache_request_args: bool = True,
+    ):
+        self._name = name
         self._task_id = INVALID_IO_TASK_HANDLE
-        component = self.services.hardware_layout.component(self.name)
+        self._rest = rest
+        self._io_loop_manager = loop_manager
+        self._convert = convert
+        self._forward = forward
+        if cache_request_args:
+            self._session_args = self._make_session_args()
+            self._request_args = self._make_request_args()
+
+    def _make_base_url(self) -> Optional[yarl.URL]:
+        return URLConfig.make_url(self._rest.session.base_url)
+
+    def _make_url(self) -> Optional[yarl.URL]:
+        return URLConfig.make_url(self._rest.request.url)
+
+    def _make_session_args(self) -> SessionArgs:
+        return SessionArgs(
+            self._make_base_url(),
+            dict(
+                self._rest.session.dict(
+                    exclude={"base_url", "timeout"},
+                    exclude_unset=True,
+                ),
+                timeout=ClientTimeout(**self._rest.session.timeout.dict()),
+            ),
+        )
+
+    def _make_request_args(self) -> RequestArgs:
+        return RequestArgs(
+            self._rest.request.method,
+            self._make_url(),
+            dict(
+                self._rest.request.dict(
+                    exclude={"method", "url", "timeout"},
+                    exclude_unset=True,
+                ),
+                timeout=ClientTimeout(**self._rest.request.timeout.dict()),
+            ),
+        )
+
+    async def _make_request(self, session: ClientSession) -> ClientResponse:
+        args = self._request_args
+        if args is None:
+            args = self._make_request_args()
+        response = await session.request(args.method, args.url, **args.kwargs)
+        return response
+
+    def _get_next_sleep_seconds(self) -> float:
+        return self._rest.poll_period_seconds
+
+    async def _run(self):
+        try:
+            reconnect = True
+            while reconnect:
+                args = self._session_args
+                if args is None:
+                    args = self._make_session_args()
+                async with aiohttp.ClientSession(
+                    args.base_url, **args.kwargs
+                ) as session:
+                    while True:
+                        try:
+                            async with await self._make_request(session) as response:
+                                message = await self._convert(response)
+                            if message is not None:
+                                self._forward(message)
+                            sleep_seconds = self._get_next_sleep_seconds()
+                            await asyncio.sleep(sleep_seconds)
+                        except BaseException as e:
+                            raise e
+
+        except BaseException as e:
+            raise e
+
+    def start(self) -> None:
+        self._task_id = self._io_loop_manager.add_io_coroutine(self._run())
+
+    def stop(self) -> None:
+        self._io_loop_manager.cancel_io_routine(self._task_id)
+
+
+class RESTPollerActor(Actor):
+    _poller: RESTPoller
+
+    def __init__(
+        self,
+        name: str,
+        services: ServicesInterface,
+        convert: Converter = null_converter,
+        forward: ThreadSafeForwarder = null_fowarder,
+        cache_request_args: bool = True,
+    ):
+        super().__init__(name, services)
+        component = services.hardware_layout.component(self.name)
         if not isinstance(component, RESTPollerComponent):
             display_name = getattr(
                 component, "display_name", "MISSING ATTRIBUTE display_name"
@@ -40,104 +173,23 @@ class RESTPoller(Actor):
                 f"  Node: {self.name}\n"
                 f"  Component id: {component.component_id}"
             )
-        self._component = component
+        self._poller = RESTPoller(
+            name,
+            component.rest,
+            services.io_loop_manager,
+            convert=convert,
+            forward=forward,
+            cache_request_args=cache_request_args,
+        )
 
     def process_message(self, message: Message) -> Result[bool, BaseException]:
-        raise ValueError("RESTPoller currently processes no messages")
-
-    def _make_base_url(self) -> Optional[yarl.URL]:
-        return URLConfig.make_url(self._component.rest.session.base_url)
-
-    def _make_url(self) -> Optional[yarl.URL]:
-        return URLConfig.make_url(self._component.rest.request.url)
-
-    def _session_args(self) -> tuple[Optional[StrOrURL], dict]:
-        return self._make_base_url(), dict(
-            self._component.rest.session.dict(
-                exclude={"base_url", "timeout"},
-                exclude_unset=True,
-            ),
-            timeout=ClientTimeout(**self._component.rest.session.timeout.dict()),
-        )
-
-    def _request_args(self) -> tuple[str, Optional[StrOrURL], dict]:
-        return (
-            self._component.rest.request.method,
-            self._make_url(),
-            dict(
-                self._component.rest.request.dict(
-                    exclude={"method", "url", "timeout"},
-                    exclude_unset=True,
-                ),
-                timeout=ClientTimeout(**self._component.rest.request.timeout.dict()),
-            ),
-        )
-
-    async def _make_request(self, session: ClientSession) -> ClientResponse:
-        # print("++RESTPoller._make_request")
-        method, url, request_kwargs = self._request_args()
-        response = await session.request(method, url, **request_kwargs)
-        # print(f"--RESTPoller._make_request {response}")
-        return response
-
-    async def _convert(self, response: ClientResponse) -> Optional[Message]:  # noqa
-        return None
-
-    def _get_next_sleep_seconds(self) -> float:
-        return self._component.rest.poll_period_seconds
-
-    async def _act(self):
-        try:
-            # print("RESTPoller  ++_act")
-            # dbg_num_loops = 0
-            reconnect = True
-            while reconnect:
-                base_url, session_kwargs = self._session_args()
-                async with aiohttp.ClientSession(base_url, **session_kwargs) as session:
-                    while True:
-                        # print(f"RESTPoller  ++loop {dbg_num_loops}")
-                        try:
-                            async with await self._make_request(session) as response:
-                                # print(
-                                #     f"RESTPoller    loop {dbg_num_loops}  "
-                                #     f"response: {response}"
-                                # )
-                                message = await self._convert(response)
-                                # print(
-                                #     f"RESTPoller    loop {dbg_num_loops}  "
-                                #     f"message: {message}"
-                                # )
-                            if message is not None:
-                                self.services.send_threadsafe(message)
-                            sleep_seconds = self._get_next_sleep_seconds()
-                            # print(
-                            #     f"RESTPoller    loop {dbg_num_loops}  "
-                            #     f"sleep_seconds: {sleep_seconds}"
-                            # )
-                            pre_sleep = time.time()
-                            await asyncio.sleep(sleep_seconds)
-                            # print(
-                            #     f"RESTPoller    loop {dbg_num_loops}  "
-                            #     f"awoke after: {time.time() - pre_sleep}"
-                            # )
-                        except BaseException as e:
-                            # print(
-                            #     f"RESTPoller  loop {dbg_num_loops}"
-                            #     f"  {e}  {type(e)}"
-                            # )
-                            raise e
-                        # print(f"RESTPoller  --loop {dbg_num_loops}")
-                        # dbg_num_loops += 1
-
-        except BaseException as e:
-            # print(f"RESTPoller  --_act  {e}  {type(e)}")
-            raise e
+        pass
 
     def start(self) -> None:
-        self._task_id = self.services.io_loop_manager.add_io_coroutine(self._act())
+        self._poller.start()
 
     def stop(self) -> None:
-        self.services.io_loop_manager.cancel_io_routine(self._task_id)
+        self._poller.stop()
 
     async def join(self) -> None:
         """IOLoop will take care of shutting down the associated task."""

@@ -23,16 +23,24 @@ async def async_polling_thread_join(
     t: Optional[threading.Thread],
     timeout_seconds: float = JOIN_NEVER_TIMEOUT,
     check_thread_seconds: float = JOIN_CHECK_THREAD_SECONDS,
-) -> None:
+    raise_errors: bool = False,
+) -> Optional[BaseException]:
     if t is None:
         return
     if timeout_seconds is None:
         timeout_seconds = JOIN_NEVER_TIMEOUT
     end = time.time() + timeout_seconds
     remaining = timeout_seconds
-    while t.is_alive() and remaining > 0:
-        await asyncio.sleep(min(check_thread_seconds, remaining))
-        remaining = end - time.time()
+    returned_e: Optional[BaseException] = None
+    try:
+        while t.is_alive() and remaining > 0:
+            await asyncio.sleep(min(check_thread_seconds, remaining))
+            remaining = end - time.time()
+    except BaseException as e:
+        returned_e = e
+        if raise_errors:
+            raise e
+    return returned_e
 
 
 def responsive_sleep(

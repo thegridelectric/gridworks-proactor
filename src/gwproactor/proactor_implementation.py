@@ -631,6 +631,6 @@ class Proactor(ServicesInterface, Runnable):
                             f"EXCEPTION in task {task.get_name()}  {exception}"
                         )
                         self._logger.error(traceback.format_tb(exception.__traceback__))
-        except:
+        except BaseException as e:
             self._logger.exception("ERROR in Proactor.join")
         self._logger.lifecycle("--Proactor.join()")
