@@ -16,6 +16,7 @@ from aiohttp import ClientSession
 from aiohttp import ClientTimeout
 from gwproto import Message
 from gwproto.data_classes.components.rest_poller_component import RESTPollerComponent
+from gwproto.types import AioHttpClientTimeout
 from gwproto.types import RESTPollerSettings
 from gwproto.types import URLConfig
 from result import Result
@@ -35,6 +36,14 @@ async def null_converter(response: ClientResponse) -> Optional[Message]:  # noqa
 
 
 def null_fowarder(message: Message) -> None:  # noqa
+    return None
+
+
+def to_client_timeout(
+    timeout: Optional[AioHttpClientTimeout],
+) -> Optional[ClientTimeout]:
+    if timeout is not None:
+        return ClientTimeout(**timeout.dict())
     return None
 
 
@@ -92,7 +101,7 @@ class RESTPoller:
                     exclude={"base_url", "timeout"},
                     exclude_unset=True,
                 ),
-                timeout=ClientTimeout(**self._rest.session.timeout.dict()),
+                timeout=to_client_timeout(self._rest.session.timeout),
             ),
         )
 
@@ -105,7 +114,7 @@ class RESTPoller:
                     exclude={"method", "url", "timeout"},
                     exclude_unset=True,
                 ),
-                timeout=ClientTimeout(**self._rest.request.timeout.dict()),
+                timeout=to_client_timeout(self._rest.request.timeout),
             ),
         )
 
