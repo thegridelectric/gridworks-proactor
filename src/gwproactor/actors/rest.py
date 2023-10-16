@@ -5,6 +5,7 @@ REST commands into a message posted to main processing thread.
 import asyncio
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Any
 from typing import Awaitable
 from typing import Callable
 from typing import Optional
@@ -28,7 +29,7 @@ from gwproactor.proactor_interface import IOLoopInterface
 
 
 Converter = Callable[[ClientResponse], Awaitable[Optional[Message]]]
-ThreadSafeForwarder = Callable[[Message], ...]
+ThreadSafeForwarder = Callable[[Message], Any]
 
 
 async def null_converter(response: ClientResponse) -> Optional[Message]:  # noqa
