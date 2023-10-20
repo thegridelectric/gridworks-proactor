@@ -36,7 +36,7 @@ async def null_converter(response: ClientResponse) -> Optional[Message]:  # noqa
     return None
 
 
-def null_fowarder(message: Message) -> None:  # noqa
+def null_forwarder(message: Message) -> None:  # noqa
     return None
 
 
@@ -75,7 +75,7 @@ class RESTPoller:
         rest: RESTPollerSettings,
         loop_manager: IOLoopInterface,
         convert: Converter = null_converter,
-        forward: ThreadSafeForwarder = null_fowarder,
+        forward: ThreadSafeForwarder = null_forwarder,
         cache_request_args: bool = True,
     ):
         self._name = name
@@ -168,7 +168,7 @@ class RESTPollerActor(Actor):
         name: str,
         services: ServicesInterface,
         convert: Converter = null_converter,
-        forward: ThreadSafeForwarder = null_fowarder,
+        forward: ThreadSafeForwarder = null_forwarder,
         cache_request_args: bool = True,
     ):
         super().__init__(name, services)
