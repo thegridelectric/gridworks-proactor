@@ -23,6 +23,7 @@ from gwproto.types import URLConfig
 from result import Result
 
 from gwproactor import Actor
+from gwproactor import Problems
 from gwproactor import ServicesInterface
 from gwproactor.proactor_interface import INVALID_IO_TASK_HANDLE
 from gwproactor.proactor_interface import IOLoopInterface
@@ -68,6 +69,7 @@ class RESTPoller:
     _task_id: int
     _session_args: Optional[SessionArgs] = None
     _request_args: Optional[RequestArgs] = None
+    _converter: Converter
 
     def __init__(
         self,
@@ -82,7 +84,7 @@ class RESTPoller:
         self._task_id = INVALID_IO_TASK_HANDLE
         self._rest = rest
         self._io_loop_manager = loop_manager
-        self._convert = convert
+        self._converter = convert
         self._forward = forward
         if cache_request_args:
             self._session_args = self._make_session_args()
@@ -119,12 +121,56 @@ class RESTPoller:
             ),
         )
 
-    async def _make_request(self, session: ClientSession) -> ClientResponse:
-        args = self._request_args
-        if args is None:
-            args = self._make_request_args()
-        response = await session.request(args.method, args.url, **args.kwargs)
+    async def _make_request(self, session: ClientSession) -> Optional[ClientResponse]:
+        try:
+            args = self._request_args
+            if args is None:
+                args = self._make_request_args()
+            response = await session.request(args.method, args.url, **args.kwargs)
+            if self._rest.errors.request.error_for_http_status:
+                response.raise_for_status()
+        except BaseException as e:
+            response = None
+            if self._rest.errors.request.report:
+                try:
+                    self._forward(
+                        Message(
+                            Payload=Problems(errors=[e]).problem_event(
+                                summary=(
+                                    f"Request error for <{self._name}>: {type(e)} <{e}>"
+                                ),
+                                src=self._name,
+                            )
+                        )
+                    )
+                except:  # noqa
+                    pass
+            if self._rest.errors.request.raise_exception:
+                raise e
         return response
+
+    async def _convert(self, response: ClientResponse) -> Optional[Message]:
+        try:
+            message = await self._converter(response)
+        except BaseException as convert_exception:
+            message = None
+            if self._rest.errors.convert.report:
+                try:
+                    self._forward(
+                        Message(
+                            Payload=Problems(errors=[convert_exception]).problem_event(
+                                summary=(
+                                    f"Convert error for <{self._name}>: {type(convert_exception)} <{convert_exception}>"
+                                ),
+                                src=self._name,
+                            )
+                        )
+                    )
+                except:  # noqa
+                    pass
+            if self._rest.errors.convert.raise_exception:
+                raise convert_exception
+        return message
 
     def _get_next_sleep_seconds(self) -> float:
         return self._rest.poll_period_seconds
@@ -140,15 +186,14 @@ class RESTPoller:
                     args.base_url, **args.kwargs
                 ) as session:
                     while True:
-                        try:
-                            async with await self._make_request(session) as response:
+                        response = await self._make_request(session)
+                        if response is not None:
+                            async with response:
                                 message = await self._convert(response)
                             if message is not None:
                                 self._forward(message)
-                            sleep_seconds = self._get_next_sleep_seconds()
-                            await asyncio.sleep(sleep_seconds)
-                        except BaseException as e:
-                            raise e
+                        sleep_seconds = self._get_next_sleep_seconds()
+                        await asyncio.sleep(sleep_seconds)
 
         except BaseException as e:
             raise e
