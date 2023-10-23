@@ -632,5 +632,5 @@ class Proactor(ServicesInterface, Runnable):
                         )
                         self._logger.error(traceback.format_tb(exception.__traceback__))
         except BaseException as e:
-            self._logger.exception("ERROR in Proactor.join")
+            self._logger.exception("ERROR in Proactor.join: %s <%s>", type(e), e)
         self._logger.lifecycle("--Proactor.join()")
