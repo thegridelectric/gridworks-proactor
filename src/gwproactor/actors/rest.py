@@ -199,7 +199,10 @@ class RESTPoller:
             raise e
 
     def start(self) -> None:
-        self._task_id = self._io_loop_manager.add_io_coroutine(self._run())
+        self._task_id = self._io_loop_manager.add_io_coroutine(
+            self._run(),
+            name=self._name,
+        )
 
     def stop(self) -> None:
         self._io_loop_manager.cancel_io_routine(self._task_id)
