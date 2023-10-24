@@ -8,6 +8,7 @@ from typing import Sequence
 from gwproto import Message
 from result import Result
 
+from gwproactor import ProactorLogger
 from gwproactor.actors.actor import MonitoredName
 from gwproactor.message import KnownNames
 from gwproactor.message import PatInternalWatchdogMessage
@@ -24,7 +25,6 @@ class IOLoop(Communicator, IOLoopInterface):
 
     _io_loop: asyncio.AbstractEventLoop
     _io_thread: Optional[threading.Thread] = None
-    _main_task: Optional[asyncio.Task] = None
     _tasks: dict[int, Optional[asyncio.Task]]
     _id2task: dict[asyncio.Task, int]
     _completed_tasks: dict[int, asyncio.Task]
@@ -33,6 +33,7 @@ class IOLoop(Communicator, IOLoopInterface):
     _next_id = INVALID_IO_TASK_HANDLE + 1
     pat_timeout: float = SyncAsyncInteractionThread.PAT_TIMEOUT
     _last_pat_time: float = 0.0
+    _lg: ProactorLogger
 
     def __init__(self, services: ServicesInterface) -> None:
         super().__init__(KnownNames.io_loop_manager.value, services)
@@ -40,6 +41,7 @@ class IOLoop(Communicator, IOLoopInterface):
         self._tasks = dict()
         self._id2task = dict()
         self._completed_tasks = dict()
+        _lg = services.logger
         self._io_loop = asyncio.new_event_loop()
 
     def add_io_coroutine(self, coro: Coroutine, name: str = "") -> int:
@@ -88,13 +90,12 @@ class IOLoop(Communicator, IOLoopInterface):
 
     async def join(self):
         pass
-        # this often generates errors, althought ht tests pass:
+        # this often generates errors, although tests pass:
         # await async_polling_thread_join(self._io_thread)
 
     def _thread_run(self) -> None:
         try:
-            self._main_task = self._io_loop.create_task(self._async_run())
-            self._io_loop.run_forever()
+            self._io_loop.run_until_complete(self._async_run())
         except BaseException as e:  # noqa
             try:
                 summary = f"Unexpected IOLoop exception <{e}>"
@@ -124,7 +125,6 @@ class IOLoop(Communicator, IOLoopInterface):
 
     async def _async_run(self):
         try:
-            dbg_wait = 0
             while not self._stop_requested:
                 with self._lock:
                     tasks = self._started_tasks()
@@ -145,14 +145,22 @@ class IOLoop(Communicator, IOLoopInterface):
                         for task in done:
                             task_id = self._id2task.pop(task)
                             self._completed_tasks[task_id] = self._tasks.pop(task_id)
+                    errors = []
                     for task in done:
-                        if not task.cancelled() and (exception := task.exception()):
-                            raise exception
-
+                        if not task.cancelled():
+                            try:
+                                exception = task.exception()
+                                if exception is not None:
+                                    errors.append(exception)
+                            except BaseException as retrieve_exception:
+                                errors.append(retrieve_exception)
+                    if errors:
+                        raise Problems(
+                            f"IOLoop caught {len(errors)}.",
+                            errors=errors,
+                        )
                 if self.time_to_pat():
                     self.pat_watchdog()
-
-                dbg_wait += 1
         finally:
             self._io_loop.stop()
 
