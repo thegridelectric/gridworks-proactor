@@ -31,17 +31,17 @@ class IOLoop(Communicator, IOLoopInterface):
     _lock: threading.RLock
     _stop_requested: bool = False
     _next_id = INVALID_IO_TASK_HANDLE + 1
-    pat_timeout: float = SyncAsyncInteractionThread.PAT_TIMEOUT
+    _pat_timeout: float = SyncAsyncInteractionThread.PAT_TIMEOUT
     _last_pat_time: float = 0.0
     _lg: ProactorLogger
 
     def __init__(self, services: ServicesInterface) -> None:
         super().__init__(KnownNames.io_loop_manager.value, services)
+        self._lg = services.logger
         self._lock = threading.RLock()
         self._tasks = dict()
         self._id2task = dict()
         self._completed_tasks = dict()
-        _lg = services.logger
         self._io_loop = asyncio.new_event_loop()
 
     def add_io_coroutine(self, coro: Coroutine, name: str = "") -> int:
@@ -165,7 +165,7 @@ class IOLoop(Communicator, IOLoopInterface):
             self._io_loop.stop()
 
     def time_to_pat(self) -> bool:
-        return time.time() >= (self._last_pat_time + (self.pat_timeout / 2))
+        return time.time() >= (self._last_pat_time + (self._pat_timeout / 2))
 
     def pat_watchdog(self):
         if not self._stop_requested:
@@ -181,4 +181,4 @@ class IOLoop(Communicator, IOLoopInterface):
 
     @property
     def monitored_names(self) -> Sequence[MonitoredName]:
-        return [MonitoredName(self.name, self.pat_timeout)]
+        return [MonitoredName(self.name, self._pat_timeout)]
