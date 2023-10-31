@@ -15,6 +15,9 @@ Particular questions:
 * Test support should be implemented / cleaner.
 """
 
+from gwproactor.actors import Actor
+from gwproactor.actors import SyncThreadActor
+from gwproactor.actors import SyncThreadT
 from gwproactor.config import ProactorSettings
 from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
 from gwproactor.links.mqtt import QOS
@@ -25,6 +28,8 @@ from gwproactor.logger import ProactorLogger
 from gwproactor.logging_setup import format_exceptions
 from gwproactor.logging_setup import setup_logging
 from gwproactor.proactor_implementation import Proactor
+from gwproactor.proactor_interface import INVALID_IO_TASK_HANDLE
+from gwproactor.proactor_interface import ActorInterface
 from gwproactor.proactor_interface import Communicator
 from gwproactor.proactor_interface import CommunicatorInterface
 from gwproactor.proactor_interface import MonitoredName
@@ -38,11 +43,14 @@ from gwproactor.sync_thread import responsive_sleep
 
 
 __all__ = [
+    "Actor",
+    "ActorInterface",
     "AsyncQueueWriter",
     "Communicator",
     "CommunicatorInterface",
     "ExternalWatchdogCommandBuilder",
     "format_exceptions",
+    "INVALID_IO_TASK_HANDLE",
     "MonitoredName",
     "MQTTClients",
     "MQTTClientWrapper",
@@ -58,4 +66,6 @@ __all__ = [
     "Subscription",
     "SyncAsyncInteractionThread",
     "SyncAsyncQueueWriter",
+    "SyncThreadT",
+    "SyncThreadActor",
 ]
