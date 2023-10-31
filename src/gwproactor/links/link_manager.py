@@ -436,7 +436,9 @@ class LinkManager:
 
     def start_ping_tasks(self) -> list[asyncio.Task]:
         return [
-            asyncio.create_task(self.send_ping(link_name))
+            asyncio.create_task(
+                self.send_ping(link_name), name=f"send_ping<{link_name}>"
+            )
             for link_name in self.link_names()
         ]
 

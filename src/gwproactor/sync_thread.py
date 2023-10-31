@@ -15,6 +15,33 @@ from gwproactor.message import PatInternalWatchdogMessage
 
 DEFAULT_STEP_DURATION = 0.1
 
+JOIN_NEVER_TIMEOUT = 1000000000.0  # > 30 years
+JOIN_CHECK_THREAD_SECONDS = 1.0
+
+
+async def async_polling_thread_join(
+    t: Optional[threading.Thread],
+    timeout_seconds: float = JOIN_NEVER_TIMEOUT,
+    check_thread_seconds: float = JOIN_CHECK_THREAD_SECONDS,
+    raise_errors: bool = False,
+) -> Optional[BaseException]:
+    if t is None:
+        return
+    if timeout_seconds is None:
+        timeout_seconds = JOIN_NEVER_TIMEOUT
+    end = time.time() + timeout_seconds
+    remaining = timeout_seconds
+    returned_e: Optional[BaseException] = None
+    try:
+        while t.is_alive() and remaining > 0:
+            await asyncio.sleep(min(check_thread_seconds, remaining))
+            remaining = end - time.time()
+    except BaseException as e:
+        returned_e = e
+        if raise_errors:
+            raise e
+    return returned_e
+
 
 def responsive_sleep(
     obj,
@@ -107,6 +134,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
 
     SLEEP_STEP_SECONDS = 0.1
     PAT_TIMEOUT = 20
+    JOIN_CHECK_THREAD_SECONDS = 1.0
 
     _channel: SyncAsyncQueueWriter
     running: Optional[bool]
@@ -224,24 +252,5 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
         self._last_pat_time = time.time()
         self._put_to_async_queue(PatInternalWatchdogMessage(src=self.name))
 
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
     async def async_join(self, timeout: float = None) -> None:
-        # TODO: Giant hack. Alternate implementations below caused
-        #       hangups or (probably) harmless but ugly exceptions
-        await asyncio.sleep(0.1)
-
-        # if timeout is not None:
-        #     end = time.time() + timeout
-        # else:
-        #     end = None
-        # if end is not None:
-        #     remaining = end - time.time()
-        # else:
-        #     remaining = None
-        # # harmless (?) exceptions
-        # while (remaining is None or remaining > 0) and self.is_alive():
-        #     await asyncio.sleep(.01)
-        #     if remaining is not None:
-        #         remaining = end - time.time()
-        # # hangs
-        # await asyncio.get_event_loop().run_in_executor(None, functools.partial(self.join, timeout=remaining))
+        await async_polling_thread_join(self, timeout)

@@ -136,8 +136,11 @@ class MQTTClientWrapper:
 
     def stop(self):
         self._stop_requested = True
-        self._client.disconnect()
-        self._thread.join()
+        try:
+            self._client.disconnect()
+            self._thread.join()
+        except:  # noqa
+            pass
 
     def publish(self, topic: str, payload: bytes, qos: int) -> MQTTMessageInfo:
         return self._client.publish(topic, payload, qos)
