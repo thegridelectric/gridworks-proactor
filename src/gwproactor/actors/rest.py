@@ -139,7 +139,6 @@ class RESTPoller:
                                 summary=(
                                     f"Request error for <{self._name}>: {type(e)} <{e}>"
                                 ),
-                                src=self._name,
                             )
                         )
                     )
@@ -162,7 +161,6 @@ class RESTPoller:
                                 summary=(
                                     f"Convert error for <{self._name}>: {type(convert_exception)} <{convert_exception}>"
                                 ),
-                                src=self._name,
                             )
                         )
                     )
