@@ -38,6 +38,7 @@ class KnownNames(Enum):
     proactor = "proactor"
     mqtt_clients = "mqtt_clients"
     watchdog_manager = "watchdog_manager"
+    io_loop_manager = "io_loop_manager"
 
 
 class MQTTClientsPayload(BaseModel):
