@@ -17,9 +17,9 @@ from aiohttp import ClientSession
 from aiohttp import ClientTimeout
 from gwproto import Message
 from gwproto.data_classes.components.rest_poller_component import RESTPollerComponent
-from gwproto.types import AioHttpClientTimeout
-from gwproto.types import RESTPollerSettings
-from gwproto.types import URLConfig
+from gwproto.type_helpers import AioHttpClientTimeout
+from gwproto.type_helpers import RESTPollerSettings
+from gwproto.type_helpers import URLConfig
 from result import Result
 
 from gwproactor import Actor
