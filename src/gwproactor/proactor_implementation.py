@@ -91,9 +91,8 @@ class Proactor(ServicesInterface, Runnable):
                     ShNodes=[
                         dict(
                             ShNodeId=str(uuid.uuid4()),
-                            Alias=self._name,
+                            Name=self._name,
                             ActorClassGtEnumSymbol="00000000",
-                            RoleGtEnumSymbol="00000000",
                             TypeName="spaceheat.node.gt",
                         )
                     ]
