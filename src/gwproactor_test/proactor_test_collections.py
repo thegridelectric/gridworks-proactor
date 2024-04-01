@@ -11,9 +11,9 @@ from paho.mqtt.client import MQTT_ERR_CONN_LOST
 from gwproactor.links import StateName
 from gwproactor.message import DBGEvent
 from gwproactor.message import DBGPayload
-from gwproactor_test import await_for
 from gwproactor_test.certs import uses_tls
 from gwproactor_test.comm_test_helper import CommTestHelper
+from gwproactor_test.wait import await_for
 
 
 @pytest.mark.asyncio

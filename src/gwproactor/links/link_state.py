@@ -120,12 +120,10 @@ class CommLinkMissing(InvalidCommStateInput):
         super().__init__(name, msg=msg)
 
 
-class CommLinkAlreadyExists(InvalidCommStateInput):
-    ...
+class CommLinkAlreadyExists(InvalidCommStateInput): ...
 
 
-class RuntimeLinkStateError(InvalidCommStateInput):
-    ...
+class RuntimeLinkStateError(InvalidCommStateInput): ...
 
 
 class State(abc.ABC):

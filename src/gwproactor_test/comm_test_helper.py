@@ -84,17 +84,21 @@ class CommTestHelper:
         self.child_helper = ProactorTestHelper(
             child_name,
             child_path_name,
-            self.child_settings_t(paths=Paths(name=Path(child_path_name)))
-            if child_settings is None
-            else child_settings,
+            (
+                self.child_settings_t(paths=Paths(name=Path(child_path_name)))
+                if child_settings is None
+                else child_settings
+            ),
             dict() if child_kwargs is None else child_kwargs,
         )
         self.parent_helper = ProactorTestHelper(
             parent_name,
             parent_path_name,
-            self.parent_settings_t(paths=Paths(name=Path(parent_path_name)))
-            if parent_settings is None
-            else parent_settings,
+            (
+                self.parent_settings_t(paths=Paths(name=Path(parent_path_name)))
+                if parent_settings is None
+                else parent_settings
+            ),
             dict() if parent_kwargs is None else parent_kwargs,
         )
         self.verbose = verbose

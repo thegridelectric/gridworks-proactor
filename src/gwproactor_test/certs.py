@@ -1,4 +1,5 @@
 """Generate or copy test certificates for MQTT using TLS."""
+
 import os
 import shutil
 import subprocess

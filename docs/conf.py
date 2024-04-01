@@ -1,4 +1,5 @@
 """Sphinx configuration."""
+
 project = "Gridworks Proactor"
 author = "Jessica Millar"
 copyright = "2023, Jessica Millar"

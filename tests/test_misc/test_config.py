@@ -1,4 +1,5 @@
 """Test config module"""
+
 import shutil
 import ssl
 from pathlib import Path

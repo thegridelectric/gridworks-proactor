@@ -1,4 +1,5 @@
 """Scada implementation"""
+
 from typing import Optional
 from typing import cast
 
