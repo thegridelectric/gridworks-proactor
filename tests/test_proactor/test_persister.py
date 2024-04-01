@@ -326,7 +326,7 @@ def test_persister_max_size():
 
     event_bytes = event.json().encode()
     num_events_supported = 4
-    with pendulum.test(pendulum.today("utc")):
+    with pendulum.travel_to(pendulum.today("utc")):
         # empty persister
         max_bytes = (num_events_supported + 1) * 1000
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=max_bytes)
@@ -399,7 +399,7 @@ def test_persister_roll_day():
 
     try:
         # d1
-        pendulum.set_test_now(d1)
+        pendulum.travel_to(d1)
         exact_days = [d1]
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert_contents(p, num_pending=0, curr_dir=d1.isoformat())
@@ -409,7 +409,7 @@ def test_persister_roll_day():
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
 
         # d2
-        pendulum.set_test_now(d2)
+        pendulum.travel_to(d2)
         exact_days.append(d2)
         inc_event()
         uids.append(event.MessageId)
@@ -419,7 +419,7 @@ def test_persister_roll_day():
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
 
         # d3
-        pendulum.set_test_now(d3)
+        pendulum.travel_to(d3)
         exact_days.append(d3)
         inc_event()
         uids.append(event.MessageId)
@@ -492,7 +492,7 @@ def test_persister_roll_day():
         assert_contents(p, num_pending=0)
 
     finally:
-        pendulum.set_test_now()
+        pendulum.travel_back()
 
 
 def test_persister_size_and_roll():
@@ -521,7 +521,7 @@ def test_persister_size_and_roll():
     try:
         # d1, add two
         exact_days = []
-        pendulum.set_test_now(d1)
+        pendulum.travel_to(d1)
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=max_size)
         assert_contents(p, num_pending=0, curr_dir=d1.isoformat(), max_bytes=max_size)
         for i in range(1, 3):
@@ -539,7 +539,7 @@ def test_persister_size_and_roll():
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
         # d2, add another two
-        pendulum.set_test_now(d2)
+        pendulum.travel_to(d2)
         for i in range(3, 5):
             uids.append(inc_uid())
             exact_days.append(d2)
@@ -555,7 +555,7 @@ def test_persister_size_and_roll():
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
         # d3, add three
-        pendulum.set_test_now(d3)
+        pendulum.travel_to(d3)
         for i in range(5, 8):
             uids.append(inc_uid())
             exact_days.append(d3)
@@ -571,7 +571,7 @@ def test_persister_size_and_roll():
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
         # d4, add two
-        pendulum.set_test_now(d4)
+        pendulum.travel_to(d4)
         for i in range(8, 10):
             uids.append(inc_uid())
             exact_days.append(d4)
@@ -587,7 +587,7 @@ def test_persister_size_and_roll():
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
         # d5, add 1
-        pendulum.set_test_now(d5)
+        pendulum.travel_to(d5)
         for i in range(10, 11):
             uids.append(inc_uid())
             exact_days.append(d5)
@@ -732,7 +732,7 @@ def test_persister_size_and_roll():
             else:
                 assert not path.parent.exists()
     finally:
-        pendulum.set_test_now()
+        pendulum.travel_back()
 
 
 def test_persister_indexing():
@@ -753,20 +753,20 @@ def test_persister_indexing():
     d4 = d3.add(days=1)
 
     try:
-        pendulum.set_test_now(d1)
+        pendulum.travel_to(d1)
         p = TimedRollingFilePersister(settings.paths.event_dir)
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        pendulum.set_test_now(d2)
+        pendulum.travel_to(d2)
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        pendulum.set_test_now(d3)
+        pendulum.travel_to(d3)
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        pendulum.set_test_now(d4)
+        pendulum.travel_to(d4)
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
@@ -796,7 +796,7 @@ def test_persister_indexing():
         assert p._pending == index
 
     finally:
-        pendulum.set_test_now()
+        pendulum.travel_back()
 
 
 def test_persister_problems():
@@ -816,7 +816,7 @@ def test_persister_problems():
     d1 = pendulum.today("utc")
 
     try:
-        pendulum.set_test_now(d1)
+        pendulum.travel_to(d1)
         p = TimedRollingFilePersister(settings.paths.event_dir)
         uids.append(inc_uid())
         exact_days.append(d1)
@@ -922,7 +922,7 @@ def test_persister_problems():
         assert isinstance(problems.errors[1], ReindexError)
 
     finally:
-        pendulum.set_test_now()
+        pendulum.travel_back()
 
 
 def test_reindex_pat(tmp_path, monkeypatch):

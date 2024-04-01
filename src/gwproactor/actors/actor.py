@@ -4,7 +4,6 @@ SyncThreadActor: An actor which orchestrates starting, stopping and communicatin
 SyncAsyncInteractionThread
 """
 
-
 from abc import ABC
 from typing import Any
 from typing import Generic

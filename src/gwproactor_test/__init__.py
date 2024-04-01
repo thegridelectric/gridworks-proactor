@@ -1,9 +1,3 @@
-from gridworks_test.wait import AwaitablePredicate
-from gridworks_test.wait import ErrorStringFunction
-from gridworks_test.wait import Predicate
-from gridworks_test.wait import StopWatch
-from gridworks_test.wait import await_for
-
 from gwproactor_test.certs import TEST_CA_CERTIFICATE_PATH_VAR
 from gwproactor_test.certs import TEST_CA_PRIVATE_KEY_VAR
 from gwproactor_test.certs import TEST_CERTIFICATE_CACHE_VAR
@@ -26,6 +20,11 @@ from gwproactor_test.proactor_recorder import RecorderLinkStats
 from gwproactor_test.proactor_recorder import RecorderStats
 from gwproactor_test.proactor_recorder import make_recorder_class
 from gwproactor_test.proactor_test_collections import ProactorCommTests
+from gwproactor_test.wait import AwaitablePredicate
+from gwproactor_test.wait import ErrorStringFunction
+from gwproactor_test.wait import Predicate
+from gwproactor_test.wait import StopWatch
+from gwproactor_test.wait import await_for
 
 
 __all__ = [

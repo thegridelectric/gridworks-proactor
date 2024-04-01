@@ -1,4 +1,5 @@
 """Test ExternalWatchdogCommandBuilder"""
+
 import os
 
 from gwproactor import ExternalWatchdogCommandBuilder

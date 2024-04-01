@@ -2,6 +2,7 @@
 REST commands into a message posted to main processing thread.
 
 """
+
 import asyncio
 from dataclasses import dataclass
 from dataclasses import field
