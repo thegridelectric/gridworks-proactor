@@ -1,4 +1,5 @@
 """Message structures for use between proactor and its sub-objects."""
+
 import uuid
 from enum import Enum
 from typing import Any
@@ -205,20 +206,19 @@ class MQTTProblemsMessage(MQTTClientMessage[MQTTCommEventPayload]):
         )
 
 
-class PatWatchdog(BaseModel):
-    ...
+class PatWatchdog(BaseModel): ...
 
 
 class PatInternalWatchdog(PatWatchdog):
-    TypeName: Literal[
+    TypeName: Literal["gridworks.watchdog.pat.internal"] = (
         "gridworks.watchdog.pat.internal"
-    ] = "gridworks.watchdog.pat.internal"
+    )
 
 
 class PatExternalWatchdog(PatWatchdog):
-    TypeName: Literal[
+    TypeName: Literal["gridworks.watchdog.pat.external"] = (
         "gridworks.watchdog.pat.external"
-    ] = "gridworks.watchdog.pat.external"
+    )
 
 
 class PatInternalWatchdogMessage(Message[PatInternalWatchdog]):
@@ -239,8 +239,7 @@ class PatExternalWatchdogMessage(Message[PatExternalWatchdog]):
         )
 
 
-class Command(BaseModel):
-    ...
+class Command(BaseModel): ...
 
 
 CommandT = TypeVar("CommandT", bound=Command)

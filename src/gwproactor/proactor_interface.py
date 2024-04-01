@@ -224,8 +224,7 @@ class ServicesInterface(CommunicatorInterface):
 
     @property
     @abstractmethod
-    def hardware_layout(self) -> HardwareLayout:
-        ...
+    def hardware_layout(self) -> HardwareLayout: ...
 
     @abstractmethod
     def get_external_watchdog_builder_class(

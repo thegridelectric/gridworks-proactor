@@ -1,4 +1,5 @@
 """Local pytest configuration"""
+
 from pathlib import Path
 
 import pytest
@@ -13,5 +14,4 @@ set_test_certificate_cache_dir(Path(__file__).parent / ".certificate_cache")
 
 
 @pytest.fixture(autouse=True)
-def always_restore_loggers(restore_loggers) -> None:
-    ...
+def always_restore_loggers(restore_loggers) -> None: ...

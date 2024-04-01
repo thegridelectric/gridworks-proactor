@@ -1,4 +1,5 @@
 """Settings for the GridWorks Scada, readable from environment and/or from env files."""
+
 from gwproactor.config.logging import DEFAULT_BYTES_PER_LOG_FILE
 from gwproactor.config.logging import DEFAULT_FRACTIONAL_SECOND_FORMAT
 from gwproactor.config.logging import DEFAULT_LOG_FILE_NAME
