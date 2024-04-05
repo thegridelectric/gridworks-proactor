@@ -12,6 +12,7 @@ from typing import Optional
 from typing import Sequence
 
 import gwproto
+from aiohttp.typedefs import Handler as HTTPHandler
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
 from gwproto.messages import Ack
@@ -57,6 +58,7 @@ from gwproactor.problems import Problems
 from gwproactor.stats import ProactorStats
 from gwproactor.str_tasks import str_tasks
 from gwproactor.watchdog import WatchdogManager
+from gwproactor.web_manager import _WebManager
 
 
 class Proactor(ServicesInterface, Runnable):
@@ -75,6 +77,7 @@ class Proactor(ServicesInterface, Runnable):
     _stop_requested: bool
     _tasks: List[asyncio.Task]
     _io_loop_manager: IOLoop
+    _web_manager: _WebManager
     _watchdog: WatchdogManager
 
     def __init__(
@@ -120,6 +123,8 @@ class Proactor(ServicesInterface, Runnable):
         self.add_communicator(self._watchdog)
         self._io_loop_manager = IOLoop(self)
         self.add_communicator(self._io_loop_manager)
+        self._web_manager = _WebManager(self)
+        self.add_communicator(self._web_manager)
 
     @classmethod
     def make_stats(cls) -> ProactorStats:
@@ -173,6 +178,21 @@ class Proactor(ServicesInterface, Runnable):
     @property
     def io_loop_manager(self) -> IOLoopInterface:
         return self._io_loop_manager
+
+    def add_web_server(self, name: str, host: str, port: int, **kwargs: Any) -> None:
+        self._web_manager.add_web_server(name=name, host=host, port=port, **kwargs)
+
+    def add_web_route(
+        self,
+        server_name: str,
+        method: str,
+        path: str,
+        handler: HTTPHandler,
+        **kwargs: Any,
+    ):
+        self._web_manager.add_web_route(
+            server_name=server_name, method=method, path=path, handler=handler, **kwargs
+        )
 
     @property
     def hardware_layout(self) -> HardwareLayout:

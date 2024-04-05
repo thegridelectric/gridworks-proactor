@@ -643,18 +643,18 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "fastapi"
-version = "0.110.0"
+version = "0.110.1"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "fastapi-0.110.0-py3-none-any.whl", hash = "sha256:87a1f6fb632a218222c5984be540055346a8f5d8a68e8f6fb647b1dc9934de4b"},
-    {file = "fastapi-0.110.0.tar.gz", hash = "sha256:266775f0dcc95af9d3ef39bad55cff525329a931d5fd51930aadd4f428bf7ff3"},
+    {file = "fastapi-0.110.1-py3-none-any.whl", hash = "sha256:5df913203c482f820d31f48e635e022f8cbfe7350e4830ef05a3163925b1addc"},
+    {file = "fastapi-0.110.1.tar.gz", hash = "sha256:6feac43ec359dfe4f45b2c18ec8c94edb8dc2dfc461d417d9e626590c071baad"},
 ]
 
 [package.dependencies]
 pydantic = ">=1.7.4,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0 || >2.0.0,<2.0.1 || >2.0.1,<2.1.0 || >2.1.0,<3.0.0"
-starlette = ">=0.36.3,<0.37.0"
+starlette = ">=0.37.2,<0.38.0"
 typing-extensions = ">=4.8.0"
 
 [package.extras]
@@ -954,21 +954,23 @@ xdg = ">=6.0.0"
 
 [[package]]
 name = "gridworks-protocol"
-version = "0.7.2"
+version = "0.7.3"
 description = "Gridworks Protocol"
 optional = false
-python-versions = "<4.0,>=3.10"
-files = [
-    {file = "gridworks_protocol-0.7.2-py3-none-any.whl", hash = "sha256:0f930790f5c0f13555f496445f1d36e0fa2562dae97213e55f15be0344924ef6"},
-    {file = "gridworks_protocol-0.7.2.tar.gz", hash = "sha256:f67a5d89e1a1b5fcb3458770ac06a3f3896a7b4df41a573fb2f1cae9f7050b0a"},
-]
+python-versions = "^3.10"
+files = []
+develop = true
 
 [package.dependencies]
-fastapi-utils = ">=0.2.1,<0.3.0"
-pendulum = ">=3,<4"
-pydantic = ">=1.10.2,<2.0.0"
-pytz = ">=2024.1,<2025.0"
-yarl = ">=1.9.2,<2.0.0"
+fastapi-utils = "^0.2.1"
+pendulum = "^3"
+pydantic = "^1.10.2"
+pytz = "^2024.1"
+yarl = "^1.9.2"
+
+[package.source]
+type = "directory"
+url = "../gridworks-protocol"
 
 [[package]]
 name = "identify"
@@ -2410,13 +2412,13 @@ sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
 name = "starlette"
-version = "0.36.3"
+version = "0.37.2"
 description = "The little ASGI library that shines."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "starlette-0.36.3-py3-none-any.whl", hash = "sha256:13d429aa93a61dc40bf503e8c801db1f1bca3dc706b10ef2434a36123568f044"},
-    {file = "starlette-0.36.3.tar.gz", hash = "sha256:90a671733cfb35771d8cc605e0b679d23b992f8dcfad48cc60b38cb29aeb7080"},
+    {file = "starlette-0.37.2-py3-none-any.whl", hash = "sha256:6fe59f29268538e5d0d182f2791a479a0c64638e6935d1c6989e63fb2699c6ee"},
+    {file = "starlette-0.37.2.tar.gz", hash = "sha256:9af890290133b79fc3db55474ade20f6220a364a0402e0b556e7cd5e1e093823"},
 ]
 
 [package.dependencies]
@@ -2441,13 +2443,13 @@ pbr = ">=2.0.0,<2.1.0 || >2.1.0"
 
 [[package]]
 name = "textual"
-version = "0.55.0"
+version = "0.55.1"
 description = "Modern Text User Interface framework"
 optional = true
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "textual-0.55.0-py3-none-any.whl", hash = "sha256:6c1537aea0897f68b547de2999589ac337210ad8bfa7f3634c0221b57a336e08"},
-    {file = "textual-0.55.0.tar.gz", hash = "sha256:2036aef7595bbbcfd0d827f0eea6efbe92b51bdb102dc493f7da8d80fa54a999"},
+    {file = "textual-0.55.1-py3-none-any.whl", hash = "sha256:4dac6401a4a1eaaf107a29560b28dc09d9a9867988c8fbb7763cfee4118e9664"},
+    {file = "textual-0.55.1.tar.gz", hash = "sha256:b48052410d83b26944536511626ded9fa60e2bd7e4ca3d7e3b71865dba25a965"},
 ]
 
 [package.dependencies]
@@ -2856,4 +2858,4 @@ tests = ["gridworks-cert", "pytest", "pytest-asyncio"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "d8e707c0c4365701921ebfc34c16de01e00e6da4d12e25a550325a82d74ca15c"
+content-hash = "576fd32933454582fcfd8557b8c710ffec02dfbcd559f0a90584fbc3697f403e"

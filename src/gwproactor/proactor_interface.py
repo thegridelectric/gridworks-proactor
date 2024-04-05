@@ -8,10 +8,12 @@ import sys
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
+from typing import Any
 from typing import Coroutine
 from typing import Optional
 from typing import Sequence
 
+from aiohttp.typedefs import Handler as HTTPHandler
 from gwproto import HardwareLayout
 from gwproto import ShNode
 from gwproto.messages import EventT
@@ -196,6 +198,21 @@ class ServicesInterface(CommunicatorInterface):
     @property
     @abstractmethod
     def io_loop_manager(self) -> IOLoopInterface:
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_web_server(self, name: str, host: str, port: int, **kwargs: Any) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_web_route(
+        self,
+        server_name: str,
+        method: str,
+        path: str,
+        handler: HTTPHandler,
+        **kwargs: Any
+    ):
         raise NotImplementedError
 
     @abstractmethod
