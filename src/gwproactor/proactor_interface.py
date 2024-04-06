@@ -201,7 +201,12 @@ class ServicesInterface(CommunicatorInterface):
         raise NotImplementedError
 
     @abstractmethod
-    def add_web_server(self, name: str, host: str, port: int, **kwargs: Any) -> None:
+    def add_web_server_config(
+        self, name: str, host: str, port: int, **kwargs: Any
+    ) -> None:
+        """Adds configuration for web server which will be started when start() is called.
+
+        Not thread safe."""
         raise NotImplementedError
 
     @abstractmethod
@@ -213,6 +218,13 @@ class ServicesInterface(CommunicatorInterface):
         handler: HTTPHandler,
         **kwargs: Any
     ):
+        """Adds configuration for web server route which will be available after start() is called.
+
+        May be called even if associated web server is not configured, in which case this route
+        will simply be ignored.
+
+        Not thread safe.
+        """
         raise NotImplementedError
 
     @abstractmethod

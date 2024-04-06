@@ -13,6 +13,7 @@ from typing import Sequence
 
 import gwproto
 from aiohttp.typedefs import Handler as HTTPHandler
+from gwproto.data_classes.components.web_server_component import WebServerComponent
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
 from gwproto.messages import Ack
@@ -125,6 +126,13 @@ class Proactor(ServicesInterface, Runnable):
         self.add_communicator(self._io_loop_manager)
         self._web_manager = _WebManager(self)
         self.add_communicator(self._web_manager)
+        for config in self._layout.get_components_by_type(WebServerComponent):
+            self._web_manager.add_web_server_config(
+                name=config.web_server_gt.Name,
+                host=config.web_server_gt.Host,
+                port=config.web_server_gt.Port,
+                **config.web_server_gt.Kwargs,
+            )
 
     @classmethod
     def make_stats(cls) -> ProactorStats:
@@ -179,8 +187,12 @@ class Proactor(ServicesInterface, Runnable):
     def io_loop_manager(self) -> IOLoopInterface:
         return self._io_loop_manager
 
-    def add_web_server(self, name: str, host: str, port: int, **kwargs: Any) -> None:
-        self._web_manager.add_web_server(name=name, host=host, port=port, **kwargs)
+    def add_web_server_config(
+        self, name: str, host: str, port: int, **kwargs: Any
+    ) -> None:
+        self._web_manager.add_web_server_config(
+            name=name, host=host, port=port, **kwargs
+        )
 
     def add_web_route(
         self,

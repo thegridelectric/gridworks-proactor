@@ -33,13 +33,11 @@ class _WebManager(Communicator, Runnable):
 
     _configs: dict[str, WebServerGt]
     _routes: dict[str, list[RouteDef]]
-    _server_tasks: list[int]
 
     def __init__(self, services: ServicesInterface) -> None:
         super().__init__("_WebManager", services)
         self._configs = dict()
         self._routes = defaultdict(list)
-        self._server_tasks = []
 
     def process_message(self, message: Message) -> Result[bool, BaseException]:
         raise ValueError("_WebManager does not currently process any messages")
@@ -47,25 +45,24 @@ class _WebManager(Communicator, Runnable):
     def start(self) -> None:
         for server_name, server_config in self._configs.items():
             if server_config.Enabled:
-                self._server_tasks.append(
-                    self._services.io_loop_manager.add_io_coroutine(
-                        functools.partial(
-                            _run_web_server,
-                            config=self._configs,
-                            routes=self._routes.get(server_name, []),
-                        ),
-                        name=f"{self.name}.{server_name}",
-                    )
+                self._services.io_loop_manager.add_io_coroutine(
+                    functools.partial(
+                        _run_web_server,
+                        config=self._configs,
+                        routes=self._routes.get(server_name, []),
+                    ),
+                    name=f"{self.name}.{server_name}",
                 )
 
     def stop(self) -> None:
-        for task_id in self._server_tasks:
-            self._services.io_loop_manager.cancel_io_routine(task_id)
+        pass
 
     async def join(self) -> None:
         pass
 
-    def add_web_server(self, name: str, host: str, port: int, **kwargs: Any) -> None:
+    def add_web_server_config(
+        self, name: str, host: str, port: int, **kwargs: Any
+    ) -> None:
         if name in self._configs:
             raise ValueError(f"ERROR: Server with name '{name}' already exists")
         self._configs[name] = WebServerGt(
