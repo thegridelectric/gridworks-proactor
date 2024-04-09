@@ -156,8 +156,16 @@ class Proactor(ServicesInterface, Runnable):
     def send_threadsafe(self, message: Message) -> None:
         self._loop.call_soon_threadsafe(self._receive_queue.put_nowait, message)
 
-    def get_communicator(self, name: str) -> CommunicatorInterface:
-        return self._communicators[name]
+    def get_communicator(self, name: str) -> Optional[CommunicatorInterface]:
+        return self._communicators.get(name, None)
+
+    def get_communicator_as_type(self, name: str, type_: Type[T]) -> Optional[T]:
+        communicator = self.get_communicator(name)
+        if communicator is not None and not isinstance(communicator, type_):
+            raise ValueError(
+                f"ERROR. Communicator <{name}> has type {type(communicator)} not {type_}"
+            )
+        return communicator
 
     @property
     def name(self) -> str:

@@ -174,7 +174,11 @@ class ServicesInterface(CommunicatorInterface):
     """Interface to system services (the proactor)"""
 
     @abstractmethod
-    def get_communicator(self, name: str) -> CommunicatorInterface:
+    def get_communicator(self, name: str) -> Optional[CommunicatorInterface]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_communicator_as_type(self, name: str, type_: Type[T]) -> Optional[T]:
         raise NotImplementedError
 
     @abstractmethod
