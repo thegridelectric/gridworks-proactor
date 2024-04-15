@@ -10,6 +10,8 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Type
+from typing import TypeVar
 
 import gwproto
 from aiohttp.typedefs import Handler as HTTPHandler
@@ -60,6 +62,9 @@ from gwproactor.stats import ProactorStats
 from gwproactor.str_tasks import str_tasks
 from gwproactor.watchdog import WatchdogManager
 from gwproactor.web_manager import _WebManager
+
+
+T = TypeVar("T")
 
 
 class Proactor(ServicesInterface, Runnable):
