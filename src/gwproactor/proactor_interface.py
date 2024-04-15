@@ -12,6 +12,8 @@ from typing import Any
 from typing import Coroutine
 from typing import Optional
 from typing import Sequence
+from typing import Type
+from typing import TypeVar
 
 from aiohttp.typedefs import Handler as HTTPHandler
 from gwproto import HardwareLayout
@@ -24,6 +26,9 @@ from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
 from gwproactor.logger import ProactorLogger
 from gwproactor.message import Message
 from gwproactor.stats import ProactorStats
+
+
+T = TypeVar("T")
 
 
 @dataclass
