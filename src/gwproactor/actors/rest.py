@@ -70,7 +70,7 @@ class RESTPoller:
     _task_id: int
     _session_args: Optional[SessionArgs] = None
     _request_args: Optional[RequestArgs] = None
-    _convert: Converter
+    _converter: Converter
     _forward: ThreadSafeForwarder
 
     def __init__(
@@ -152,7 +152,7 @@ class RESTPoller:
 
     async def _convert(self, response: ClientResponse) -> Optional[Message]:
         try:
-            message = await self._convert(response)
+            message = await self._converter(response)
         except BaseException as convert_exception:
             message = None
             if self._rest.errors.convert.report:
