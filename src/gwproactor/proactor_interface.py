@@ -111,7 +111,8 @@ class Runnable(ABC):
 
 
 class ActorInterface(CommunicatorInterface, Runnable, ABC):
-    """Pure interface for a proactor sub-object (an Actor) which can communicate and has a GridWorks ShNode."""
+    """Pure interface for a proactor sub-object (an Actor) which can communicate
+    and has a GridWorks ShNode."""
 
     @property
     @abstractmethod
@@ -122,6 +123,10 @@ class ActorInterface(CommunicatorInterface, Runnable, ABC):
     @abstractmethod
     def node(self) -> ShNode:
         raise NotImplementedError
+
+    @abstractmethod
+    def init(self) -> None:
+        """Called after constructor so derived functions can be used in setup."""
 
     @classmethod
     def load(
@@ -134,7 +139,9 @@ class ActorInterface(CommunicatorInterface, Runnable, ABC):
         if module_name not in sys.modules:
             importlib.import_module(module_name)
         actor_class = getattr(sys.modules[module_name], actor_class_name)
-        return actor_class(name, services)
+        actor = actor_class(name, services)
+        actor.init()
+        return actor
 
 
 INVALID_IO_TASK_HANDLE = -1
