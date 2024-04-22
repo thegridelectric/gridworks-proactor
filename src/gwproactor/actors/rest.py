@@ -71,6 +71,7 @@ class RESTPoller:
     _session_args: Optional[SessionArgs] = None
     _request_args: Optional[RequestArgs] = None
     _converter: Converter
+    _forward: ThreadSafeForwarder
 
     def __init__(
         self,
@@ -85,7 +86,7 @@ class RESTPoller:
         self._task_id = INVALID_IO_TASK_HANDLE
         self._rest = rest
         self._io_loop_manager = loop_manager
-        self._converter = convert
+        self._convert = convert
         self._forward = forward
         if cache_request_args:
             self._session_args = self._make_session_args()

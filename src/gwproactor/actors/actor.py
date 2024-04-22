@@ -37,6 +37,9 @@ class Actor(ActorInterface, Communicator, ABC):
     def node(self):
         return self._node
 
+    def init(self) -> None:
+        """Called after constructor so derived functions can be used in setup."""
+
 
 SyncThreadT = TypeVar("SyncThreadT", bound=SyncAsyncInteractionThread)
 
