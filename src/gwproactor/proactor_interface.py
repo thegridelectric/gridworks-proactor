@@ -8,10 +8,14 @@ import sys
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
+from typing import Any
 from typing import Coroutine
 from typing import Optional
 from typing import Sequence
+from typing import Type
+from typing import TypeVar
 
+from aiohttp.typedefs import Handler as HTTPHandler
 from gwproto import HardwareLayout
 from gwproto import ShNode
 from gwproto.messages import EventT
@@ -22,6 +26,9 @@ from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
 from gwproactor.logger import ProactorLogger
 from gwproactor.message import Message
 from gwproactor.stats import ProactorStats
+
+
+T = TypeVar("T")
 
 
 @dataclass
@@ -104,7 +111,8 @@ class Runnable(ABC):
 
 
 class ActorInterface(CommunicatorInterface, Runnable, ABC):
-    """Pure interface for a proactor sub-object (an Actor) which can communicate and has a GridWorks ShNode."""
+    """Pure interface for a proactor sub-object (an Actor) which can communicate
+    and has a GridWorks ShNode."""
 
     @property
     @abstractmethod
@@ -115,6 +123,10 @@ class ActorInterface(CommunicatorInterface, Runnable, ABC):
     @abstractmethod
     def node(self) -> ShNode:
         raise NotImplementedError
+
+    @abstractmethod
+    def init(self) -> None:
+        """Called after constructor so derived functions can be used in setup."""
 
     @classmethod
     def load(
@@ -127,7 +139,9 @@ class ActorInterface(CommunicatorInterface, Runnable, ABC):
         if module_name not in sys.modules:
             importlib.import_module(module_name)
         actor_class = getattr(sys.modules[module_name], actor_class_name)
-        return actor_class(name, services)
+        actor = actor_class(name, services)
+        actor.init()
+        return actor
 
 
 INVALID_IO_TASK_HANDLE = -1
@@ -172,7 +186,11 @@ class ServicesInterface(CommunicatorInterface):
     """Interface to system services (the proactor)"""
 
     @abstractmethod
-    def get_communicator(self, name: str) -> CommunicatorInterface:
+    def get_communicator(self, name: str) -> Optional[CommunicatorInterface]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_communicator_as_type(self, name: str, type_: Type[T]) -> Optional[T]:
         raise NotImplementedError
 
     @abstractmethod
@@ -196,6 +214,33 @@ class ServicesInterface(CommunicatorInterface):
     @property
     @abstractmethod
     def io_loop_manager(self) -> IOLoopInterface:
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_web_server_config(
+        self, name: str, host: str, port: int, **kwargs: Any
+    ) -> None:
+        """Adds configuration for web server which will be started when start() is called.
+
+        Not thread safe."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_web_route(
+        self,
+        server_name: str,
+        method: str,
+        path: str,
+        handler: HTTPHandler,
+        **kwargs: Any
+    ):
+        """Adds configuration for web server route which will be available after start() is called.
+
+        May be called even if associated web server is not configured, in which case this route
+        will simply be ignored.
+
+        Not thread safe.
+        """
         raise NotImplementedError
 
     @abstractmethod

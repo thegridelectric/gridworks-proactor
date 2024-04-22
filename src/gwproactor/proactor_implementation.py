@@ -10,8 +10,12 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Type
+from typing import TypeVar
 
 import gwproto
+from aiohttp.typedefs import Handler as HTTPHandler
+from gwproto.data_classes.components.web_server_component import WebServerComponent
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
 from gwproto.messages import Ack
@@ -57,6 +61,10 @@ from gwproactor.problems import Problems
 from gwproactor.stats import ProactorStats
 from gwproactor.str_tasks import str_tasks
 from gwproactor.watchdog import WatchdogManager
+from gwproactor.web_manager import _WebManager
+
+
+T = TypeVar("T")
 
 
 class Proactor(ServicesInterface, Runnable):
@@ -75,6 +83,7 @@ class Proactor(ServicesInterface, Runnable):
     _stop_requested: bool
     _tasks: List[asyncio.Task]
     _io_loop_manager: IOLoop
+    _web_manager: _WebManager
     _watchdog: WatchdogManager
 
     def __init__(
@@ -120,6 +129,15 @@ class Proactor(ServicesInterface, Runnable):
         self.add_communicator(self._watchdog)
         self._io_loop_manager = IOLoop(self)
         self.add_communicator(self._io_loop_manager)
+        self._web_manager = _WebManager(self)
+        self.add_communicator(self._web_manager)
+        for config in self._layout.get_components_by_type(WebServerComponent):
+            self._web_manager.add_web_server_config(
+                name=config.web_server_gt.Name,
+                host=config.web_server_gt.Host,
+                port=config.web_server_gt.Port,
+                **config.web_server_gt.Kwargs,
+            )
 
     @classmethod
     def make_stats(cls) -> ProactorStats:
@@ -143,8 +161,16 @@ class Proactor(ServicesInterface, Runnable):
     def send_threadsafe(self, message: Message) -> None:
         self._loop.call_soon_threadsafe(self._receive_queue.put_nowait, message)
 
-    def get_communicator(self, name: str) -> CommunicatorInterface:
-        return self._communicators[name]
+    def get_communicator(self, name: str) -> Optional[CommunicatorInterface]:
+        return self._communicators.get(name, None)
+
+    def get_communicator_as_type(self, name: str, type_: Type[T]) -> Optional[T]:
+        communicator = self.get_communicator(name)
+        if communicator is not None and not isinstance(communicator, type_):
+            raise ValueError(
+                f"ERROR. Communicator <{name}> has type {type(communicator)} not {type_}"
+            )
+        return communicator
 
     @property
     def name(self) -> str:
@@ -173,6 +199,25 @@ class Proactor(ServicesInterface, Runnable):
     @property
     def io_loop_manager(self) -> IOLoopInterface:
         return self._io_loop_manager
+
+    def add_web_server_config(
+        self, name: str, host: str, port: int, **kwargs: Any
+    ) -> None:
+        self._web_manager.add_web_server_config(
+            name=name, host=host, port=port, **kwargs
+        )
+
+    def add_web_route(
+        self,
+        server_name: str,
+        method: str,
+        path: str,
+        handler: HTTPHandler,
+        **kwargs: Any,
+    ):
+        self._web_manager.add_web_route(
+            server_name=server_name, method=method, path=path, handler=handler, **kwargs
+        )
 
     @property
     def hardware_layout(self) -> HardwareLayout:
