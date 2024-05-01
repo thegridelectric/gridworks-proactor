@@ -50,6 +50,9 @@ from gwproactor.message import MQTTConnectPayload
 from gwproactor.message import MQTTDisconnectPayload
 from gwproactor.message import MQTTReceiptPayload
 from gwproactor.message import MQTTSubackPayload
+from gwproactor.persister import ByteDecodingError
+from gwproactor.persister import DecodingError
+from gwproactor.persister import FileEmptyWarning
 from gwproactor.persister import JSONDecodingError
 from gwproactor.persister import PersisterInterface
 from gwproactor.persister import UIDMissingWarning
@@ -92,7 +95,6 @@ class LinkManager:
         self._stats = stats
         self._event_persister = event_persister
         self._reuploads = Reuploads(
-            self._event_persister,
             self._logger,
             self._settings.num_initial_event_reuploads,
         )
@@ -253,57 +255,125 @@ class LinkManager:
         )
 
     def _start_reupload(self) -> None:
-        self._logger.path("++_start_reupload reuploading: %s", self.reuploading())
-        path_dbg = 0
         if not self._reuploads.reuploading():
+            self._continue_reupload(
+                self._reuploads.start_reupload(self._event_persister.pending())
+            )
+
+    def _continue_reupload(self, event_ids: list[str]) -> None:
+        self._logger.path("++_continue_reupload  %d", len(event_ids))
+        path_dbg = 0
+        tried_count_dbg = 0
+        sent_count_dbg = 0
+        continuation_count_dbg = -1
+
+        if event_ids:
             path_dbg |= 0x00000001
-            events_to_reupload = self._reuploads.start_reupload()
-            self._reupload_events(events_to_reupload)
-            if self._logger.isEnabledFor(logging.INFO):
+            sent_one = False
+            # Try to send all requested events. At least send must succeed to
+            # continue the reupload, so if all sends fail, get more until
+            # one is sent or there are no more reuploads.
+            while not sent_one and self._reuploads.reuploading():
                 path_dbg |= 0x00000002
-                if self._reuploads.reuploading():
+                continuation_count_dbg += 1
+                next_event_ids = []
+                for event_id in event_ids:
                     path_dbg |= 0x00000004
-                    state_str = f"{self._reuploads.num_reupload_pending} reupload events pending."
-                else:
-                    path_dbg |= 0x00000008
-                    state_str = "reupload complete."
-                self._logger.info(
-                    f"_start_reupload: reuploaded {len(events_to_reupload)} events. "
-                    f"{state_str} "
-                    f"Total pending events: {self._event_persister.num_pending}."
-                )
+                    tried_count_dbg += 1
+                    problems = Problems()
+                    ret = self._reupload_event(event_id)
+                    if ret.is_ok():
+                        path_dbg |= 0x00000008
+                        if ret.value:
+                            path_dbg |= 0x00000010
+                            sent_count_dbg += 1
+                            sent_one = True
+                        else:
+                            path_dbg |= 0x00000020
+                            problems.add_error(DecodingError(uid=event_id))
+                    else:
+                        path_dbg |= 0x00000040
+                        problems.add_problems(ret.err())
+                    if problems:
+                        path_dbg |= 0x00000080
+                        # There was some error decoding this event.
+                        # We generate a new event with information
+                        # about decoding failure and delete this event.
+                        self.generate_event(
+                            problems.problem_event(
+                                f"Event decoding error - uid:{event_id}"
+                            )
+                        )
+                        self._event_persister.clear(event_id)
+                        next_event_ids.extend(
+                            self._reuploads.process_ack_for_reupload(event_id)
+                        )
+                event_ids = next_event_ids
         self._logger.path(
-            "--_start_reupload reuploading: %s  path:0x%08X",
-            self.reuploading(),
+            "--_continue_reupload  path:0x%08X  sent:%d  tried:%d  continuations:%d",
             path_dbg,
+            tried_count_dbg,
+            sent_count_dbg,
+            continuation_count_dbg,
         )
 
-    def _reupload_events(self, event_ids: list[str]) -> Result[bool, BaseException]:
-        errors = []
-        for message_id in event_ids:
-            match self._event_persister.retrieve(message_id):
-                case Ok(event_bytes):
-                    if event_bytes is None:
-                        errors.append(
-                            UIDMissingWarning("reupload_events", uid=message_id)
+    def _reupload_event(self, event_id) -> Result[bool, Problems]:
+        """Load event for event_id from storage, decoded to JSON and send it.
+
+        Return either Ok(True) or Err(Problems(list of decoding errors)).
+
+        Send errors handled either by exception, which will propagate up, or
+        by ack timeout.
+        """
+        self._logger.path("++_reupload_event  %s", event_id)
+        path_dbg = 0
+        problems = Problems()
+        match self._event_persister.retrieve(event_id):
+            case Ok(event_bytes):
+                path_dbg |= 0x00000001
+                if event_bytes is None:
+                    path_dbg |= 0x00000002
+                    problems.add_error(
+                        UIDMissingWarning("reupload_events", uid=event_id)
+                    )
+                elif len(event_bytes) == 0:
+                    path_dbg |= 0x00000004
+                    problems.add_error(
+                        FileEmptyWarning("reupload_events", uid=event_id)
+                    )
+                else:
+                    path_dbg |= 0x00000008
+                    try:
+                        event_str = event_bytes.decode(encoding=self.PERSISTER_ENCODING)
+                    except BaseException as e:
+                        path_dbg |= 0x00000010
+                        problems.add_error(e).add_error(
+                            ByteDecodingError("reupload_events", uid=event_id)
                         )
                     else:
+                        path_dbg |= 0x00000020
                         try:
-                            event = json.loads(
-                                event_bytes.decode(encoding=self.PERSISTER_ENCODING)
-                            )
+                            event = json.loads(event_str)
                         except BaseException as e:
-                            errors.append(e)
-                            errors.append(
-                                JSONDecodingError("reupload_events", uid=message_id)
+                            path_dbg |= 0x00000040
+                            problems.add_error(e).add_error(
+                                JSONDecodingError(
+                                    f"reupload_events - raw json:\n<\n{event_str}\n>",
+                                    uid=event_id,
+                                )
                             )
                         else:
+                            path_dbg |= 0x00000080
                             self.publish_upstream(event, AckRequired=True)
-                case Err(error):
-                    errors.append(error)
-        if errors:
-            return Err(Problems(errors=errors))
-        return Ok()
+                            self._logger.path(
+                                "--_reupload_event:1  path:0x%08X", path_dbg
+                            )
+                            return Ok(True)
+            case Err(error):
+                path_dbg |= 0x00000100
+                problems.add_problems(error)
+        self._logger.path("--_reupload_event:0  path:0x%08X", path_dbg)
+        return Err(problems)
 
     def start(
         self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
@@ -410,17 +480,11 @@ class LinkManager:
             self._event_persister.clear(message_id)
             if self._reuploads.reuploading() and link_name == self.upstream_client:
                 path_dbg |= 0x00000002
-                reupload_now = self._reuploads.process_ack_for_reupload(message_id)
-                if reupload_now:
-                    path_dbg |= 0x00000004
-                    self._reupload_events(reupload_now)
-                self._logger.path(
-                    "events pending: %d  reupload pending: %d",
-                    self._event_persister.num_pending,
-                    self._reuploads.num_reupload_pending,
+                self._continue_reupload(
+                    self._reuploads.process_ack_for_reupload(message_id)
                 )
                 if not self._reuploads.reuploading():
-                    path_dbg |= 0x00000008
+                    path_dbg |= 0x00000004
                     self._logger.info("reupload complete.")
         self._logger.path("--LinkManager.process_ack path:0x%08X", path_dbg)
 
