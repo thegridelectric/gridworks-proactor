@@ -90,7 +90,7 @@ jobs:
           container-name: "local-mqtt"
 
       - name: Wait for Mosquitto
-        uses: iFaxity/wait-on-action@v1.1.0
+        uses: iFaxity/wait-on-action@v1.2.0
         with:
           resource: tcp:localhost:1883
           timeout: 5000
