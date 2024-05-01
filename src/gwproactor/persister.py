@@ -59,7 +59,13 @@ class TrimFailed(PersisterError): ...
 class ReindexError(PersisterError): ...
 
 
-class JSONDecodingError(PersisterException): ...
+class DecodingError(PersisterError): ...
+
+
+class ByteDecodingError(DecodingError): ...
+
+
+class JSONDecodingError(DecodingError): ...
 
 
 class UIDExistedWarning(PersisterWarning): ...
@@ -72,6 +78,9 @@ class FileMissingWarning(PersisterWarning): ...
 
 
 class UIDMissingWarning(PersisterWarning): ...
+
+
+class FileEmptyWarning(PersisterWarning): ...
 
 
 class PersisterInterface(abc.ABC):
@@ -197,9 +206,10 @@ class TimedRollingFilePersister(PersisterInterface):
         self._base_dir = Path(base_dir).resolve()
         self._max_bytes = max_bytes
         self._curr_dir = self._today_dir()
+        self._curr_bytes = 0
         self._pat_watchdog_args = pat_watchdog_args
         self._reindex_pat_seconds = reindex_pat_seconds
-        self.reindex()
+        self._pending = dict()
 
     @property
     def max_bytes(self) -> int:
