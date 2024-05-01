@@ -5,7 +5,6 @@ from gwproactor.persister import PersisterInterface
 class Reuploads:
     NUM_INITIAL_EVENTS: int = 5
 
-    _event_persister: PersisterInterface
     _reupload_pending: dict[str, None]
     _reuploaded_unacked: dict[str, None]
     _num_initial_events: int
@@ -13,11 +12,9 @@ class Reuploads:
 
     def __init__(
         self,
-        event_persister: PersisterInterface,
         logger: ProactorLogger,
         num_initial_events: int = NUM_INITIAL_EVENTS,
     ):
-        self._event_persister = event_persister
         self._reupload_pending = dict()
         self._reuploaded_unacked = dict()
         self._num_initial_events = num_initial_events
@@ -29,8 +26,7 @@ class Reuploads:
             s += f"\n  {message_id}"
         return s
 
-    def start_reupload(self) -> list[str]:
-        pending_events = self._event_persister.pending()
+    def start_reupload(self, pending_events: list[str]) -> list[str]:
         reupload_now = pending_events[: self._num_initial_events]
         self._reuploaded_unacked = dict.fromkeys(reupload_now)
         self._reupload_pending = dict.fromkeys(

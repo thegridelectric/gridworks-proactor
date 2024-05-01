@@ -92,7 +92,6 @@ class LinkManager:
         self._stats = stats
         self._event_persister = event_persister
         self._reuploads = Reuploads(
-            self._event_persister,
             self._logger,
             self._settings.num_initial_event_reuploads,
         )
@@ -257,7 +256,9 @@ class LinkManager:
         path_dbg = 0
         if not self._reuploads.reuploading():
             path_dbg |= 0x00000001
-            events_to_reupload = self._reuploads.start_reupload()
+            events_to_reupload = self._reuploads.start_reupload(
+                self._event_persister.pending()
+            )
             self._reupload_events(events_to_reupload)
             if self._logger.isEnabledFor(logging.INFO):
                 path_dbg |= 0x00000002
