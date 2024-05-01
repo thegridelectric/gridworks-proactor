@@ -12,6 +12,8 @@ from typing import TypeVar
 from gwproactor import Proactor
 from gwproactor import ProactorSettings
 from gwproactor import setup_logging
+from gwproactor.config import DEFAULT_BASE_NAME
+from gwproactor.config import LoggingSettings
 from gwproactor.config import MQTTClient
 from gwproactor.config import Paths
 from gwproactor_test import copy_keys
@@ -99,7 +101,12 @@ class CommTestHelper:
             parent_name,
             parent_path_name,
             (
-                self.parent_settings_t(paths=Paths(name=Path(parent_path_name)))
+                self.parent_settings_t(
+                    logging=LoggingSettings(
+                        base_log_name=f"parent_{DEFAULT_BASE_NAME}"
+                    ),
+                    paths=Paths(name=Path(parent_path_name)),
+                )
                 if parent_settings is None
                 else parent_settings
             ),
