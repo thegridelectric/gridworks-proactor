@@ -255,32 +255,10 @@ class LinkManager:
         )
 
     def _start_reupload(self) -> None:
-        self._logger.path("++_start_reupload reuploading: %s", self.reuploading())
-        path_dbg = 0
         if not self._reuploads.reuploading():
-            path_dbg |= 0x00000001
-            events_to_reupload = self._reuploads.start_reupload(
-                self._event_persister.pending()
+            self._continue_reupload(
+                self._reuploads.start_reupload(self._event_persister.pending())
             )
-            self._reupload_events(events_to_reupload)
-            if self._logger.isEnabledFor(logging.INFO):
-                path_dbg |= 0x00000002
-                if self._reuploads.reuploading():
-                    path_dbg |= 0x00000004
-                    state_str = f"{self._reuploads.num_reupload_pending} reupload events pending."
-                else:
-                    path_dbg |= 0x00000008
-                    state_str = "reupload complete."
-                self._logger.info(
-                    f"_start_reupload: reuploaded {len(events_to_reupload)} events. "
-                    f"{state_str} "
-                    f"Total pending events: {self._event_persister.num_pending}."
-                )
-        self._logger.path(
-            "--_start_reupload reuploading: %s  path:0x%08X",
-            self.reuploading(),
-            path_dbg,
-        )
 
     def _continue_reupload(self, event_ids: list[str]) -> None:
         self._logger.path("++_continue_reupload  %d", len(event_ids))
@@ -295,29 +273,29 @@ class LinkManager:
             # Try to send all requested events. At least send must succeed to
             # continue the reupload, so if all sends fail, get more until
             # one is sent or there are no more reuploads.
-            while not sent_one and self._reuploads.reuploading():
-                path_dbg |= 0x00000002
+            while not sent_one and self._reuploads.reuploading() and event_ids:
+                continuation_path_dbg = 0x00000002
                 continuation_count_dbg += 1
                 next_event_ids = []
                 for event_id in event_ids:
-                    path_dbg |= 0x00000004
+                    event_path_dbg = 0x00000004
                     tried_count_dbg += 1
                     problems = Problems()
                     ret = self._reupload_event(event_id)
                     if ret.is_ok():
-                        path_dbg |= 0x00000008
+                        event_path_dbg |= 0x00000008
                         if ret.value:
                             path_dbg |= 0x00000010
                             sent_count_dbg += 1
                             sent_one = True
                         else:
-                            path_dbg |= 0x00000020
+                            event_path_dbg |= 0x00000020
                             problems.add_error(DecodingError(uid=event_id))
                     else:
-                        path_dbg |= 0x00000040
+                        event_path_dbg |= 0x00000040
                         problems.add_problems(ret.err())
                     if problems:
-                        path_dbg |= 0x00000080
+                        event_path_dbg |= 0x00000080
                         # There was some error decoding this event.
                         # We generate a new event with information
                         # about decoding failure and delete this event.
@@ -327,10 +305,15 @@ class LinkManager:
                             )
                         )
                         self._event_persister.clear(event_id)
-                        next_event_ids.extend(
-                            self._reuploads.process_ack_for_reupload(event_id)
+                        next_event_id = self._reuploads.process_ack_for_reupload(
+                            event_id
                         )
+                        if next_event_id:
+                            event_path_dbg |= 0x00000100
+                            next_event_ids.extend(next_event_id)
+                        continuation_path_dbg |= event_path_dbg
                 event_ids = next_event_ids
+                path_dbg |= continuation_path_dbg
         self._logger.path(
             "--_continue_reupload  path:0x%08X  sent:%d  tried:%d  continuations:%d",
             path_dbg,
@@ -529,17 +512,11 @@ class LinkManager:
             self._event_persister.clear(message_id)
             if self._reuploads.reuploading() and link_name == self.upstream_client:
                 path_dbg |= 0x00000002
-                reupload_now = self._reuploads.process_ack_for_reupload(message_id)
-                if reupload_now:
-                    path_dbg |= 0x00000004
-                    self._reupload_events(reupload_now)
-                self._logger.path(
-                    "events pending: %d  reupload pending: %d",
-                    self._event_persister.num_pending,
-                    self._reuploads.num_reupload_pending,
+                self._continue_reupload(
+                    self._reuploads.process_ack_for_reupload(message_id)
                 )
                 if not self._reuploads.reuploading():
-                    path_dbg |= 0x00000008
+                    path_dbg |= 0x00000004
                     self._logger.info("reupload complete.")
         self._logger.path("--LinkManager.process_ack path:0x%08X", path_dbg)
 
