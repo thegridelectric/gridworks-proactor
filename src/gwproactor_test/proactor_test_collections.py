@@ -732,7 +732,7 @@ class ProactorCommTests:
         In practice these might be corner cases that rarely or never occur, since by default all subacks will come and
         one message and we should not receive any messages before subscribing.
         """
-        async with self.CTH(add_child=True, add_parent=True, child_verbose=True) as h:
+        async with self.CTH(add_child=True, add_parent=True) as h:
             child = h.child
             child_subscriptions = child.mqtt_subscriptions(child.upstream_client)
             if len(child_subscriptions) < 2:
@@ -1142,6 +1142,7 @@ class ProactorCommTests:
             child = h.child
             child.disable_derived_events()
             upstream_link = h.child._links.link(child.upstream_client)
+            reupload_counts = h.child.stats.link(child.upstream_client).reupload_counts
             await await_for(
                 lambda: child.mqtt_quiescent(),
                 1,
@@ -1153,6 +1154,8 @@ class ProactorCommTests:
             assert child._links.num_reupload_pending == 0
             assert child._links.num_reuploaded_unacked == 0
             assert not child._links.reuploading()
+            assert reupload_counts.started == 0
+            assert reupload_counts.completed == 0
 
             # Start parent, wait for reconnect.
             h.start_parent()
@@ -1165,7 +1168,7 @@ class ProactorCommTests:
 
             # Wait for reuploading to complete
             await await_for(
-                lambda: not child._links.reuploading(),
+                lambda: reupload_counts.completed > 0,
                 1,
                 "ERROR waiting for re-upload to complete",
                 err_str_f=h.summary_str,
@@ -1191,6 +1194,7 @@ class ProactorCommTests:
             child = h.child
             child.disable_derived_events()
             upstream_link = h.child._links.link(child.upstream_client)
+            reupload_counts = h.child.stats.link(child.upstream_client).reupload_counts
             await await_for(
                 lambda: child.mqtt_quiescent(),
                 1,
@@ -1227,9 +1231,9 @@ class ProactorCommTests:
 
             # Wait for reupload to complete
             await await_for(
-                lambda: not child._links.reuploading(),
+                lambda: reupload_counts.completed > 0,
                 1,
-                "ERROR waiting for reupload",
+                "ERROR waiting for reupload to complete",
                 err_str_f=h.summary_str,
             )
 

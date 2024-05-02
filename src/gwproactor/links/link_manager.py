@@ -410,6 +410,8 @@ class LinkManager:
     def start(
         self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
     ) -> None:
+        if self.upstream_client:
+            self._reuploads.stats = self._stats.link(self.upstream_client)
         self._mqtt_clients.start(loop, async_queue)
         self.generate_event(StartupEvent())
         self._states.start_all()
