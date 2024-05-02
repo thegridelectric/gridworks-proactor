@@ -10,6 +10,18 @@ from gwproactor.message import MQTTReceiptPayload
 
 
 @dataclass
+class ReuploadCounts:
+    started: int = 0
+    completed: int = 0
+
+    def start(self):
+        self.started += 1
+
+    def complete(self):
+        self.completed += 1
+
+
+@dataclass
 class LinkStats:
     name: str
     num_received_by_type: dict[str, int] = field(
@@ -19,7 +31,14 @@ class LinkStats:
         default_factory=lambda: defaultdict(int)
     )
     comm_event_counts: dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    reupload_counts: ReuploadCounts = field(default_factory=ReuploadCounts)
     timeouts: int = 0
+
+    def start_reupload(self):
+        self.reupload_counts.start()
+
+    def complete_reupload(self):
+        self.reupload_counts.complete()
 
     @property
     def num_received(self) -> int:
@@ -39,6 +58,8 @@ class LinkStats:
             s += "\n  Comm event counts:"
             for comm_event in self.comm_event_counts:
                 s += f"\n    {self.comm_event_counts[comm_event]:3d}: [{comm_event}]"
+            s += f"\n    {self.reupload_counts.started:3d}: [reuploads_started]"
+            s += f"\n    {self.reupload_counts.completed:3d}: [reuploads_completed]"
         return s
 
 

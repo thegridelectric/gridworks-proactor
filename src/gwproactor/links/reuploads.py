@@ -11,6 +11,7 @@ This module only manages events ids; it does not change (add or remove) event st
 from typing import Optional
 
 from gwproactor.logger import ProactorLogger
+from gwproactor.stats import LinkStats
 
 
 class _AckLogger:
@@ -78,6 +79,11 @@ class Reuploads:
     _num_initial_events: int
     """Number of events to send when re-upload starts."""
 
+    stats: Optional[LinkStats] = None
+    """Object into which we can record reupload start and complete. Set during
+    LinkManager.start() since upstream client does not exist durin LinkManager
+    construction. """
+
     _logger: ProactorLogger
 
     def __init__(
@@ -100,6 +106,8 @@ class Reuploads:
         self._reupload_pending = dict.fromkeys(
             pending_events[self._num_initial_events :]
         )
+        if self.reuploading() and self.stats is not None:
+            self.stats.start_reupload()
         self._log_start_reupload(len(pending_events), len(reupload_now))
         return reupload_now
 
@@ -109,6 +117,7 @@ class Reuploads:
         next."""
 
         path_dbg = 0
+        was_reuploading = self.reuploading()
         ack_logger = _AckLogger()
         if self._logger.path_enabled:
             ack_logger.init(self, ack_id, verbose=False)
@@ -136,6 +145,9 @@ class Reuploads:
         elif ack_id in self._reupload_pending:
             path_dbg |= 0x00000004
             self._reupload_pending.pop(ack_id)
+        if was_reuploading and not self.reuploading() and self.stats is not None:
+            path_dbg |= 0x00000008
+            self.stats.complete_reupload()
         if self._logger.path_enabled:
             ack_logger.log_ack(path_dbg)
         return reupload_now
