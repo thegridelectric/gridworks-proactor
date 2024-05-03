@@ -117,6 +117,8 @@ class Proactor(ServicesInterface, Runnable):
         reindex_result = self._event_persister.reindex()
         if reindex_result.is_err():
             self._reindex_problems = reindex_result.err()
+            self._logger.error("ERROR in event persister reindex():")
+            self._logger.error(reindex_result.err())
         self._links = LinkManager(
             publication_name=self.publication_name,
             settings=settings,
