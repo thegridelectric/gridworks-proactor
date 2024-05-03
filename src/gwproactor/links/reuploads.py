@@ -14,7 +14,7 @@ from gwproactor.logger import ProactorLogger
 from gwproactor.stats import LinkStats
 
 
-class _AckLogger:
+class _ReuploadDiffLogger:  # pragma: no cover
     """Helper class for logging results of an ack without to much logging code bulk in the ack processing routine"""
 
     reuploads: Optional["Reuploads"] = None
@@ -28,11 +28,9 @@ class _AckLogger:
     def init(
         self,
         reuploads: Optional["Reuploads"] = None,
-        event_id: str = "",
         verbose: bool = False,
     ):
         self.reuploads = reuploads
-        self.event_id = event_id
         self.verbose = verbose
         if reuploads is not None:
             self.begin_reuploading = reuploads.reuploading()
@@ -41,19 +39,22 @@ class _AckLogger:
             if verbose:
                 self.begin_verbose_str = reuploads.get_str(num_events=100)
 
-    def ack_str(self, path_dbg: int) -> str:
+    def diff_str(self, path_dbg: int) -> str:
         s = ""
         if self.reuploads is not None:
             if self.verbose:
                 s += f"Begin reuploads:\n{self.begin_verbose_str}\n"
                 s += f"End reuploads:\n{self.reuploads.get_str(num_events=100)}\n"
             s += (
-                f"--process_ack_for_reupload  path:0x{path_dbg:08X}  "
+                f"path:0x{path_dbg:08X}  "
                 f"reuploading: {int(self.begin_reuploading)} -> {int(self.reuploads.reuploading())}  "
                 f"unacked: {self.begin_num_unacked} -> {self.reuploads.num_reuploaded_unacked}  "
                 f"pending: {self.begin_num_pending} -> {self.reuploads.num_reupload_pending}  "
             )
         return s
+
+    def ack_str(self, path_dbg: int) -> str:
+        return f"--process_ack_for_reupload  {self.diff_str(path_dbg)}"
 
     def log_ack(self, path_dbg: int) -> None:
         if self.reuploads is not None and self.reuploads._logger.path_enabled:  # noqa
@@ -121,9 +122,9 @@ class Reuploads:
 
         path_dbg = 0
         was_reuploading = self.reuploading()
-        ack_logger = _AckLogger()
+        ack_logger = _ReuploadDiffLogger()
         if self._logger.path_enabled:
-            ack_logger.init(self, ack_id, verbose=True)
+            ack_logger.init(self, verbose=True)
         reupload_now = []
         if ack_id in self._reuploaded_unacked:
             path_dbg |= 0x00000001
