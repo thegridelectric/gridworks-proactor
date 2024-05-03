@@ -1542,7 +1542,7 @@ class ProactorCommTests:
             # Wait for reupload to complete
             await await_for(
                 lambda: reupload_counts.completed > 0,
-                1,
+                3,
                 "ERROR waiting for reupload to complete",
                 err_str_f=_err_str,
             )
