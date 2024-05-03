@@ -37,14 +37,14 @@ class _ReuploadDiffLogger:  # pragma: no cover
             self.begin_num_unacked = reuploads.num_reuploaded_unacked
             self.begin_num_pending = reuploads.num_reupload_pending
             if verbose:
-                self.begin_verbose_str = reuploads.get_str(num_events=100)
+                self.begin_verbose_str = reuploads.get_str(num_events=5)
 
     def diff_str(self, path_dbg: int) -> str:
         s = ""
         if self.reuploads is not None:
             if self.verbose:
                 s += f"Begin reuploads:\n{self.begin_verbose_str}\n"
-                s += f"End reuploads:\n{self.reuploads.get_str(num_events=100)}\n"
+                s += f"End reuploads:\n{self.reuploads.get_str(num_events=5)}\n"
             s += (
                 f"path:0x{path_dbg:08X}  "
                 f"reuploading: {int(self.begin_reuploading)} -> {int(self.reuploads.reuploading())}  "
@@ -200,4 +200,4 @@ class Reuploads:
                 f"Total events in reupload: {num_pending_events}."
             )
         if self._logger.path_enabled:
-            self._logger.path(self.get_str(num_events=100))
+            self._logger.path(self.get_str(num_events=5))
