@@ -2,18 +2,100 @@ import asyncio
 import logging
 import time
 import warnings
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Type
 
 import pytest
 from gwproto import MQTTTopic
 from paho.mqtt.client import MQTT_ERR_CONN_LOST
 
+from gwproactor import ServicesInterface
 from gwproactor.links import StateName
 from gwproactor.message import DBGEvent
 from gwproactor.message import DBGPayload
+from gwproactor.persister import TimedRollingFilePersister
 from gwproactor_test.certs import uses_tls
 from gwproactor_test.comm_test_helper import CommTestHelper
 from gwproactor_test.wait import await_for
+
+
+@dataclass
+class _EventEntry:
+    uid: str
+    path: Path
+
+
+class _EventGen:
+    ok: list[_EventEntry]
+    corrupt: list[_EventEntry]
+    empty: list[_EventEntry]
+    missing: list[_EventEntry]
+
+    persister: TimedRollingFilePersister
+
+    def __len__(self) -> int:
+        return len(self.ok) + len(self.corrupt) + len(self.empty)
+
+    def __init__(self, proactor: ServicesInterface):
+        self.ok = []
+        self.corrupt = []
+        self.empty = []
+        self.missing = []
+        persister = proactor._event_persister  # noqa
+        assert isinstance(persister, TimedRollingFilePersister)
+        self.persister = persister
+
+    def _generate_event(self, member_name: str) -> _EventEntry:
+        event = DBGEvent(Command=DBGPayload(), Msg=f"event {len(self)} {member_name}")
+        ret = self.persister.persist(
+            event.MessageId, event.json(sort_keys=True, indent=2).encode()
+        )
+        if ret.is_err():
+            raise ret.err()
+        entry = _EventEntry(
+            event.MessageId, self.persister.get_path(event.MessageId)  # noqa
+        )
+        getattr(self, member_name).append(entry)
+        return entry
+
+    def _generate_ok(self) -> _EventEntry:
+        return self._generate_event("ok")
+
+    def _generate_corrupt(self) -> _EventEntry:
+        entry = self._generate_event("corrupt")
+        with entry.path.open() as f:
+            contents = f.read()
+        with entry.path.open("w") as f:
+            f.write(contents[:-6])
+        return entry
+
+    def _generate_empty(self) -> _EventEntry:
+        entry = self._generate_event("empty")
+        with entry.path.open("w") as f:
+            f.write("")
+        return entry
+
+    def _generate_missing(self) -> _EventEntry:
+        entry = self._generate_event("missing")
+        entry.path.unlink()
+        return entry
+
+    def generate(
+        self,
+        num_ok: int = 0,
+        num_corrupt: int = 0,
+        num_empty: int = 0,
+        num_missing: int = 0,
+    ):
+        for _ in range(num_ok):
+            self._generate_ok()
+        for _ in range(num_corrupt):
+            self._generate_corrupt()
+        for _ in range(num_empty):
+            self._generate_empty()
+        for _ in range(num_missing):
+            self._generate_missing()
 
 
 @pytest.mark.asyncio
@@ -1408,3 +1490,61 @@ class ProactorCommTests:
                 last_num_repuload_pending = curr_num_repuload_pending
 
             assert not child_links.reuploading()
+
+    @pytest.mark.asyncio
+    async def test_reupload_errors(self):
+        async with self.CTH(
+            start_child=True,
+            add_parent=True,
+            child_verbose=False,
+        ) as h:
+            child = h.child
+            child.disable_derived_events()
+            reupload_counts = h.child.stats.link(child.upstream_client).reupload_counts
+            child_links = h.child._links
+            upstream_link = child_links.link(child.upstream_client)
+            parent = h.parent
+
+            def _err_str() -> str:
+                return (
+                    f"\nCHILD\n{child.summary_str()}\n"
+                    f"\nPARENT\n{parent.summary_str()}\n"
+                )
+
+            await await_for(
+                lambda: child.mqtt_quiescent(),
+                1,
+                "ERROR waiting for child to connect to mqtt",
+                err_str_f=_err_str,
+            )
+            base_num_pending = child_links.num_pending
+            assert base_num_pending > 0
+            assert child_links.num_reupload_pending == 0
+            assert child_links.num_reuploaded_unacked == 0
+            assert not child_links.reuploading()
+
+            generator = _EventGen(child)
+            generator.generate(num_corrupt=10)
+            generator.generate(num_ok=10)
+            generator.generate(num_empty=10)
+            generator.generate(num_ok=10)
+            generator.generate(num_missing=10)
+            generator.generate(num_ok=10)
+
+            h.start_parent()
+            await await_for(
+                lambda: upstream_link.active(),
+                1,
+                "ERROR waiting for active",
+                err_str_f=_err_str,
+            )
+
+            # Wait for reupload to complete
+            await await_for(
+                lambda: reupload_counts.completed > 0,
+                1,
+                "ERROR waiting for reupload to complete",
+                err_str_f=_err_str,
+            )
+            assert reupload_counts.started == reupload_counts.completed
+            assert parent.stats.num_events_received >= base_num_pending + 60

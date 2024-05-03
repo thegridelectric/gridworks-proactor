@@ -210,6 +210,9 @@ class LinkManager:
                     s += f"\t\t[{subscription}]\n"
             self._logger.lifecycle(s)
 
+    def get_reuploads_str(self, verbose: bool = True, num_events: int = 5) -> str:
+        return self._reuploads.get_str(verbose=verbose, num_events=num_events)
+
     def publish_message(
         self, client, message: Message, qos: int = 0, context: Any = None
     ) -> MQTTMessageInfo:
@@ -305,20 +308,24 @@ class LinkManager:
                             )
                         )
                         self._event_persister.clear(event_id)
-                        next_event_id = self._reuploads.process_ack_for_reupload(
-                            event_id
-                        )
-                        if next_event_id:
+                        if sent_one:
                             event_path_dbg |= 0x00000100
-                            next_event_ids.extend(next_event_id)
-                        continuation_path_dbg |= event_path_dbg
+                            self._reuploads.clear_unacked_event(event_id)
+                        else:
+                            event_path_dbg |= 0x00000200
+                            next_event_ids.extend(
+                                self._reuploads.process_ack_for_reupload(event_id)
+                            )
+                    self._logger.path("  1 event path:0x%08X", event_path_dbg)
+                    continuation_path_dbg |= event_path_dbg
+                self._logger.path("  1 continuation path:0x%08X", continuation_path_dbg)
                 event_ids = next_event_ids
                 path_dbg |= continuation_path_dbg
         self._logger.path(
             "--_continue_reupload  path:0x%08X  sent:%d  tried:%d  continuations:%d",
             path_dbg,
-            tried_count_dbg,
             sent_count_dbg,
+            tried_count_dbg,
             continuation_count_dbg,
         )
 
@@ -379,33 +386,6 @@ class LinkManager:
                 problems.add_problems(error)
         self._logger.path("--_reupload_event:0  path:0x%08X", path_dbg)
         return Err(problems)
-
-    def _reupload_events(self, event_ids: list[str]) -> Result[bool, BaseException]:
-        errors = []
-        for message_id in event_ids:
-            match self._event_persister.retrieve(message_id):
-                case Ok(event_bytes):
-                    if event_bytes is None:
-                        errors.append(
-                            UIDMissingWarning("reupload_events", uid=message_id)
-                        )
-                    else:
-                        try:
-                            event = json.loads(
-                                event_bytes.decode(encoding=self.PERSISTER_ENCODING)
-                            )
-                        except BaseException as e:
-                            errors.append(e)
-                            errors.append(
-                                JSONDecodingError("reupload_events", uid=message_id)
-                            )
-                        else:
-                            self.publish_upstream(event, AckRequired=True)
-                case Err(error):
-                    errors.append(error)
-        if errors:
-            return Err(Problems(errors=errors))
-        return Ok()
 
     def start(
         self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue

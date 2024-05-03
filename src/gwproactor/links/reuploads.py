@@ -39,14 +39,14 @@ class _AckLogger:
             self.begin_num_unacked = reuploads.num_reuploaded_unacked
             self.begin_num_pending = reuploads.num_reupload_pending
             if verbose:
-                self.begin_verbose_str = reuploads.get_str()
+                self.begin_verbose_str = reuploads.get_str(num_events=100)
 
     def ack_str(self, path_dbg: int) -> str:
         s = ""
         if self.reuploads is not None:
             if self.verbose:
                 s += f"Begin reuploads:\n{self.begin_verbose_str}\n"
-                s += f"End reuploads:\n{self.reuploads.get_str()}\n"
+                s += f"End reuploads:\n{self.reuploads.get_str(num_events=100)}\n"
             s += (
                 f"--process_ack_for_reupload  path:0x{path_dbg:08X}  "
                 f"reuploading: {int(self.begin_reuploading)} -> {int(self.reuploads.reuploading())}  "
@@ -106,10 +106,13 @@ class Reuploads:
         self._reupload_pending = dict.fromkeys(
             pending_events[self._num_initial_events :]
         )
-        if self.reuploading() and self.stats is not None:
+        if self.reuploading():
             self.stats.start_reupload()
         self._log_start_reupload(len(pending_events), len(reupload_now))
         return reupload_now
+
+    def clear_unacked_event(self, ack_id: str) -> None:
+        self._reuploaded_unacked.pop(ack_id)
 
     def process_ack_for_reupload(self, ack_id: str) -> list[str]:
         """If ack_id is in our "unacked" store, remove it from the unacked store. If any events remain in our "pending"
@@ -120,7 +123,7 @@ class Reuploads:
         was_reuploading = self.reuploading()
         ack_logger = _AckLogger()
         if self._logger.path_enabled:
-            ack_logger.init(self, ack_id, verbose=False)
+            ack_logger.init(self, ack_id, verbose=True)
         reupload_now = []
         if ack_id in self._reuploaded_unacked:
             path_dbg |= 0x00000001
@@ -145,7 +148,7 @@ class Reuploads:
         elif ack_id in self._reupload_pending:
             path_dbg |= 0x00000004
             self._reupload_pending.pop(ack_id)
-        if was_reuploading and not self.reuploading() and self.stats is not None:
+        if was_reuploading and not self.reuploading():
             path_dbg |= 0x00000008
             self.stats.complete_reupload()
         if self._logger.path_enabled:
@@ -173,10 +176,10 @@ class Reuploads:
             s += f"  num initial:{self._num_initial_events}\n"
             s += f"  unacked:{len(self._reuploaded_unacked)}\n"
             for message_id in self._reuploaded_unacked:
-                s += f"    {message_id}\n"
+                s += f"    {message_id[:8]}...\n"
             s += f"  pending:{len(self._reupload_pending)}\n"
             for i, message_id in enumerate(self._reupload_pending):
-                s += f"    {message_id}\n"
+                s += f"    {message_id[:8]}...\n"
                 if i == num_events - 1:
                     break
         return s.rstrip()
@@ -196,4 +199,4 @@ class Reuploads:
                 f"Total events in reupload: {num_pending_events}."
             )
         if self._logger.path_enabled:
-            self._logger.path(self.get_str())
+            self._logger.path(self.get_str(num_events=100))

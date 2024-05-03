@@ -66,6 +66,7 @@ class LinkStats:
 class ProactorStats:
     num_received_by_type: dict[str, int]
     num_received_by_topic: dict[str, int]
+    num_events_received: int = 0
     links: dict[str, LinkStats]
 
     def __init__(self, link_names: Optional[Sequence[str]] = None):
@@ -86,6 +87,8 @@ class ProactorStats:
         link_stats.num_received_by_type[Message.type_name()] += 1
         link_stats.num_received_by_type[message.Header.MessageType] += 1
         link_stats.num_received_by_topic[message.Payload.message.topic] += 1
+        if "gridworks-event" in message.Payload.message.topic:
+            self.num_events_received += 1
 
     def total_received(self, message_type: str) -> int:
         return self.num_received_by_type.get(message_type, 0)
@@ -114,6 +117,7 @@ class ProactorStats:
             s += "\nGlobal received by message_type:"
             for message_type in sorted(self.num_received_by_type):
                 s += f"\n    {self.num_received_by_type[message_type]:3d}: [{message_type}]"
+            s += f"\n    {self.num_events_received:3d}: [gridworks.event*]"
         for link_name in sorted(self.links):
             s += "\n"
             s += str(self.links[link_name])
