@@ -76,6 +76,7 @@ class Proactor(ServicesInterface, Runnable):
     _logger: ProactorLogger
     _stats: ProactorStats
     _event_persister: PersisterInterface
+    _reindex_problems: Optional[Problems] = None
     _loop: Optional[asyncio.AbstractEventLoop] = None
     _receive_queue: Optional[asyncio.Queue] = None
     _links: LinkManager
@@ -113,6 +114,9 @@ class Proactor(ServicesInterface, Runnable):
         self._logger = ProactorLogger(**settings.logging.qualified_logger_names())
         self._stats = self.make_stats()
         self._event_persister = self.make_event_persister(settings)
+        reindex_result = self._event_persister.reindex()
+        if reindex_result.is_err():
+            self._reindex_problems = reindex_result.err()
         self._links = LinkManager(
             publication_name=self.publication_name,
             settings=settings,
@@ -621,6 +625,11 @@ class Proactor(ServicesInterface, Runnable):
         self._loop = asyncio.get_running_loop()
         self._receive_queue = asyncio.Queue()
         self._links.start(self._loop, self._receive_queue)
+        if self._reindex_problems is not None:
+            self.generate_event(
+                self._reindex_problems.problem_event("Startup event reindex() problems")
+            )
+        self._reindex_problems = None
         for communicator in self._communicators.values():
             if isinstance(communicator, Runnable):
                 communicator.start()

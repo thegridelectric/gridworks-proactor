@@ -202,6 +202,7 @@ def assert_contents(
             base_dir=p.base_dir,
             max_bytes=p.max_bytes,
         )
+        assert p2.reindex().is_ok()
         if p.num_pending == 0:
             assert p.curr_bytes == 0
         assert p.pending() == p2.pending()
@@ -343,6 +344,7 @@ def test_persister_max_size():
         # empty persister
         max_bytes = (num_events_supported + 1) * 1000
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=max_bytes)
+        assert p.reindex().is_ok()
         assert_contents(p, max_bytes=max_bytes, num_pending=0)
 
         # a few
@@ -415,6 +417,7 @@ def test_persister_roll_day():
         pendulum_travel_to(d1)
         exact_days = [d1]
         p = TimedRollingFilePersister(settings.paths.event_dir)
+        assert p.reindex().is_ok()
         assert_contents(p, num_pending=0, curr_dir=d1.isoformat())
         result = p.persist(event.MessageId, event.json().encode())
         assert result.is_ok()
@@ -536,6 +539,7 @@ def test_persister_size_and_roll():
         exact_days = []
         pendulum_travel_to(d1)
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=max_size)
+        assert p.reindex().is_ok()
         assert_contents(p, num_pending=0, curr_dir=d1.isoformat(), max_bytes=max_size)
         for i in range(1, 3):
             uids.append(inc_uid())
@@ -768,6 +772,7 @@ def test_persister_indexing():
     try:
         pendulum_travel_to(d1)
         p = TimedRollingFilePersister(settings.paths.event_dir)
+        assert p.reindex().is_ok()
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
@@ -785,6 +790,7 @@ def test_persister_indexing():
 
         index = dict(p._pending)
         p = TimedRollingFilePersister(settings.paths.event_dir)
+        assert p.reindex().is_ok()
         assert p._pending == index
 
         # removed dir
@@ -806,6 +812,7 @@ def test_persister_indexing():
         # invalid file - invalid date
         shutil.copy(p6, p6_dir / ("x" + p6.name))
         p = TimedRollingFilePersister(settings.paths.event_dir)
+        assert p.reindex().is_ok()
         assert p._pending == index
 
     finally:
@@ -831,6 +838,7 @@ def test_persister_problems():
     try:
         pendulum_travel_to(d1)
         p = TimedRollingFilePersister(settings.paths.event_dir)
+        assert p.reindex().is_ok()
         uids.append(inc_uid())
         exact_days.append(d1)
 
@@ -862,6 +870,7 @@ def test_persister_problems():
                 raise ValueError("whoops")
 
         broken = BrokenRoller(settings.paths.event_dir)
+        assert broken.reindex().is_ok()
         problems = broken.persist("bla", buf).unwrap_err()
         assert len(problems.errors) == 2
         assert len(problems.warnings) == 0
@@ -874,6 +883,7 @@ def test_persister_problems():
                 raise ValueError("arg")
 
         p = BrokenRoller2(settings.paths.event_dir, max_bytes=len(buf) + 50)
+        assert p.reindex().is_ok()
         problems = p.persist("xxxbla", buf).unwrap_err()
         assert len(problems.errors) == 3
         assert len(problems.warnings) == 0
@@ -883,6 +893,7 @@ def test_persister_problems():
 
         # _trim_old_storage, clear error, file missing
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=len(buf) + 50)
+        assert p.reindex().is_ok()
         p.get_path(uids[-1]).unlink()
         problems = p.persist("xxxbla", buf).unwrap_err()
         assert len(problems.errors) == 0
@@ -907,6 +918,7 @@ def test_persister_problems():
         shutil.rmtree(p.base_dir)
         settings.paths.mkdirs()
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=len(buf) + 50)
+        assert p.reindex().is_ok()
         p.persist(uids[-1], buf).unwrap()
 
         class BrokenRoller3(TimedRollingFilePersister):

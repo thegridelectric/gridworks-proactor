@@ -248,11 +248,7 @@ def make_recorder_class(
             s += "Pending acks:\n"
             for link_name in self.stats.links:
                 s += f"  {link_name:10s}  {self._links.num_acks(link_name):3d}\n"
-            s += (
-                f"pending events: {self._links.num_pending}  "
-                f"pending upload events: {self._links.num_reupload_pending}  "
-                f"reuploading: {self._links.reuploading()}\n"
-            )
+            s += self._links.get_reuploads_str() + "\n"
             s += f"subacks_paused: {self.subacks_paused}  pending_subacks: {len(self.pending_subacks)}\n"
             return s
 
