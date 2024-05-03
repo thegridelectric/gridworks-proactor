@@ -386,7 +386,7 @@ class TimedRollingFilePersister(PersisterInterface):
             try:
                 if base_dir_entry.is_dir() and self._is_iso_parseable(base_dir_entry):
                     for day_dir_entry in base_dir_entry.iterdir():
-                        if self._pat_watchdog_args is not None:
+                        if self._pat_watchdog_args:
                             now = time.time()
                             if now > last_pat + self._reindex_pat_seconds:
                                 last_pat = now
@@ -404,7 +404,7 @@ class TimedRollingFilePersister(PersisterInterface):
                             )
             except BaseException as e:
                 problems.add_error(e).add_error(ReindexError())
-        self._pending = dict(sorted(paths, key=lambda item: item.path))
+        self._pending = dict(sorted(paths, key=lambda item: item.path))  # noqa
         if problems:
             return Err(problems)
         else:
