@@ -327,8 +327,13 @@ class TimedRollingFilePersister(PersisterInterface):
             if path.exists():
                 self._curr_bytes -= path.stat().st_size
                 path.unlink()
-                if next(path.parent.iterdir(), None) is None:
-                    shutil.rmtree(path.parent, ignore_errors=True)
+                path_dir = path.parent
+                # Remove directory if empty.
+                # This is much faster than using iterdir.
+                try:
+                    path_dir.rmdir()
+                except OSError:
+                    ...
             else:
                 problems.add_warning(FileMissingWarning(uid=uid, path=path))
         else:
