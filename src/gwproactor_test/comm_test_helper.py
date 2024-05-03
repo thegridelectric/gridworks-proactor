@@ -12,6 +12,8 @@ from typing import TypeVar
 from gwproactor import Proactor
 from gwproactor import ProactorSettings
 from gwproactor import setup_logging
+from gwproactor.config import DEFAULT_BASE_NAME
+from gwproactor.config import LoggingSettings
 from gwproactor.config import MQTTClient
 from gwproactor.config import Paths
 from gwproactor_test import copy_keys
@@ -49,6 +51,8 @@ class CommTestHelper:
     parent_helper: ProactorTestHelper
     child_helper: ProactorTestHelper
     verbose: bool
+    child_verbose: bool
+    parent_verbose: bool
     parent_on_screen: bool
     lifecycle_logging: bool
     logger_guards: LoggerGuards
@@ -67,6 +71,8 @@ class CommTestHelper:
         child_settings: Optional[ChildSettingsT] = None,
         parent_settings: Optional[ParentSettingsT] = None,
         verbose: bool = False,
+        child_verbose: bool = False,
+        parent_verbose: bool = False,
         lifecycle_logging: bool = False,
         add_child: bool = False,
         add_parent: bool = False,
@@ -95,13 +101,20 @@ class CommTestHelper:
             parent_name,
             parent_path_name,
             (
-                self.parent_settings_t(paths=Paths(name=Path(parent_path_name)))
+                self.parent_settings_t(
+                    logging=LoggingSettings(
+                        base_log_name=f"parent_{DEFAULT_BASE_NAME}"
+                    ),
+                    paths=Paths(name=Path(parent_path_name)),
+                )
                 if parent_settings is None
                 else parent_settings
             ),
             dict() if parent_kwargs is None else parent_kwargs,
         )
         self.verbose = verbose
+        self.child_verbose = child_verbose
+        self.parent_verbose = parent_verbose
         self.parent_on_screen = parent_on_screen
         self.lifecycle_logging = lifecycle_logging
         self.setup_logging()
@@ -207,7 +220,6 @@ class CommTestHelper:
         if not self.lifecycle_logging:
             self.child_helper.settings.logging.levels.lifecycle = logging.WARNING
             self.parent_helper.settings.logging.levels.lifecycle = logging.WARNING
-        args = argparse.Namespace(verbose=self.verbose)
         self.logger_guards = LoggerGuards(
             list(self.child_helper.settings.logging.qualified_logger_names().values())
             + list(
@@ -215,7 +227,7 @@ class CommTestHelper:
             )
         )
         setup_logging(
-            args,
+            argparse.Namespace(verbose=self.verbose or self.child_verbose),
             self.child_helper.settings,
             errors,
             add_screen_handler=True,
@@ -223,7 +235,7 @@ class CommTestHelper:
         )
         assert not errors
         setup_logging(
-            args,
+            argparse.Namespace(verbose=self.verbose or self.parent_verbose),
             self.parent_helper.settings,
             errors,
             add_screen_handler=self.parent_on_screen,

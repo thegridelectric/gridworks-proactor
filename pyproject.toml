@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gridworks-proactor"
-version = "0.4.3"
+version = "0.4.4"
 description = "Gridworks Proactor"
 authors = ["Jessica Millar <jmillar@gridworks-consulting.com>"]
 license = "MIT"
@@ -35,6 +35,7 @@ gridworks-cert = {version = ">=0.4.2", optional = true}
 aiohttp = "^3.8.5"
 yarl = "^1.9.2"
 multidict = "^6.0.4"
+pendulum = "2.1.2"
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
