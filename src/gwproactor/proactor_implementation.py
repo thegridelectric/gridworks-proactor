@@ -18,6 +18,7 @@ from aiohttp.typedefs import Handler as HTTPHandler
 from gwproto.data_classes.components.web_server_component import WebServerComponent
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
+from gwproto.enums import ActorClass
 from gwproto.messages import Ack
 from gwproto.messages import EventBase
 from gwproto.messages import EventT
@@ -101,10 +102,10 @@ class Proactor(ServicesInterface, Runnable):
                     ShNodes=[
                         dict(
                             ShNodeId=str(uuid.uuid4()),
-                            Alias=self._name,
-                            ActorClassGtEnumSymbol="00000000",
-                            RoleGtEnumSymbol="00000000",
+                            Name=self._name,
+                            ActorClassGtEnumSymbol=ActorClass.Scada.value,
                             TypeName="spaceheat.node.gt",
+                            Version="200",
                         )
                     ]
                 )
