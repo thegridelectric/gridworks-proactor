@@ -910,8 +910,10 @@ class ProactorCommTests:
 
             # (awaiting_setup -> message_from_peer -> awaiting_setup)
             # Receive another message from peer, remaining in awaiting_setup
+
+            #Office hours:was  DBGPayload.__fields__ in pydantic 1.x
             dbg_topic = MQTTTopic.encode(
-                "gw", parent.publication_name, DBGPayload.__fields__["TypeName"].default
+                "gw", parent.publication_name, DBGPayload.model_fields["TypeName"].default
             )
             assert stats.num_received_by_topic[dbg_topic] == 0
             parent.send_dbg_to_peer()

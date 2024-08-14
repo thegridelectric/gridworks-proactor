@@ -4,7 +4,7 @@ from typing import Optional
 
 import xdg
 from pydantic import BaseModel
-from pydantic import validator
+from pydantic import field_validator
 
 
 DEFAULT_BASE_NAME = "gridworks"
@@ -35,8 +35,8 @@ class TLSPaths(BaseModel):
         """Re-calculate non-set paths given a certs_dir and client name. Meant to be called in context where those are
         known, e.g. a validator on a higher-level model which has access to a Paths object and a named MQTT
         configuration."""
-        fields = self.defaults(Path(certs_dir), client_name).dict()
-        fields.update(self.dict(exclude_none=True))
+        fields = self.defaults(Path(certs_dir), client_name).model_dump()
+        fields.update(self.model_dump(exclude_none=True))
         return TLSPaths(**fields)
 
     def mkdirs(self, mode: int = 0o777, parents: bool = True, exist_ok: bool = True):
@@ -76,55 +76,65 @@ class Paths(BaseModel):
     log_dir: str | Path = ""
     hardware_layout: str | Path = ""
 
-    @validator("data_home", always=True)
+    @field_validator("data_home", mode="before")
+    @classmethod
     def get_data_home(cls, v: str | Path) -> Path:
         return Path(v if v else xdg.xdg_data_home())
 
-    @validator("state_home", always=True)
+    @field_validator("state_home", mode="before")
+    @classmethod
     def get_state_home(cls, v: str | Path) -> Path:
         return Path(v if v else xdg.xdg_state_home())
 
-    @validator("config_home", always=True)
+    @field_validator("config_home", mode="before")
+    @classmethod
     def get_config_home(cls, v: str | Path) -> Path:
         return Path(v if v else xdg.xdg_config_home())
 
-    @validator("config_dir", always=True)
+    @field_validator("config_dir", mode="before")
+    @classmethod
     def get_config_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["config_home"]) / values["relative_path"]
         return Path(v)
 
-    @validator("certs_dir", always=True)
+    @field_validator("certs_dir", mode="before")
+    @classmethod
     def get_certs_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["config_dir"]) / "certs"
         return Path(v)
 
-    @validator("data_dir", always=True)
+    @field_validator("data_dir", mode="before")
+    @classmethod
     def get_data_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["data_home"]) / values["relative_path"]
         return Path(v)
 
-    @validator("event_dir", always=True)
+    @field_validator("event_dir", mode="before")
+    @classmethod
     def get_event_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["data_dir"]) / "event"
         return Path(v)
 
-    @validator("log_dir", always=True)
+    @field_validator("log_dir", mode="before")
+    @classmethod
     def get_log_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["state_home"]) / values["relative_path"] / "log"
         return Path(v)
 
-    @validator("hardware_layout", always=True)
+    @field_validator("hardware_layout", mode="before")
+    @classmethod
     def get_hardware_layout(cls, v, values):
         if not v:
             v = Path(values["config_dir"]) / DEFAULT_LAYOUT_FILE
         return Path(v)
 
-    @validator("relative_path", always=True)
+    @field_validator("relative_path", mode="before")
+    
     def get_relative_path(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["base"]) / values["name"]
@@ -137,6 +147,6 @@ class Paths(BaseModel):
         self.log_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
 
     def copy(self, **kwargs) -> "Paths":
-        fields = self.dict(exclude_unset=True)
+        fields = self.model_dump(exclude_unset=True)
         fields.update(**kwargs)
         return Paths(**fields)

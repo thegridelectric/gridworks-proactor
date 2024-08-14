@@ -1,8 +1,7 @@
 from typing import Any
 from typing import Optional
 
-from pydantic import root_validator
-from pydantic import validator
+from pydantic import model_validator
 
 from gwproactor import ProactorSettings
 from gwproactor.config import LoggingSettings
@@ -18,6 +17,6 @@ class DummyParentSettings(ProactorSettings):
     class Config(ProactorSettings.Config):
         env_prefix = DUMMY_PARENT_ENV_PREFIX
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def pre_root_validator(cls, values: dict) -> dict:
         return ProactorSettings.update_paths_name(values, DUMMY_PARENT_NAME)

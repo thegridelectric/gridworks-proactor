@@ -18,7 +18,7 @@ from gwproto.messages import EventBase
 from paho.mqtt.client import MQTT_ERR_UNKNOWN
 from paho.mqtt.client import MQTTMessage
 from pydantic import BaseModel
-from pydantic import validator
+from pydantic import field_validator
 
 from gwproactor.config import LoggerLevels
 from gwproactor.problems import Problems
@@ -79,7 +79,7 @@ class MQTTMessageModel(BaseModel):
     @classmethod
     def from_mqtt_message(cls, message: MQTTMessage) -> "MQTTMessageModel":
         model = MQTTMessageModel()
-        for field_name in model.__fields__:
+        for field_name in model.model_fields:
             setattr(model, field_name, getattr(message, field_name))
         return model
 
@@ -210,15 +210,15 @@ class PatWatchdog(BaseModel): ...
 
 
 class PatInternalWatchdog(PatWatchdog):
-    TypeName: Literal["gridworks.watchdog.pat.internal"] = (
+    TypeName: Literal[
         "gridworks.watchdog.pat.internal"
-    )
+    ] = "gridworks.watchdog.pat.internal"
 
 
 class PatExternalWatchdog(PatWatchdog):
-    TypeName: Literal["gridworks.watchdog.pat.external"] = (
+    TypeName: Literal[
         "gridworks.watchdog.pat.external"
-    )
+    ] = "gridworks.watchdog.pat.external"
 
 
 class PatInternalWatchdogMessage(Message[PatInternalWatchdog]):
@@ -282,7 +282,8 @@ class DBGPayload(BaseModel):
     Command: Optional[DBGCommands] = None
     TypeName: Literal["gridworks.proactor.dbg"] = "gridworks.proactor.dbg"
 
-    @validator("Command", pre=True)
+    @field_validator("Command", mode="before")
+    @classmethod
     def command_value(cls, v) -> Optional[DBGCommands]:
         return as_enum(v, DBGCommands)
 

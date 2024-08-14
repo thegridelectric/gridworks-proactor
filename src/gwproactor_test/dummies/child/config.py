@@ -1,4 +1,4 @@
-from pydantic import root_validator
+from pydantic import model_validator
 
 from gwproactor import ProactorSettings
 from gwproactor.config import MQTTClient
@@ -14,6 +14,7 @@ class DummyChildSettings(ProactorSettings):
     class Config(ProactorSettings.Config):
         env_prefix = DUMMY_CHILD_ENV_PREFIX
 
-    @root_validator(pre=True)
+    #Office hours - not sure model validator has access to cls and values?
+    @model_validator(mode="before")
     def pre_root_validator(cls, values: dict) -> dict:
         return ProactorSettings.update_paths_name(values, DUMMY_CHILD_NAME)

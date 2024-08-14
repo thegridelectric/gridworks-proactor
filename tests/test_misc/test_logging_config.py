@@ -16,7 +16,7 @@ from gwproactor.config import RotatingFileHandlerSettings
 
 def test_logger_levels():
     # Check if fields have been added or renamed
-    assert set(LoggerLevels().__fields__.keys()) == {
+    assert set(LoggerLevels().model_fields.keys()) == {
         "message_summary",
         "lifecycle",
         "comm_event",
@@ -53,7 +53,7 @@ def test_logger_levels():
     base_name = "foo"
     assert levels.qualified_logger_names(base_name) == {
         field_name: f"{base_name}.{field_name}"
-        for field_name in levels.__fields__.keys()
+        for field_name in levels.model_fields.keys()
     }
 
     # logger_names_to_levels()
@@ -78,7 +78,7 @@ def test_logger_levels():
 
 def test_logging_settings():
     # Check if loggers have been added or renamed
-    assert set(LoggingSettings().levels.__fields__.keys()) == {
+    assert set(LoggingSettings().levels.model_fields.keys()) == {
         "message_summary",
         "lifecycle",
         "comm_event",
@@ -112,7 +112,7 @@ def test_logging_settings():
     logging_settings = LoggingSettings()
     exp_logger_names = {
         field_name: f"gridworks.{field_name}"
-        for field_name in logging_settings.levels.__fields__.keys()
+        for field_name in logging_settings.levels.model_fields.keys()
     }
     exp_logger_names["base"] = logging_settings.base_log_name
     assert logging_settings.qualified_logger_names() == exp_logger_names
