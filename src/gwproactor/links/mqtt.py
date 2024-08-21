@@ -58,7 +58,7 @@ class MQTTClientWrapper:
         name: str,
         client_config: config.MQTTClient,
         receive_queue: AsyncQueueWriter,
-    ):
+    ) -> None:
         self.name = name
         self._client_config = client_config
         self._receive_queue = receive_queue
@@ -125,10 +125,10 @@ class MQTTClientWrapper:
                     running_field=False,
                 )
 
-    def start(self):
+    def start(self) -> None:
         self._thread.start()
 
-    def stop(self):
+    def stop(self) -> None:
         self._stop_requested = True
         try:
             self._client.disconnect()
@@ -182,7 +182,7 @@ class MQTTClientWrapper:
     def subscription_items(self) -> list[Tuple[str, int]]:
         return list(cast(list[Tuple[str, int]], self._subscriptions.items()))
 
-    def on_message(self, _, userdata, message):
+    def on_message(self, _, userdata, message) -> None:
         self._receive_queue.put(
             MQTTReceiptMessage(
                 client_name=self.name,
@@ -198,7 +198,7 @@ class MQTTClientWrapper:
                 self._pending_subscriptions.remove(topic)
         return len(self._pending_subscriptions)
 
-    def on_subscribe(self, _, userdata, mid, granted_qos):
+    def on_subscribe(self, _, userdata, mid, granted_qos) -> None:
         self._receive_queue.put(
             MQTTSubackMessage(
                 client_name=self.name,
@@ -208,7 +208,7 @@ class MQTTClientWrapper:
             )
         )
 
-    def on_connect(self, _, userdata, flags, rc):
+    def on_connect(self, _, userdata, flags, rc) -> None:
         self._receive_queue.put(
             MQTTConnectMessage(
                 client_name=self.name,
@@ -218,7 +218,7 @@ class MQTTClientWrapper:
             )
         )
 
-    def on_connect_fail(self, _, userdata):
+    def on_connect_fail(self, _, userdata) -> None:
         self._receive_queue.put(
             MQTTConnectFailMessage(
                 client_name=self.name,
@@ -226,7 +226,7 @@ class MQTTClientWrapper:
             )
         )
 
-    def on_disconnect(self, _, userdata, rc):
+    def on_disconnect(self, _, userdata, rc) -> None:
         self._pending_subscriptions = set(self._subscriptions.keys())
         self._receive_queue.put(
             MQTTDisconnectMessage(
@@ -238,10 +238,10 @@ class MQTTClientWrapper:
 
     def enable_logger(
         self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
-    ):
+    ) -> None:
         self._client.enable_logger(logger)
 
-    def disable_logger(self):
+    def disable_logger(self) -> None:
         self._client.disable_logger()
 
 
@@ -261,7 +261,7 @@ class MQTTClients:
         client_config: config.MQTTClient,
         upstream: bool = False,
         primary_peer: bool = False,
-    ):
+    ) -> None:
         if name in self.clients:
             raise ValueError(f"ERROR. MQTT client named {name} already exists")
         if upstream:
@@ -295,11 +295,13 @@ class MQTTClients:
     def handle_suback(self, suback: MQTTSubackPayload) -> int:
         return self.clients[suback.client_name].handle_suback(suback)
 
-    def stop(self):
+    def stop(self) -> None:
         for client in self.clients.values():
             client.stop()
 
-    def start(self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue):
+    def start(
+        self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
+    ) -> None:
         self._send_queue.set_async_loop(loop, async_queue)
         for client in self.clients.values():
             client.start()
@@ -318,11 +320,11 @@ class MQTTClients:
 
     def enable_loggers(
         self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
-    ):
+    ) -> None:
         for client_name in self.clients:
             self.clients[client_name].enable_logger(logger)
 
-    def disable_loggers(self):
+    def disable_loggers(self) -> None:
         for client_name in self.clients:
             self.clients[client_name].disable_logger()
 

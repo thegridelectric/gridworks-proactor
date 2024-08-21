@@ -4,7 +4,17 @@ import asyncio
 import sys
 import traceback
 import uuid
-from typing import Any, Awaitable, Dict, List, Optional, Sequence, Type, TypeVar
+from typing import (
+    Any,
+    Awaitable,
+    Dict,
+    List,
+    NoReturn,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+)
 
 import gwproto
 from aiohttp.typedefs import Handler as HTTPHandler
@@ -144,7 +154,7 @@ class Proactor(ServicesInterface, Runnable):
     def make_event_persister(cls, settings: ProactorSettings) -> PersisterInterface:
         return StubPersister()
 
-    def send(self, message: Message):
+    def send(self, message: Message) -> None:
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_summary(
                 "OUT internal",
@@ -211,7 +221,7 @@ class Proactor(ServicesInterface, Runnable):
         path: str,
         handler: HTTPHandler,
         **kwargs: Any,
-    ):
+    ) -> None:
         self._web_manager.add_web_route(
             server_name=server_name, method=method, path=path, handler=handler, **kwargs
         )
@@ -293,7 +303,7 @@ class Proactor(ServicesInterface, Runnable):
         )
         self._logger.path("--_process_dbg  path:0x%08X  count:%d", path_dbg, count_dbg)
 
-    def add_communicator(self, communicator: CommunicatorInterface):
+    def add_communicator(self, communicator: CommunicatorInterface) -> None:
         if communicator.name in self._communicators:
             raise ValueError(
                 f"ERROR. Communicator with name [{communicator.name}] already present"
@@ -310,7 +320,7 @@ class Proactor(ServicesInterface, Runnable):
     def event_loop(self) -> Optional[asyncio.AbstractEventLoop]:
         return self._loop
 
-    async def process_messages(self):
+    async def process_messages(self) -> None:
         # noinspection PyBroadException
         try:
             self._start_processing_messages()
@@ -341,7 +351,7 @@ class Proactor(ServicesInterface, Runnable):
         except:
             self._logger.exception("ERROR stopping proactor")
 
-    def start_tasks(self):
+    def start_tasks(self) -> None:
         self._tasks = [
             asyncio.create_task(self.process_messages(), name="process_messages"),
         ] + self._links.start_ping_tasks()
@@ -391,7 +401,7 @@ class Proactor(ServicesInterface, Runnable):
     def _start_processing_messages(self):
         """Hook for processing before any messages are pulled from queue"""
 
-    async def process_message(self, message: Message):
+    async def process_message(self, message: Message) -> None:
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_enter(
                 "++Proactor.process_message %s/%s",
@@ -614,7 +624,7 @@ class Proactor(ServicesInterface, Runnable):
             f"Shutting down due to ShutdownMessage, [{message.Payload.Reason}]"
         )
 
-    async def run_forever(self):
+    async def run_forever(self) -> None:
         self._loop = asyncio.get_running_loop()
         self._receive_queue = asyncio.Queue()
         self._links.start(self._loop, self._receive_queue)
@@ -629,10 +639,10 @@ class Proactor(ServicesInterface, Runnable):
         self.start_tasks()
         await self.join()
 
-    def start(self):
+    def start(self) -> NoReturn:
         raise RuntimeError("ERROR. Proactor must be started by awaiting run_forever()")
 
-    def stop(self):
+    def stop(self) -> None:
         self._stop_requested = True
         for task in self._tasks:
             # TODO: CS - Send self a shutdown message instead?
@@ -647,7 +657,7 @@ class Proactor(ServicesInterface, Runnable):
                 except:
                     pass
 
-    async def join(self):
+    async def join(self) -> None:
         self._logger.lifecycle("++Proactor.join()")
         self._logger.lifecycle(str_tasks(self._loop, "Proactor.join() - all tasks"))
         running: List[Awaitable] = self._tasks[:]

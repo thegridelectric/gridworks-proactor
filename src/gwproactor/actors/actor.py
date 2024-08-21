@@ -22,16 +22,16 @@ from gwproactor.sync_thread import SyncAsyncInteractionThread
 class Actor(ActorInterface, Communicator, ABC):
     _node: ShNode
 
-    def __init__(self, name: str, services: ServicesInterface):
+    def __init__(self, name: str, services: ServicesInterface) -> None:
         self._node = services.hardware_layout.node(name)
         super().__init__(name, services)
 
     @property
-    def alias(self):
+    def alias(self) -> str:
         return self._name
 
     @property
-    def node(self):
+    def node(self) -> ShNode:
         return self._node
 
     def init(self) -> None:
@@ -49,7 +49,7 @@ class SyncThreadActor(Actor, Generic[SyncThreadT]):
         name: str,
         services: ServicesInterface,
         sync_thread: SyncAsyncInteractionThread,
-    ):
+    ) -> None:
         super().__init__(name, services)
         self._sync_thread = sync_thread
 
@@ -61,15 +61,15 @@ class SyncThreadActor(Actor, Generic[SyncThreadT]):
     def send_driver_message(self, message: Any) -> None:
         self._sync_thread.put_to_sync_queue(message)
 
-    def start(self):
+    def start(self) -> None:
         self._sync_thread.set_async_loop_and_start(
             self.services.event_loop, self.services.async_receive_queue
         )
 
-    def stop(self):
+    def stop(self) -> None:
         self._sync_thread.request_stop()
 
-    async def join(self):
+    async def join(self) -> None:
         await self._sync_thread.async_join()
 
     @property

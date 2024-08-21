@@ -105,11 +105,11 @@ class SyncAsyncQueueWriter:
 
     def put_to_sync_queue(
         self, item: Any, block: bool = True, timeout: Optional[float] = None
-    ):
+    ) -> None:
         """Write to synchronous queue in a threadsafe way."""
         self.sync_queue.put(item, block=block, timeout=timeout)
 
-    def put_to_async_queue(self, item: Any):
+    def put_to_async_queue(self, item: Any) -> None:
         """Write to asynchronous queue in a threadsafe way."""
         if self._loop is None or self._async_queue is None:
             raise ValueError(
@@ -195,7 +195,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
     def _put_to_async_queue(self, message: Any) -> None:
         self._channel.put_to_async_queue(message)
 
-    def run(self):
+    def run(self) -> None:
         if self.running is None:
             self.running = True
             self._last_pat_time = time.time()
@@ -245,7 +245,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
     def time_to_pat(self) -> bool:
         return time.time() >= (self._last_pat_time + (self.pat_timeout / 2))
 
-    def pat_watchdog(self):
+    def pat_watchdog(self) -> None:
         self._last_pat_time = time.time()
         self._put_to_async_queue(PatInternalWatchdogMessage(src=self.name))
 

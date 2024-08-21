@@ -7,7 +7,7 @@ import importlib
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Coroutine, Optional, Sequence, Type, TypeVar
+from typing import Any, Coroutine, NoReturn, Optional, Sequence, Type, TypeVar
 
 from aiohttp.typedefs import Handler as HTTPHandler
 from gwproto import HardwareLayout, ShNode
@@ -225,7 +225,7 @@ class ServicesInterface(CommunicatorInterface):
         path: str,
         handler: HTTPHandler,
         **kwargs: Any,
-    ):
+    ) -> NoReturn:
         """Adds configuration for web server route which will be available after start() is called.
 
         May be called even if associated web server is not configured, in which case this route

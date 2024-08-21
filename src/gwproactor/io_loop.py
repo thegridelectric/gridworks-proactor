@@ -85,7 +85,7 @@ class IOLoop(Communicator, IOLoopInterface):
         for task in tasks:
             self._io_loop.call_soon_threadsafe(task.cancel)
 
-    async def join(self):
+    async def join(self) -> None:
         pass
         # this often generates errors, although tests pass:
         # await async_polling_thread_join(self._io_thread)
@@ -164,7 +164,7 @@ class IOLoop(Communicator, IOLoopInterface):
     def time_to_pat(self) -> bool:
         return time.time() >= (self._last_pat_time + (self._pat_timeout / 2))
 
-    def pat_watchdog(self):
+    def pat_watchdog(self) -> None:
         if not self._stop_requested:
             self._last_pat_time = time.time()
             self._services.send_threadsafe(PatInternalWatchdogMessage(src=self.name))

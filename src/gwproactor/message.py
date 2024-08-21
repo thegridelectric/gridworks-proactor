@@ -1,4 +1,3 @@
-# ruff: noqa: ANN401
 """Message structures for use between proactor and its sub-objects."""
 
 import uuid

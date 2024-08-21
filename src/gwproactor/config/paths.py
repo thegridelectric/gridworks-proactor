@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import xdg
 from pydantic import BaseModel, validator
@@ -36,7 +36,9 @@ class TLSPaths(BaseModel):
         fields.update(self.dict(exclude_none=True))
         return TLSPaths(**fields)
 
-    def mkdirs(self, mode: int = 0o777, parents: bool = True, exist_ok: bool = True):
+    def mkdirs(
+        self, *, mode: int = 0o777, parents: bool = True, exist_ok: bool = True
+    ) -> None:
         """Create directories that will be used to store certificates and private keys."""
         if (
             self.ca_cert_path is None
@@ -74,66 +76,78 @@ class Paths(BaseModel):
     hardware_layout: str | Path = ""
 
     @validator("data_home", always=True)
+    @classmethod
     def get_data_home(cls, v: str | Path) -> Path:
         return Path(v or xdg.xdg_data_home())
 
     @validator("state_home", always=True)
+    @classmethod
     def get_state_home(cls, v: str | Path) -> Path:
         return Path(v or xdg.xdg_state_home())
 
     @validator("config_home", always=True)
+    @classmethod
     def get_config_home(cls, v: str | Path) -> Path:
         return Path(v or xdg.xdg_config_home())
 
     @validator("config_dir", always=True)
+    @classmethod
     def get_config_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["config_home"]) / values["relative_path"]
         return Path(v)
 
     @validator("certs_dir", always=True)
+    @classmethod
     def get_certs_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["config_dir"]) / "certs"
         return Path(v)
 
     @validator("data_dir", always=True)
+    @classmethod
     def get_data_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["data_home"]) / values["relative_path"]
         return Path(v)
 
     @validator("event_dir", always=True)
+    @classmethod
     def get_event_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["data_dir"]) / "event"
         return Path(v)
 
     @validator("log_dir", always=True)
+    @classmethod
     def get_log_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["state_home"]) / values["relative_path"] / "log"
         return Path(v)
 
     @validator("hardware_layout", always=True)
-    def get_hardware_layout(cls, v, values):
+    @classmethod
+    def get_hardware_layout(cls, v: Any, values: dict) -> Path:
         if not v:
             v = Path(values["config_dir"]) / DEFAULT_LAYOUT_FILE
         return Path(v)
 
     @validator("relative_path", always=True)
+    @classmethod
     def get_relative_path(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
         if not v:
             v = Path(values["base"]) / values["name"]
         return Path(v)
 
-    def mkdirs(self, mode: int = 0o777, parents: bool = True, exist_ok: bool = True):
+    def mkdirs(
+        self, *, mode: int = 0o777, parents: bool = True, exist_ok: bool = True
+    ) -> None:
         self.data_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
         self.config_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
         self.event_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
         self.log_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
 
-    def copy(self, **kwargs) -> "Paths":
+    def copy(self, **kwargs: Any) -> "Paths":
         fields = self.dict(exclude_unset=True)
         fields.update(**kwargs)
         return Paths(**fields)
