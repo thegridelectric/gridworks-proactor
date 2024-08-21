@@ -13,7 +13,7 @@ from gwproactor.config import (
 from tests.test_misc.test_logging_config import get_exp_formatted_time
 
 
-def test_get_default_logging_config(caplog, capsys):
+def test_get_default_logging_config(caplog, capsys) -> None:
     paths = Paths()
     paths.mkdirs()
     settings = ProactorSettings(logging=LoggingSettings(base_log_level=logging.INFO))
@@ -85,7 +85,7 @@ def test_get_default_logging_config(caplog, capsys):
     assert log_contents == text
 
 
-def test_rollover():
+def test_rollover() -> None:
     paths = Paths()
     paths.mkdirs()
 

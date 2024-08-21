@@ -19,7 +19,7 @@ class Problems(ValueError):
         warnings: Optional[Sequence[BaseException]] = None,
         errors: Optional[Sequence[BaseException]] = None,
         max_problems: Optional[int] = MAX_PROBLEMS,
-    ):
+    ) -> None:
         self.errors = [] if errors is None else list(errors)
         self.warnings = [] if warnings is None else list(warnings)
         self.max_problems = max_problems

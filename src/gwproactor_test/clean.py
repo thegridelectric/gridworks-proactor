@@ -63,7 +63,7 @@ class DefaultTestEnv:
         copy_test_layout: bool = True,
         use_test_dotenv: bool = True,
         prefixes: Optional[list[str]] = None,
-    ):
+    ) -> None:
         if isinstance(xdg_home, str) and bool(xdg_home):
             xdg_home = Path(xdg_home)
         self.xdg_home = xdg_home
@@ -89,7 +89,7 @@ class DefaultTestEnv:
             self.setup_text_xdg_home(m)
             yield m
 
-    def setup_text_xdg_home(self, m: MonkeyPatch):
+    def setup_text_xdg_home(self, m: MonkeyPatch) -> None:
         if self.xdg_home is not None:
             m.setenv("XDG_DATA_HOME", str(self.xdg_home / ".local" / "share"))
             m.setenv("XDG_STATE_HOME", str(self.xdg_home / ".local" / "state"))
@@ -99,13 +99,13 @@ class DefaultTestEnv:
                 paths.hardware_layout.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(self.src_test_layout, paths.hardware_layout)
 
-    def clean_env(self, m: MonkeyPatch):
+    def clean_env(self, m: MonkeyPatch) -> None:
         for env_var in os.environ:
             for prefix in self.prefixes:
                 if env_var.startswith(prefix):
                     m.delenv(env_var)
 
-    def load_test_dotenv(self):
+    def load_test_dotenv(self) -> None:
         if self.use_test_dotenv:
             test_dotenv_file = os.getenv(TEST_DOTENV_PATH_VAR)
             if test_dotenv_file is None:

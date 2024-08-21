@@ -7,7 +7,7 @@ from gwproactor.config import Paths
 from gwproactor_test import LoggerGuards
 
 
-def test_proactor_logger(caplog):
+def test_proactor_logger(caplog) -> None:
     paths = Paths()
     paths.mkdirs()
     settings = ProactorSettings()

@@ -67,7 +67,7 @@ class ProactorStats:
     num_events_received: int = 0
     links: dict[str, LinkStats]
 
-    def __init__(self, link_names: Optional[Sequence[str]] = None):
+    def __init__(self, link_names: Optional[Sequence[str]] = None) -> None:
         self.num_received_by_type = defaultdict(int)
         self.num_received_by_topic = defaultdict(int)
         if link_names is None:

@@ -120,7 +120,7 @@ class IOLoop(Communicator, IOLoopInterface):
         finally:
             self._io_loop.stop()
 
-    async def _async_run(self):
+    async def _async_run(self) -> None:
         try:
             while not self._stop_requested:
                 with self._lock:

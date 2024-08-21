@@ -44,7 +44,7 @@ class _RunWebServer:
         self,
         config: WebServerGt,
         routes: list[RouteDef],
-    ):
+    ) -> None:
         self.config = config
         self.routes = routes.copy()
 
@@ -82,7 +82,7 @@ class _WebManager(Communicator, Runnable):
     def process_message(self, message: Message) -> Result[bool, BaseException]:
         raise ValueError("_WebManager does not currently process any messages")
 
-    def disable(self):
+    def disable(self) -> None:
         self._configs.clear()
         self._routes.clear()
 
@@ -119,7 +119,7 @@ class _WebManager(Communicator, Runnable):
         path: str,
         handler: HTTPHandler,
         **kwargs: Any,
-    ):
+    ) -> None:
         self._routes[server_name].append(
             RouteDef(
                 method=method,

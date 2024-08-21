@@ -13,14 +13,14 @@ class LoggerGuard:
     handlers: set[logging.Handler]
     filters: set[logging.Filter]
 
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger) -> None:
         self.logger = logger
         self.level = logger.level
         self.propagate = logger.propagate
         self.handlers = set(logger.handlers)
         self.filters = set(logger.filters)
 
-    def restore(self):
+    def restore(self) -> None:
         screen_handlers = [
             h
             for h in self.logger.handlers
@@ -60,7 +60,7 @@ class LoggerGuard:
 class LoggerGuards:
     guards: dict[str, LoggerGuard]
 
-    def __init__(self, extra_logger_names: Optional[Sequence[str]] = None):
+    def __init__(self, extra_logger_names: Optional[Sequence[str]] = None) -> None:
         logger_names = self.default_logger_names()
         if extra_logger_names is not None:
             logger_names = logger_names.union(set(extra_logger_names))
@@ -69,7 +69,7 @@ class LoggerGuards:
             for logger_name in logger_names
         }
 
-    def restore(self):
+    def restore(self) -> None:
         for guard in self.guards.values():
             guard.restore()
 

@@ -92,7 +92,7 @@ class MQTTClientWrapper:
         )
         self._stop_requested = False
 
-    def _client_thread(self):
+    def _client_thread(self) -> None:
         MAX_BACK_OFF = 1024
         backoff = 1
         while not self._stop_requested:
@@ -251,7 +251,7 @@ class MQTTClients:
     upstream_client: str = ""
     primary_peer_client: str = ""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._send_queue = AsyncQueueWriter()
         self.clients = {}
 

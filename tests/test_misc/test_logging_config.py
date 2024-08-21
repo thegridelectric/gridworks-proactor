@@ -16,7 +16,7 @@ from gwproactor.config import (
 )
 
 
-def test_logger_levels():
+def test_logger_levels() -> None:
     # Check if fields have been added or renamed
     assert set(LoggerLevels().__fields__.keys()) == {
         "message_summary",
@@ -78,7 +78,7 @@ def test_logger_levels():
     assert LoggerLevels().set_logger_names_to_levels(base_name) == {}
 
 
-def test_logging_settings():
+def test_logging_settings() -> None:
     # Check if loggers have been added or renamed
     assert set(LoggingSettings().levels.__fields__.keys()) == {
         "message_summary",
@@ -175,7 +175,7 @@ def get_exp_formatted_time(
     )
 
 
-def test_formatter_settings():
+def test_formatter_settings() -> None:
     settings = FormatterSettings()
     formatter = settings.create()
     record = logging.makeLogRecord({"msg": "bla %s %d", "args": ("biz", 1)})
@@ -190,7 +190,7 @@ def test_formatter_settings():
     assert formatted.endswith(record.msg % record.args)
 
 
-def test_rotating_file_handler_settings(tmp_path):
+def test_rotating_file_handler_settings(tmp_path) -> None:
     settings = RotatingFileHandlerSettings()
     handler = settings.create(tmp_path, FormatterSettings().create())
     assert handler.level == logging.NOTSET

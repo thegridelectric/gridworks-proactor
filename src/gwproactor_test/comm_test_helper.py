@@ -53,7 +53,7 @@ class CommTestHelper:
     warn_if_multi_subscription_tests_skipped: bool = True
 
     @classmethod
-    def setup_class(cls):
+    def setup_class(cls) -> None:
         if cls.parent_recorder_t is None:
             cls.parent_recorder_t = make_recorder_class(cls.parent_t)
         if cls.child_recorder_t is None:
@@ -78,7 +78,7 @@ class CommTestHelper:
         parent_path_name: str = "parent",
         child_kwargs: Optional[dict] = None,
         parent_kwargs: Optional[dict] = None,
-    ):
+    ) -> None:
         self.setup_class()
         self.child_helper = ProactorTestHelper(
             child_name,
@@ -206,7 +206,7 @@ class CommTestHelper:
         self._set_settings_use_tls(use_tls, self._get_child_clients_supporting_tls())
         self._set_settings_use_tls(use_tls, self._get_parent_clients_supporting_tls())
 
-    def setup_logging(self):
+    def setup_logging(self) -> None:
         self.child_helper.settings.paths.mkdirs(parents=True)
         self.parent_helper.settings.paths.mkdirs(parents=True)
         errors = []
@@ -236,7 +236,7 @@ class CommTestHelper:
         )
         assert not errors
 
-    async def stop_and_join(self):
+    async def stop_and_join(self) -> None:
         proactors = [
             helper.proactor
             for helper in [self.child_helper, self.parent_helper]

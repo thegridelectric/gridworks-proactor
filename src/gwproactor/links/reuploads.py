@@ -29,7 +29,7 @@ class _ReuploadDiffLogger:  # pragma: no cover
         self,
         reuploads: Optional["Reuploads"] = None,
         verbose: bool = False,
-    ):
+    ) -> None:
         self.reuploads = reuploads
         self.verbose = verbose
         if reuploads is not None:
@@ -91,7 +91,7 @@ class Reuploads:
         self,
         logger: ProactorLogger,
         num_initial_events: int = NUM_INITIAL_EVENTS,
-    ):
+    ) -> None:
         self._reupload_pending = {}
         self._reuploaded_unacked = {}
         self._num_initial_events = num_initial_events
@@ -185,10 +185,10 @@ class Reuploads:
                     break
         return s.rstrip()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.get_str(verbose=False)
 
-    def _log_start_reupload(self, num_pending_events, num_reupload_now):
+    def _log_start_reupload(self, num_pending_events, num_reupload_now) -> None:
         if self._logger.general_enabled:
             if self.reuploading():
                 state_str = f"{self.num_reupload_pending} reupload events pending."

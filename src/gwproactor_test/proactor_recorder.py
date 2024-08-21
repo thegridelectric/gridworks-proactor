@@ -106,7 +106,7 @@ class RecorderLinks(LinkManager):
     needs_ack: list[_PausedAck]
 
     # noinspection PyMissingConstructor
-    def __init__(self, other: LinkManager):
+    def __init__(self, other: LinkManager) -> None:
         self.__dict__ = other.__dict__
         self.acks_paused = False
         self.needs_ack = []
@@ -163,7 +163,7 @@ def make_recorder_class(
         pending_subacks: list[Message]
         mqtt_messages_dropped: bool
 
-        def __init__(self, name: str, settings: ProactorSettings, **kwargs_):
+        def __init__(self, name: str, settings: ProactorSettings, **kwargs_) -> None:
             super().__init__(name=name, settings=settings, **kwargs_)
             self.subacks_paused = False
             self.pending_subacks = []
@@ -178,7 +178,7 @@ def make_recorder_class(
         def needs_ack(self) -> list[_PausedAck]:
             return self._links.needs_ack
 
-        def split_client_subacks(self: ProactorT, client_name: str):
+        def split_client_subacks(self: ProactorT, client_name: str) -> None:
             client_wrapper = self.mqtt_client_wrapper(client_name)
 
             def member_split_subscriptions():
@@ -186,14 +186,14 @@ def make_recorder_class(
 
             client_wrapper.subscribe_all = member_split_subscriptions
 
-        def restore_client_subacks(self: ProactorT, client_name: str):
+        def restore_client_subacks(self: ProactorT, client_name: str) -> None:
             client_wrapper = self.mqtt_client_wrapper(client_name)
             client_wrapper.subscribe_all = MQTTClientWrapper.subscribe_all
 
-        def pause_subacks(self):
+        def pause_subacks(self) -> None:
             self.subacks_paused = True
 
-        def release_subacks(self: ProactorT, num_released: int = -1):
+        def release_subacks(self: ProactorT, num_released: int = -1) -> None:
             self.subacks_paused = False
             if num_released < 0:
                 num_released = len(self.pending_subacks)
@@ -202,13 +202,13 @@ def make_recorder_class(
             for message in release:
                 self._receive_queue.put_nowait(message)
 
-        async def process_message(self, message: Message):
+        async def process_message(self, message: Message) -> None:
             if self.subacks_paused and isinstance(message.Payload, MQTTSubackPayload):
                 self.pending_subacks.append(message)
             else:
                 await super().process_message(message)
 
-        def pause_acks(self):
+        def pause_acks(self) -> None:
             self._links.acks_paused = True
 
         def release_acks(self, clear: bool = False, num_to_release: int = -1) -> int:
@@ -217,10 +217,10 @@ def make_recorder_class(
         def set_ack_timeout_seconds(self, delay: float) -> None:
             self._links._acks._default_delay_seconds = delay  # noqa
 
-        def drop_mqtt(self, drop: bool):
+        def drop_mqtt(self, drop: bool) -> None:
             self.mqtt_messages_dropped = drop
 
-        def _process_mqtt_message(self, message: Message[MQTTReceiptPayload]):
+        def _process_mqtt_message(self, message: Message[MQTTReceiptPayload]) -> None:
             if not self.mqtt_messages_dropped:
                 # noinspection PyProtectedMember
                 super()._process_mqtt_message(message)
@@ -264,7 +264,7 @@ def make_recorder_class(
             lifecycle: int = -1,
             comm_event: int = -1,
             command: Optional[DBGCommands | str] = None,
-        ):
+        ) -> None:
             if isinstance(command, str):
                 command = DBGCommands(command)
             self.send_threadsafe(
@@ -282,7 +282,7 @@ def make_recorder_class(
                 )
             )
 
-        def _derived_process_message(self, message: Message):
+        def _derived_process_message(self, message: Message) -> None:
             match message.Payload:
                 case DBGPayload():
                     message.Header.Src = self.publication_name

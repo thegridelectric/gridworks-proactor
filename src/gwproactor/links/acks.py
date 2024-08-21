@@ -29,7 +29,7 @@ class AckManager:
         timer_mgr: TimerManagerInterface,
         callback: AckTimerCallback,
         delay: Optional[float] = DEFAULT_ACK_DELAY,
-    ):
+    ) -> None:
         self._acks = {}
         self._timer_mgr = timer_mgr
         self._user_callback = callback

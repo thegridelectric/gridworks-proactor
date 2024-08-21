@@ -93,7 +93,7 @@ class Proactor(ServicesInterface, Runnable):
         name: str,
         settings: ProactorSettings,
         hardware_layout: Optional[HardwareLayout] = None,
-    ):
+    ) -> None:
         self._name = name
         self._settings = settings
         if hardware_layout is None:
@@ -247,7 +247,7 @@ class Proactor(ServicesInterface, Runnable):
     def primary_peer_client(self) -> str:
         return self._links.primary_peer_client
 
-    def _send(self, message: Message):
+    def _send(self, message: Message) -> None:
         self.send(message)
 
     def generate_event(self, event: EventT) -> Result[bool, BaseException]:
@@ -271,10 +271,10 @@ class Proactor(ServicesInterface, Runnable):
             "--Proactor._process_ack_timeout path:0x%08X", path_dbg
         )
 
-    def _process_ack(self, link_name: str, message_id: str):
+    def _process_ack(self, link_name: str, message_id: str) -> None:
         self._links.process_ack(link_name, message_id)
 
-    def _process_dbg(self, dbg: DBGPayload):
+    def _process_dbg(self, dbg: DBGPayload) -> None:
         self._logger.path("++_process_dbg")
         path_dbg = 0
         count_dbg = 0
@@ -357,15 +357,15 @@ class Proactor(ServicesInterface, Runnable):
         ] + self._links.start_ping_tasks()
         self._start_derived_tasks()
 
-    def _start_derived_tasks(self):
+    def _start_derived_tasks(self) -> None:
         pass
 
-    def _derived_process_message(self, message: Message):
+    def _derived_process_message(self, message: Message) -> None:
         pass
 
     def _derived_process_mqtt_message(
         self, message: Message[MQTTReceiptPayload], decoded: Any
-    ):
+    ) -> None:
         pass
 
     @classmethod
@@ -398,7 +398,7 @@ class Proactor(ServicesInterface, Runnable):
             return Err(e2)
         return Ok()
 
-    def _start_processing_messages(self):
+    def _start_processing_messages(self) -> None:
         """Hook for processing before any messages are pulled from queue"""
 
     async def process_message(self, message: Message) -> None:
@@ -544,7 +544,7 @@ class Proactor(ServicesInterface, Runnable):
         )
         return decode_result
 
-    def _process_mqtt_connected(self, message: Message[MQTTConnectPayload]):
+    def _process_mqtt_connected(self, message: Message[MQTTConnectPayload]) -> None:
         result = self._links.process_mqtt_connected(message)
         if result.is_err():
             self._report_error(result.err(), "_process_mqtt_connected")
@@ -617,7 +617,7 @@ class Proactor(ServicesInterface, Runnable):
         )
         return Ok()
 
-    def _process_shutdown_message(self, message: Message[Shutdown]):
+    def _process_shutdown_message(self, message: Message[Shutdown]) -> None:
         self._stop_requested = True
         self.generate_event(ShutdownEvent(Reason=message.Payload.Reason))
         self._logger.lifecycle(

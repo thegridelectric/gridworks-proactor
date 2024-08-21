@@ -26,12 +26,12 @@ ChildMessageDecoder = create_message_payload_discriminator(
 
 
 class ChildMQTTCodec(MQTTCodec):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             Decoders.from_objects(message_payload_discriminator=ChildMessageDecoder)
         )
 
-    def validate_source_alias(self, source_alias: str):
+    def validate_source_alias(self, source_alias: str) -> None:
         if source_alias != DUMMY_PARENT_NAME:
             raise Exception(
                 f"alias {source_alias} not my AtomicTNode ({DUMMY_PARENT_NAME})!"
@@ -45,7 +45,7 @@ class DummyChild(Proactor):
         self,
         name: str = "",
         settings: Optional[DummyChildSettings] = None,
-    ):
+    ) -> None:
         super().__init__(
             name=name or DUMMY_CHILD_NAME,
             settings=DummyChildSettings() if settings is None else settings,

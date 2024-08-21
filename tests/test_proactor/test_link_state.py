@@ -20,7 +20,7 @@ from gwproactor.message import (
 )
 
 
-def assert_transition(got: Transition, exp: Transition):
+def assert_transition(got: Transition, exp: Transition) -> None:
     assert got.__dict__ == exp.__dict__
 
 
@@ -41,7 +41,7 @@ class _Case:
             new_state=self.end,
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"{self.start.value}--{self.input.value}-->{self.end.value}---ok:{self.ok}"
         )
@@ -77,7 +77,7 @@ class _Case:
         links: LinkStates,
         name: str,
         got: Result[Transition, InvalidCommStateInput],
-    ):
+    ) -> None:
         assert links[name].name == name
         assert links.link(name).name == name
         if self.ok:
@@ -90,7 +90,7 @@ class _Case:
                 assert isinstance(got_err, self.err.__class__)
             assert links[name].state == self.start
 
-    def _test(self):
+    def _test(self) -> None:
         name = "a"
         links = LinkStates([name])
         link = links[name]
@@ -144,7 +144,7 @@ class _State:
     start: StateName
     transitions: dict[TransitionName, list[_Case]]
 
-    def __init__(self, start: StateName):
+    def __init__(self, start: StateName) -> None:
         self.start = start
         # By default, all transitions illegal
         self.transitions = {
@@ -153,7 +153,7 @@ class _State:
             if transition != TransitionName.none
         }
 
-    def set_case(self, case: _Case | list[_Case]):
+    def set_case(self, case: _Case | list[_Case]) -> None:
         if isinstance(case, _Case):
             start = case.start
             input_ = case.input
@@ -180,7 +180,7 @@ class _State:
 class _Cases:
     states: dict[StateName, _State]
 
-    def __init__(self, cases: Optional[list[_Case]] = None):
+    def __init__(self, cases: Optional[list[_Case]] = None) -> None:
         # Disallow all transitions by default.
         self.states = {
             state: _State(state) for state in StateName if state != StateName.none
@@ -189,7 +189,7 @@ class _Cases:
         for case in cases:
             self.set_case(case)
 
-    def set_case(self, case: _Case | list[_Case]):
+    def set_case(self, case: _Case | list[_Case]) -> None:
         if isinstance(case, _Case):
             start = case.start
         else:
@@ -305,5 +305,5 @@ all_cases = _Cases(
 
 
 @pytest.mark.parametrize("case", all_cases.cases(), ids=_Case.__str__)
-def test_transitions(case):
+def test_transitions(case) -> None:
     case._test()

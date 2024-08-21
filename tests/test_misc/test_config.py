@@ -14,7 +14,7 @@ from gwproactor.config.paths import TLSPaths
 from gwproactor_test.dummies import DummyChildSettings
 
 
-def test_tls_paths():
+def test_tls_paths() -> None:
     # unitialized TLSPaths
     exp = {
         "ca_cert_path": None,
@@ -96,7 +96,7 @@ def test_tls_paths_mkdirs(clean_test_env, tmp_path) -> None:
     assert tls_paths.private_key_path.parent.exists()
 
 
-def test_tls_info():
+def test_tls_info() -> None:
     # unitialized TLSInfo
     exp: dict = {
         "use_tls": True,
@@ -131,7 +131,7 @@ def test_tls_info():
         assert getattr(info, k) == v
 
 
-def test_mqtt_client_settings():
+def test_mqtt_client_settings() -> None:
     """Test MQTTClient"""
     password = "d"
     port = 1883
@@ -207,7 +207,7 @@ def exp_paths_dict(**kwargs) -> dict:
     return exp
 
 
-def assert_paths(paths: Paths, **kwargs):
+def assert_paths(paths: Paths, **kwargs) -> None:
     exp = exp_paths_dict(**kwargs)
     for field, exp_value in exp.items():
         got_value = getattr(paths, field)
@@ -220,11 +220,11 @@ def assert_paths(paths: Paths, **kwargs):
     assert paths.dict() == exp
 
 
-def test_paths_defaults(clean_test_env, tmp_path):
+def test_paths_defaults(clean_test_env, tmp_path) -> None:
     assert_paths(Paths(), home=tmp_path)
 
 
-def test_paths(clean_test_env, tmp_path):
+def test_paths(clean_test_env, tmp_path) -> None:
     # base, name
     assert_paths(
         Paths(base="foo", name="bar"),
@@ -343,7 +343,7 @@ def _assert_eq(
     field_name: str,
     exp: Any,
     got: Any,
-):
+) -> None:
     assert exp == got, (
         f"ERROR on field <{field_name}> for test {tag}\n"
         f"\texp: {exp}\n"
@@ -359,7 +359,7 @@ def _assert_child_paths_update(
     ca_cert_path: Path | str,
     cert_path: Path | str,
     private_key_path: Path | str,
-):
+) -> None:
     tag = f"[{test_name}], with param type: {param_type}"
     _assert_eq(tag, "certs_dir", Path(certs_dir), child.paths.certs_dir)
     _assert_eq(

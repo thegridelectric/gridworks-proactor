@@ -69,7 +69,7 @@ class RESTPoller:
         convert: Converter = null_converter,
         forward: ThreadSafeForwarder = null_forwarder,
         cache_request_args: bool = True,
-    ):
+    ) -> None:
         self._name = name
         self._task_id = INVALID_IO_TASK_HANDLE
         self._rest = rest
@@ -163,7 +163,7 @@ class RESTPoller:
     def _get_next_sleep_seconds(self) -> float:
         return self._rest.poll_period_seconds
 
-    async def _run(self):
+    async def _run(self) -> None:
         try:
             reconnect = True
             while reconnect:
@@ -206,7 +206,7 @@ class RESTPollerActor(Actor):
         convert: Converter = null_converter,
         forward: ThreadSafeForwarder = null_forwarder,
         cache_request_args: bool = True,
-    ):
+    ) -> None:
         super().__init__(name, services)
         component = services.hardware_layout.component(self.name)
         if not isinstance(component, RESTPollerComponent):

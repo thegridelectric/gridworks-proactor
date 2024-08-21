@@ -36,7 +36,7 @@ class _EventGen:
     def __len__(self) -> int:
         return len(self.ok) + len(self.corrupt) + len(self.empty)
 
-    def __init__(self, proactor: ServicesInterface):
+    def __init__(self, proactor: ServicesInterface) -> None:
         self.ok = []
         self.corrupt = []
         self.empty = []
@@ -87,7 +87,7 @@ class _EventGen:
         num_corrupt: int = 0,
         num_empty: int = 0,
         num_missing: int = 0,
-    ):
+    ) -> None:
         for _ in range(num_ok):
             self._generate_ok()
         for _ in range(num_corrupt):
@@ -102,7 +102,7 @@ class _EventGen:
 class ProactorCommTests:
     CTH: Type[CommTestHelper]
 
-    async def test_no_parent(self):
+    async def test_no_parent(self) -> None:
         async with self.CTH(add_child=True) as h:
             child = h.child
             stats = child.stats.link(child.upstream_client)
@@ -158,7 +158,7 @@ class ProactorCommTests:
             for comm_event in stats.comm_events:
                 assert comm_event.MessageId in child._event_persister
 
-    async def test_basic_comm_child_first(self):
+    async def test_basic_comm_child_first(self) -> None:
         async with self.CTH(add_child=True, add_parent=True) as h:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
@@ -285,7 +285,7 @@ class ProactorCommTests:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("suppress_tls", [False, True])
-    async def test_basic_comm_parent_first(self, request, suppress_tls: bool):
+    async def test_basic_comm_parent_first(self, request, suppress_tls: bool) -> None:
         async with self.CTH() as h:
             base_logger = logging.getLogger(
                 h.child_helper.settings.logging.base_log_name
@@ -357,7 +357,7 @@ class ProactorCommTests:
             )
 
     @pytest.mark.asyncio
-    async def test_basic_parent_comm_loss(self):
+    async def test_basic_parent_comm_loss(self) -> None:
         async with self.CTH(add_child=True, add_parent=True, verbose=False) as h:
             child = h.child
             child_stats = child.stats.link(child.upstream_client)
@@ -514,7 +514,7 @@ class ProactorCommTests:
             )
 
     @pytest.mark.asyncio
-    async def test_awaiting_setup_and_peer(self):
+    async def test_awaiting_setup_and_peer(self) -> None:
         """
         Test:
          (connecting -> connected -> awaiting_setup_and_peer)
@@ -637,7 +637,7 @@ class ProactorCommTests:
                 assert comm_event.MessageId in child._event_persister
 
     @pytest.mark.asyncio
-    async def test_awaiting_setup_and_peer_corner_cases(self, request):
+    async def test_awaiting_setup_and_peer_corner_cases(self, request) -> None:
         """
         Test corner cases:
          (connecting -> connected -> awaiting_setup_and_peer)
@@ -797,7 +797,7 @@ class ProactorCommTests:
     # @pytest.mark.skip
 
     @pytest.mark.asyncio
-    async def test_awaiting_setup2__(self, request):
+    async def test_awaiting_setup2__(self, request) -> None:
         """
         Test awaiting_setup (corner state):
          (awaiting_setup_and_peer -> message_from_peer -> awaiting_setup)
@@ -981,7 +981,7 @@ class ProactorCommTests:
             )
 
     @pytest.mark.asyncio
-    async def test_response_timeout(self):
+    async def test_response_timeout(self) -> None:
         """
         Test:
             (awaiting_peer -> response_timeout -> awaiting_peer)
@@ -1080,7 +1080,7 @@ class ProactorCommTests:
             )
 
     @pytest.mark.asyncio
-    async def test_ping(self):
+    async def test_ping(self) -> None:
         """
         Test:
             ping sent peridoically if no messages sent
@@ -1211,7 +1211,7 @@ class ProactorCommTests:
             )
 
     @pytest.mark.asyncio
-    async def test_reupload_basic(self):
+    async def test_reupload_basic(self) -> None:
         """
         Test:
             reupload not requiring flow control
@@ -1262,7 +1262,7 @@ class ProactorCommTests:
             assert not child._links.reuploading()
 
     @pytest.mark.asyncio
-    async def test_reupload_flow_control_simple(self):
+    async def test_reupload_flow_control_simple(self) -> None:
         """
         Test:
             reupload requiring flow control
@@ -1321,7 +1321,7 @@ class ProactorCommTests:
             )
 
     @pytest.mark.asyncio
-    async def test_reupload_flow_control_detail(self):
+    async def test_reupload_flow_control_detail(self) -> None:
         """
         Test:
             reupload requiring flow control
@@ -1494,7 +1494,7 @@ class ProactorCommTests:
             assert not child_links.reuploading()
 
     @pytest.mark.asyncio
-    async def test_reupload_errors(self):
+    async def test_reupload_errors(self) -> None:
         async with self.CTH(
             start_child=True,
             add_parent=True,

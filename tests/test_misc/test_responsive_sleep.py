@@ -7,12 +7,12 @@ from gwproactor_test import StopWatch
 
 
 class StopMe:
-    def __init__(self, running: bool = True, step_duration: float = 0.1):
+    def __init__(self, running: bool = True, step_duration: float = 0.1) -> None:
         self.running = running
         self.step_duration = step_duration
         self.thread = threading.Thread(target=self.loop)
 
-    def loop(self):
+    def loop(self) -> None:
         while self.running:
             print(".")
             responsive_sleep(
@@ -22,10 +22,10 @@ class StopMe:
                 running_field_name="running",
             )
 
-    def start(self):
+    def start(self) -> None:
         self.thread.start()
 
-    def stop(self):
+    def stop(self) -> None:
         self.running = False
         self.thread.join()
 
@@ -33,7 +33,7 @@ class StopMe:
 MAX_DELAY = 0.01
 
 
-def test_responsive_sleep():
+def test_responsive_sleep() -> None:
     sw = StopWatch()
     seconds = 0.1
     with sw:

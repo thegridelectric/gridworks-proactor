@@ -18,12 +18,14 @@ class PersisterException(Exception):
     path: Optional[Path] = None
     uid: str = ""
 
-    def __init__(self, msg: str = "", uid: str = "", path: Optional[Path] = None):
+    def __init__(
+        self, msg: str = "", uid: str = "", path: Optional[Path] = None
+    ) -> None:
         self.path = path
         self.uid = uid
         super().__init__(msg)
 
-    def __str__(self):
+    def __str__(self) -> str:
         s = self.__class__.__name__
         super_str = super().__str__()
         if super_str:
@@ -146,7 +148,7 @@ class SimpleDirectoryWriter(StubPersister):
     def __init__(
         self,
         base_dir: Path | str,
-    ):
+    ) -> None:
         self._base_dir = Path(base_dir).resolve()
 
     @classmethod
@@ -198,7 +200,7 @@ class TimedRollingFilePersister(PersisterInterface):
         max_bytes: int = DEFAULT_MAX_BYTES,
         pat_watchdog_args: Optional[list[str]] = None,
         reindex_pat_seconds=REINDEX_PAT_SECONDS,
-    ):
+    ) -> None:
         self._base_dir = Path(base_dir).resolve()
         self._max_bytes = max_bytes
         self._curr_dir = self._today_dir()
@@ -402,7 +404,7 @@ class TimedRollingFilePersister(PersisterInterface):
     def _today_dir(self) -> Path:
         return self._base_dir / pendulum.today("utc").isoformat()
 
-    def _roll_curr_dir(self):
+    def _roll_curr_dir(self) -> None:
         today_dir = self._today_dir()
         if today_dir != self._curr_dir:
             self._curr_dir = today_dir

@@ -38,7 +38,7 @@ class CommunicatorInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _send(self, message: Message):
+    def _send(self, message: Message) -> NoReturn:
         raise NotImplementedError
 
     @abstractmethod
@@ -62,7 +62,7 @@ class Communicator(CommunicatorInterface, ABC):
     _name: str
     _services: "ServicesInterface"
 
-    def __init__(self, name: str, services: "ServicesInterface"):
+    def __init__(self, name: str, services: "ServicesInterface") -> None:
         self._name = name
         self._services = services
 

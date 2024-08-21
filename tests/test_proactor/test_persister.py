@@ -3,7 +3,7 @@ import shutil
 import time
 from importlib.metadata import version as get_package_version
 from pathlib import Path
-from typing import Optional, Union
+from typing import NoReturn, Optional, Union
 
 import gwproto.messages
 import pendulum
@@ -58,7 +58,7 @@ class SlowIndexer(TimedRollingFilePersister):
         base_dir: Path | str,
         max_bytes: int = TimedRollingFilePersister.DEFAULT_MAX_BYTES,
         pat_watchdog_args: Optional[list[str]] = None,
-    ):
+    ) -> None:
         super().__init__(
             base_dir=base_dir,
             max_bytes=max_bytes,
@@ -73,7 +73,7 @@ class SlowIndexer(TimedRollingFilePersister):
         return super()._persisted_item_from_file_path(filepath)
 
 
-def test_problems():
+def test_problems() -> None:
     p = Problems()
     assert not p
     assert not str(p)
@@ -116,7 +116,7 @@ def test_problems():
     assert str(p2)
 
 
-def test_persister_exception():
+def test_persister_exception() -> None:
     e = PersisterException("foo")
     assert str(e)
     assert e.uid == ""
@@ -145,7 +145,7 @@ def assert_contents(
     curr_dir: Optional[Union[str, Path]] = None,
     check_index: bool = True,
     max_bytes: Optional[int] = None,
-):
+) -> None:
     assert p.num_pending == len(p.pending())
     if num_pending is not None:
         assert p.num_pending == num_pending
@@ -213,7 +213,7 @@ def assert_contents(
             assert uid in str(path.name)
 
 
-def test_persister_happy_path(tmp_path):
+def test_persister_happy_path(tmp_path) -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     event = ProblemEvent(
@@ -322,7 +322,7 @@ def test_persister_happy_path(tmp_path):
     )
 
 
-def test_persister_max_size():
+def test_persister_max_size() -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     event = ProblemEvent(
@@ -333,7 +333,7 @@ def test_persister_max_size():
         Details="x" * 1024,
     )
 
-    def inc_event():
+    def inc_event() -> None:
         event.MessageId = f"{int(event.MessageId) + 1:2d}"
 
     event_bytes = event.json().encode()
@@ -391,7 +391,7 @@ def test_persister_max_size():
         assert_contents(p, num_pending=exp_pending, curr_bytes=exp_size, uids=uids)
 
 
-def test_persister_roll_day():
+def test_persister_roll_day() -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     event = ProblemEvent(
@@ -402,7 +402,7 @@ def test_persister_roll_day():
         Details="x" * 1024,
     )
 
-    def inc_event():
+    def inc_event() -> None:
         event.MessageId = f"{int(event.MessageId) + 1:2d}"
 
     uids = [event.MessageId]
@@ -509,7 +509,7 @@ def test_persister_roll_day():
         pendulum_travel_back()
 
 
-def test_persister_size_and_roll():
+def test_persister_size_and_roll() -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     uidi = 1
@@ -750,7 +750,7 @@ def test_persister_size_and_roll():
         pendulum_travel_back()
 
 
-def test_persister_indexing():
+def test_persister_indexing() -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     uidi = 1
@@ -817,7 +817,7 @@ def test_persister_indexing():
         pendulum_travel_back()
 
 
-def test_persister_problems():
+def test_persister_problems() -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     uidi = 1
@@ -864,7 +864,7 @@ def test_persister_problems():
 
         # persist, unexpected error
         class BrokenRoller(TimedRollingFilePersister):
-            def _roll_curr_dir(self):
+            def _roll_curr_dir(self) -> NoReturn:
                 raise ValueError("whoops")
 
         broken = BrokenRoller(settings.paths.event_dir)
@@ -921,7 +921,7 @@ def test_persister_problems():
 
         class BrokenRoller3(TimedRollingFilePersister):
             @classmethod
-            def _persisted_item_from_file_path(cls, filepath: Path):
+            def _persisted_item_from_file_path(cls, filepath: Path) -> NoReturn:
                 raise ValueError("arg")
 
         p = BrokenRoller3(settings.paths.event_dir, max_bytes=len(buf) + 50)
@@ -948,7 +948,7 @@ def test_persister_problems():
         pendulum_travel_back()
 
 
-def test_reindex_pat(tmp_path, monkeypatch):
+def test_reindex_pat(tmp_path, monkeypatch) -> None:
     PatWatchdogWithFile.pat_dir = tmp_path / "pats"
     PatWatchdogWithFile.pat_dir.mkdir(parents=True)
     service_name = "foo"

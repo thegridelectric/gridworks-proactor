@@ -18,12 +18,12 @@ ParentMessageDecoder = create_message_payload_discriminator(
 
 
 class ParentMQTTCodec(MQTTCodec):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             Decoders.from_objects(message_payload_discriminator=ParentMessageDecoder)
         )
 
-    def validate_source_alias(self, source_alias: str):
+    def validate_source_alias(self, source_alias: str) -> None:
         if source_alias != DUMMY_CHILD_NAME:
             raise Exception(f"alias {source_alias} not my Scada!")
 
@@ -35,7 +35,7 @@ class DummyParent(Proactor):
         self,
         name: str = "",
         settings: Optional[DummyParentSettings] = None,
-    ):
+    ) -> None:
         super().__init__(
             name=name or DUMMY_PARENT_NAME,
             settings=DummyParentSettings() if settings is None else settings,

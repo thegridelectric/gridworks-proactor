@@ -94,7 +94,7 @@ class ProactorLogger(logging.LoggerAdapter):
         lifecycle: str,
         comm_event: str,
         extra: Optional[dict] = None,
-    ):
+    ) -> None:
         super().__init__(logging.getLogger(base), extra=extra)
         self.message_summary_logger = logging.getLogger(message_summary)
         self.lifecycle_logger = logging.getLogger(lifecycle)

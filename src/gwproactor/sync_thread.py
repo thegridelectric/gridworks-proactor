@@ -94,7 +94,7 @@ class SyncAsyncQueueWriter:
     _async_queue: Optional[asyncio.Queue] = None
     sync_queue: Optional[queue.Queue]
 
-    def __init__(self, sync_queue: Optional[queue.Queue] = None):
+    def __init__(self, sync_queue: Optional[queue.Queue] = None) -> None:
         self.sync_queue = sync_queue
 
     def set_async_loop(
@@ -148,7 +148,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
         responsive_sleep_step_seconds: float = SLEEP_STEP_SECONDS,
         pat_timeout: Optional[float] = PAT_TIMEOUT,
         daemon: bool = True,
-    ):
+    ) -> None:
         super().__init__(name=name, daemon=daemon)
         if channel is None:
             self._channel = SyncAsyncQueueWriter()
