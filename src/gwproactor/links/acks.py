@@ -30,7 +30,7 @@ class AckManager:
         callback: AckTimerCallback,
         delay: Optional[float] = DEFAULT_ACK_DELAY,
     ):
-        self._acks = dict()
+        self._acks = {}
         self._timer_mgr = timer_mgr
         self._user_callback = callback
         self._default_delay_seconds = delay
@@ -56,12 +56,12 @@ class AckManager:
             context=context,
         )
         if link_name not in self._acks:
-            self._acks[link_name] = dict()
+            self._acks[link_name] = {}
         self._acks[link_name][message_id] = wait_info
         return wait_info
 
     def add_link(self, link_name: str) -> None:
-        self._acks[link_name] = dict()
+        self._acks[link_name] = {}
 
     def _pop_wait_info(self, link_name: str, message_id: str) -> Optional[AckWaitInfo]:
         if (client_acks := self._acks.get(link_name, None)) is not None:
@@ -80,7 +80,7 @@ class AckManager:
     def cancel_ack_timers(self, link_name: str) -> list[AckWaitInfo]:
         if link_name in self._acks:
             wait_infos = self._acks[link_name]
-            self._acks[link_name] = dict()
+            self._acks[link_name] = {}
             for wait_info in wait_infos.values():
                 self._timer_mgr.cancel_timer(wait_info.timer_handle)
         else:

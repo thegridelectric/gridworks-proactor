@@ -65,7 +65,7 @@ class LoggerLevels(BaseModel):
         self, base_log_name: str, fields: Iterable[str]
     ) -> dict[str, dict[str, int]]:
         return {
-            f"{base_log_name}.{field_name}": dict(level=getattr(self, field_name))
+            f"{base_log_name}.{field_name}": {"level": getattr(self, field_name)}
             for field_name in fields
         }
 
@@ -110,7 +110,7 @@ class LoggingSettings(BaseModel):
         d = dict(
             self.levels.logger_names_to_levels(self.base_log_name),
         )
-        d[self.base_log_name] = dict(level=self.base_log_level)
+        d[self.base_log_name] = {"level": self.base_log_level}
         return d
 
     def set_logger_levels(self) -> dict[str, dict[str, int]]:

@@ -94,7 +94,7 @@ class LinkManager:
             self._settings.num_initial_event_reuploads,
         )
         self._mqtt_clients = MQTTClients()
-        self._mqtt_codecs = dict()
+        self._mqtt_codecs = {}
         self._states = LinkStates()
         self._message_times = MessageTimes()
         self._acks = AckManager(

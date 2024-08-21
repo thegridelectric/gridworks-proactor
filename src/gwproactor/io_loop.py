@@ -36,9 +36,9 @@ class IOLoop(Communicator, IOLoopInterface):
         super().__init__(KnownNames.io_loop_manager.value, services)
         self._lg = services.logger
         self._lock = threading.RLock()
-        self._tasks = dict()
-        self._id2task = dict()
-        self._completed_tasks = dict()
+        self._tasks = {}
+        self._id2task = {}
+        self._completed_tasks = {}
         self._io_loop = asyncio.new_event_loop()
 
     def add_io_coroutine(self, coro: Coroutine, name: str = "") -> int:

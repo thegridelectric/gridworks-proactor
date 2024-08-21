@@ -205,7 +205,7 @@ class TimedRollingFilePersister(PersisterInterface):
         self._curr_bytes = 0
         self._pat_watchdog_args = pat_watchdog_args
         self._reindex_pat_seconds = reindex_pat_seconds
-        self._pending = dict()
+        self._pending = {}
 
     @property
     def max_bytes(self) -> int:

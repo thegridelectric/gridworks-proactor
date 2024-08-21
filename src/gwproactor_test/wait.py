@@ -85,15 +85,15 @@ async def await_for(
     if result:
         return True
     caller = getframeinfo(stack()[1][0])
-    format_dict = dict(
-        tag=tag,
-        file=Path(caller.filename).name,
-        line=caller.lineno,
-        seconds=time.time() - start,
-        f=f,
-        p=f(),
-        err_str=err_str_f_(),
-    )
+    format_dict = {
+        "tag": tag,
+        "file": Path(caller.filename).name,
+        "line": caller.lineno,
+        "seconds": time.time() - start,
+        "f": f,
+        "p": f(),
+        "err_str": err_str_f_(),
+    }
     err_str = err_format.format(**format_dict)
     if error_dict is not None:
         error_dict.update(

@@ -88,17 +88,17 @@ class Proactor(ServicesInterface, Runnable):
         self._settings = settings
         if hardware_layout is None:
             hardware_layout = HardwareLayout(
-                dict(
-                    ShNodes=[
-                        dict(
-                            ShNodeId=str(uuid.uuid4()),
-                            Alias=self._name,
-                            ActorClassGtEnumSymbol="00000000",
-                            RoleGtEnumSymbol="00000000",
-                            TypeName="spaceheat.node.gt",
-                        )
+                {
+                    "ShNodes": [
+                        {
+                            "ShNodeId": str(uuid.uuid4()),
+                            "Alias": self._name,
+                            "ActorClassGtEnumSymbol": "00000000",
+                            "RoleGtEnumSymbol": "00000000",
+                            "TypeName": "spaceheat.node.gt",
+                        }
                     ]
-                )
+                }
             )
         self._layout = hardware_layout
         self._node = self._layout.node(name)
@@ -119,7 +119,7 @@ class Proactor(ServicesInterface, Runnable):
             timer_manager=AsyncioTimerManager(),
             ack_timeout_callback=self._process_ack_timeout,
         )
-        self._communicators = dict()
+        self._communicators = {}
         self._tasks = []
         self._stop_requested = False
         self._watchdog = WatchdogManager(9, self)

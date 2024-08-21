@@ -76,7 +76,7 @@ class _WebManager(Communicator, Runnable):
 
     def __init__(self, services: ServicesInterface) -> None:
         super().__init__("_WebManager", services)
-        self._configs = dict()
+        self._configs = {}
         self._routes = defaultdict(list)
 
     def process_message(self, message: Message) -> Result[bool, BaseException]:

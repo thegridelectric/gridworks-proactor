@@ -88,7 +88,7 @@ class CommTestHelper:
                 if child_settings is None
                 else child_settings
             ),
-            dict() if child_kwargs is None else child_kwargs,
+            {} if child_kwargs is None else child_kwargs,
         )
         self.parent_helper = ProactorTestHelper(
             parent_name,
@@ -103,7 +103,7 @@ class CommTestHelper:
                 if parent_settings is None
                 else parent_settings
             ),
-            dict() if parent_kwargs is None else parent_kwargs,
+            {} if parent_kwargs is None else parent_kwargs,
         )
         self.verbose = verbose
         self.child_verbose = child_verbose

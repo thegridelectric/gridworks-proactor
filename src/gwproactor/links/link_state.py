@@ -429,7 +429,7 @@ class LinkStates:
     _links: dict[str, LinkState]
 
     def __init__(self, names: Optional[Sequence[str]] = None):
-        self._links = dict()
+        self._links = {}
         if names is not None:
             for name in names:
                 self.add(name)

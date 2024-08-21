@@ -34,7 +34,7 @@ class WatchdogManager(Communicator, Runnable):
         super().__init__(KnownNames.watchdog_manager.value, services)
         self.lg = services.logger
         self._seconds_per_pat = seconds_per_pat
-        self._monitored_names = dict()
+        self._monitored_names = {}
         self._pat_external_watchdog_process_args = []
 
     def start(self):

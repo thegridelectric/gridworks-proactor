@@ -52,7 +52,7 @@ class _Case:
             match self.input:
                 case TransitionName.mqtt_connected:
                     content = MQTTConnectMessage(
-                        client_name=name, userdata=None, flags=dict(), rc=0
+                        client_name=name, userdata=None, flags={}, rc=0
                     )
                 case TransitionName.mqtt_connect_failed:
                     content = MQTTConnectFailMessage(client_name=name, userdata=None)

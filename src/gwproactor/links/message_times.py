@@ -45,7 +45,7 @@ class MessageTimes:
     _links: dict[str, LinkMessageTimes]
 
     def __init__(self):
-        self._links = dict()
+        self._links = {}
 
     def add_link(self, name: str) -> None:
         self._links[name] = LinkMessageTimes()

@@ -92,8 +92,8 @@ class Reuploads:
         logger: ProactorLogger,
         num_initial_events: int = NUM_INITIAL_EVENTS,
     ):
-        self._reupload_pending = dict()
-        self._reuploaded_unacked = dict()
+        self._reupload_pending = {}
+        self._reuploaded_unacked = {}
         self._num_initial_events = num_initial_events
         self._logger = logger
 

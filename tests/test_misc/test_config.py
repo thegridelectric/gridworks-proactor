@@ -16,11 +16,11 @@ from gwproactor_test.dummies import DummyChildSettings
 
 def test_tls_paths():
     # unitialized TLSPaths
-    exp = dict(
-        ca_cert_path=None,
-        cert_path=None,
-        private_key_path=None,
-    )
+    exp = {
+        "ca_cert_path": None,
+        "cert_path": None,
+        "private_key_path": None,
+    }
     paths = TLSPaths()
     paths_d = paths.dict()
     for k, v in exp.items():
@@ -30,11 +30,11 @@ def test_tls_paths():
     # defaults, given a certs_dir and a name
     certs_dir = Path("foo/certs")
     name = "bar"
-    exp = dict(
-        ca_cert_path=certs_dir / name / "ca.crt",
-        cert_path=certs_dir / name / f"{name}.crt",
-        private_key_path=certs_dir / name / "private" / f"{name}.pem",
-    )
+    exp = {
+        "ca_cert_path": certs_dir / name / "ca.crt",
+        "cert_path": certs_dir / name / f"{name}.crt",
+        "private_key_path": certs_dir / name / "private" / f"{name}.pem",
+    }
     paths = TLSPaths.defaults(certs_dir, name)
     paths_d = paths.dict()
     for k, v in exp.items():
@@ -43,11 +43,11 @@ def test_tls_paths():
 
     # a value set explicitly
     ca_cert_path = Path("bla/bla/bla")
-    exp = dict(
-        ca_cert_path=ca_cert_path,
-        cert_path=None,
-        private_key_path=None,
-    )
+    exp = {
+        "ca_cert_path": ca_cert_path,
+        "cert_path": None,
+        "private_key_path": None,
+    }
     paths = TLSPaths(ca_cert_path=ca_cert_path)
     paths_d = paths.dict()
     for k, v in exp.items():
@@ -57,11 +57,11 @@ def test_tls_paths():
     # updates for unset values, given a certs_dir and a name
     certs_dir = Path("foo/certs")
     name = "bar"
-    exp = dict(
-        ca_cert_path=ca_cert_path,
-        cert_path=certs_dir / name / f"{name}.crt",
-        private_key_path=certs_dir / name / "private" / f"{name}.pem",
-    )
+    exp = {
+        "ca_cert_path": ca_cert_path,
+        "cert_path": certs_dir / name / f"{name}.crt",
+        "private_key_path": certs_dir / name / "private" / f"{name}.pem",
+    }
     paths = paths.effective_paths(certs_dir, name)
     paths_d = paths.dict()
     for k, v in exp.items():
@@ -98,18 +98,18 @@ def test_tls_paths_mkdirs(clean_test_env, tmp_path) -> None:
 
 def test_tls_info():
     # unitialized TLSInfo
-    exp: dict = dict(
-        use_tls=True,
-        port=8883,
-        paths=dict(
-            ca_cert_path=None,
-            cert_path=None,
-            private_key_path=None,
-        ),
-        cert_reqs=ssl.CERT_REQUIRED,
-        ciphers=None,
-        keyfile_password=SecretStr(""),
-    )
+    exp: dict = {
+        "use_tls": True,
+        "port": 8883,
+        "paths": {
+            "ca_cert_path": None,
+            "cert_path": None,
+            "private_key_path": None,
+        },
+        "cert_reqs": ssl.CERT_REQUIRED,
+        "ciphers": None,
+        "keyfile_password": SecretStr(""),
+    }
     info = TLSInfo()
     info_d = info.dict()
     for k, v in exp.items():
@@ -120,11 +120,11 @@ def test_tls_info():
     certs_dir = Path("foo/certs")
     name = "bar"
     info.update_tls_paths(certs_dir, name)
-    exp["paths"] = dict(
-        ca_cert_path=certs_dir / name / "ca.crt",
-        cert_path=certs_dir / name / f"{name}.crt",
-        private_key_path=certs_dir / name / "private" / f"{name}.pem",
-    )
+    exp["paths"] = {
+        "ca_cert_path": certs_dir / name / "ca.crt",
+        "cert_path": certs_dir / name / f"{name}.crt",
+        "private_key_path": certs_dir / name / "private" / f"{name}.pem",
+    }
     info_d = info.dict()
     for k, v in exp.items():
         assert info_d[k] == v
@@ -135,26 +135,26 @@ def test_mqtt_client_settings():
     """Test MQTTClient"""
     password = "d"
     port = 1883
-    exp: dict = dict(
-        host="a",
-        keepalive=1,
-        bind_address="b",
-        bind_port=2,
-        username="c",
-        password=SecretStr(password),
-        tls=dict(
-            use_tls=True,
-            port=8883,
-            paths=dict(
-                ca_cert_path=None,
-                cert_path=None,
-                private_key_path=None,
-            ),
-            cert_reqs=ssl.CERT_REQUIRED,
-            ciphers=None,
-            keyfile_password=SecretStr(""),
-        ),
-    )
+    exp: dict = {
+        "host": "a",
+        "keepalive": 1,
+        "bind_address": "b",
+        "bind_port": 2,
+        "username": "c",
+        "password": SecretStr(password),
+        "tls": {
+            "use_tls": True,
+            "port": 8883,
+            "paths": {
+                "ca_cert_path": None,
+                "cert_path": None,
+                "private_key_path": None,
+            },
+            "cert_reqs": ssl.CERT_REQUIRED,
+            "ciphers": None,
+            "keyfile_password": SecretStr(""),
+        },
+    }
     settings = MQTTClient(**exp)
     d = settings.dict()
     assert d == dict(exp, port=port)
@@ -168,11 +168,11 @@ def test_mqtt_client_settings():
     certs_dir = Path("foo/certs")
     name = "bar"
     settings.update_tls_paths(certs_dir, name)
-    exp["tls"]["paths"] = dict(
-        ca_cert_path=certs_dir / name / "ca.crt",
-        cert_path=certs_dir / name / f"{name}.crt",
-        private_key_path=certs_dir / name / "private" / f"{name}.pem",
-    )
+    exp["tls"]["paths"] = {
+        "ca_cert_path": certs_dir / name / "ca.crt",
+        "cert_path": certs_dir / name / f"{name}.crt",
+        "private_key_path": certs_dir / name / "private" / f"{name}.pem",
+    }
     d = settings.dict()
     assert d == dict(exp, port=port)
     for k, v in exp.items():
@@ -189,20 +189,20 @@ def exp_paths_dict(**kwargs) -> dict:
     default_state_home = home / ".local" / "state"
     default_config_home = home / ".config"
     default_config_dir = default_config_home / default_relative_path
-    exp = dict(
-        base=default_base,
-        name=default_name,
-        relative_path=default_relative_path,
-        data_home=default_data_home,
-        state_home=default_state_home,
-        config_home=default_config_home,
-        data_dir=default_data_home / default_relative_path,
-        config_dir=default_config_dir,
-        certs_dir=default_config_dir / "certs",
-        event_dir=default_data_home / default_relative_path / "event",
-        log_dir=default_state_home / default_relative_path / "log",
-        hardware_layout=default_config_dir / "hardware-layout.json",
-    )
+    exp = {
+        "base": default_base,
+        "name": default_name,
+        "relative_path": default_relative_path,
+        "data_home": default_data_home,
+        "state_home": default_state_home,
+        "config_home": default_config_home,
+        "data_dir": default_data_home / default_relative_path,
+        "config_dir": default_config_dir,
+        "certs_dir": default_config_dir / "certs",
+        "event_dir": default_data_home / default_relative_path / "event",
+        "log_dir": default_state_home / default_relative_path / "log",
+        "hardware_layout": default_config_dir / "hardware-layout.json",
+    }
     exp.update(**kwargs)
     return exp
 
@@ -456,7 +456,7 @@ def test_proactor_settings_root_validators(clean_test_env) -> None:
                     DummyChildSettings(
                         paths=dict(name="foo"),  # noqa
                         parent_mqtt=dict(  # noqa
-                            tls=dict(paths=dict(ca_cert_path=explicit_ca_cert_path))
+                            tls={"paths": {"ca_cert_path": explicit_ca_cert_path}}
                         ),
                     ),
                 ),

@@ -84,9 +84,9 @@ class MQTTClientWrapper:
         self._client.on_connect_fail = self.on_connect_fail
         self._client.on_disconnect = self.on_disconnect
         self._client.on_subscribe = self.on_subscribe
-        self._subscriptions = dict()
+        self._subscriptions = {}
         self._pending_subscriptions = set()
-        self._pending_subacks = dict()
+        self._pending_subacks = {}
         self._thread = threading.Thread(
             target=self._client_thread, name=f"MQTT-client-thread-{self.name}"
         )
@@ -253,7 +253,7 @@ class MQTTClients:
 
     def __init__(self):
         self._send_queue = AsyncQueueWriter()
-        self.clients = dict()
+        self.clients = {}
 
     def add_client(
         self,

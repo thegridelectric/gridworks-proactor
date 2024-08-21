@@ -60,9 +60,9 @@ def test_logger_levels():
 
     # logger_names_to_levels()
     assert levels.logger_names_to_levels(base_name) == {
-        "foo.message_summary": dict(level=50),
-        "foo.lifecycle": dict(level=10),
-        "foo.comm_event": dict(level=10),
+        "foo.message_summary": {"level": 50},
+        "foo.lifecycle": {"level": 10},
+        "foo.comm_event": {"level": 10},
     }
 
     # set_logger_names_to_levels() - all fields set
@@ -72,7 +72,7 @@ def test_logger_levels():
     # only some fields set
     levels = LoggerLevels(comm_event=2)
     assert levels.set_logger_names_to_levels(base_name) == {
-        "foo.comm_event": dict(level=2),
+        "foo.comm_event": {"level": 2},
     }
     # no fields set
     assert LoggerLevels().set_logger_names_to_levels(base_name) == {}
@@ -121,10 +121,10 @@ def test_logging_settings():
 
     # logger_levels()
     assert logging_settings.logger_levels() == {
-        "gridworks": dict(level=30),
-        "gridworks.message_summary": dict(level=30),
-        "gridworks.lifecycle": dict(level=20),
-        "gridworks.comm_event": dict(level=20),
+        "gridworks": {"level": 30},
+        "gridworks.message_summary": {"level": 30},
+        "gridworks.lifecycle": {"level": 20},
+        "gridworks.comm_event": {"level": 20},
     }
 
     # set_logger_levels() - no fields set
@@ -133,7 +133,7 @@ def test_logging_settings():
     # some fields set
     logging_settings = LoggingSettings(levels=LoggerLevels(lifecycle=2))
     assert logging_settings.set_logger_levels() == {
-        "gridworks.lifecycle": dict(level=2),
+        "gridworks.lifecycle": {"level": 2},
     }
 
     # custom base name and level dicts
@@ -147,14 +147,12 @@ def test_logging_settings():
         "comm_event": "foo.comm_event",
     }
     assert logging_settings.logger_levels() == {
-        "foo": dict(level=0),
-        "foo.message_summary": dict(level=1),
-        "foo.lifecycle": dict(level=20),
-        "foo.comm_event": dict(level=20),
+        "foo": {"level": 0},
+        "foo.message_summary": {"level": 1},
+        "foo.lifecycle": {"level": 20},
+        "foo.comm_event": {"level": 20},
     }
-    assert logging_settings.set_logger_levels() == {
-        "foo.message_summary": dict(level=1)
-    }
+    assert logging_settings.set_logger_levels() == {"foo.message_summary": {"level": 1}}
 
     # verbose()
     logging_settings = LoggingSettings()
@@ -180,7 +178,7 @@ def get_exp_formatted_time(
 def test_formatter_settings():
     settings = FormatterSettings()
     formatter = settings.create()
-    record = logging.makeLogRecord(dict(msg="bla %s %d", args=("biz", 1)))
+    record = logging.makeLogRecord({"msg": "bla %s %d", "args": ("biz", 1)})
     got_formatted_time = formatter.formatTime(record, formatter.datefmt)
     created_gmt = time.gmtime(record.created)
     strftimed = time.strftime(logging.Formatter.default_time_format, created_gmt)
