@@ -54,7 +54,8 @@ class _EventGen:
         if ret.is_err():
             raise ret.err()
         entry = _EventEntry(
-            event.MessageId, self.persister.get_path(event.MessageId)  # noqa
+            event.MessageId,
+            self.persister.get_path(event.MessageId),  # noqa
         )
         getattr(self, member_name).append(entry)
         return entry

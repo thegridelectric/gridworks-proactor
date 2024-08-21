@@ -22,7 +22,6 @@ from gwproactor.sync_thread import SyncAsyncInteractionThread
 
 
 class IOLoop(Communicator, IOLoopInterface):
-
     _io_loop: asyncio.AbstractEventLoop
     _io_thread: Optional[threading.Thread] = None
     _tasks: dict[int, Optional[asyncio.Task]]

@@ -84,11 +84,9 @@ class LoggerGuards:
 
     @classmethod
     def default_logger_names(cls) -> set[str]:
-        return (
-            {"root"}
-            .union(LoggerLevels().qualified_logger_names(DEFAULT_BASE_NAME).values())
-            .union(logging.root.manager.loggerDict.keys())
-        )
+        return {"root"}.union(
+            LoggerLevels().qualified_logger_names(DEFAULT_BASE_NAME).values()
+        ).union(logging.root.manager.loggerDict.keys())
 
 
 @pytest.fixture

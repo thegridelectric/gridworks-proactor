@@ -22,7 +22,6 @@ from gwproactor.sync_thread import SyncAsyncInteractionThread
 
 
 class Actor(ActorInterface, Communicator, ABC):
-
     _node: ShNode
 
     def __init__(self, name: str, services: ServicesInterface):

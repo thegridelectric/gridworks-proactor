@@ -232,7 +232,7 @@ class ServicesInterface(CommunicatorInterface):
         method: str,
         path: str,
         handler: HTTPHandler,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         """Adds configuration for web server route which will be available after start() is called.
 

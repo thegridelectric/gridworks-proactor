@@ -73,7 +73,6 @@ class _RunWebServer:
 
 
 class _WebManager(Communicator, Runnable):
-
     _configs: dict[str, WebServerGt]
     _routes: dict[str, list[RouteDef]]
 

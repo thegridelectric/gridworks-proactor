@@ -68,7 +68,6 @@ T = TypeVar("T")
 
 
 class Proactor(ServicesInterface, Runnable):
-
     _name: str
     _settings: ProactorSettings
     _node: ShNode
