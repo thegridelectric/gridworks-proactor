@@ -37,7 +37,7 @@ class DummyParent(Proactor):
         settings: Optional[DummyParentSettings] = None,
     ):
         super().__init__(
-            name=name if name else DUMMY_PARENT_NAME,
+            name=name or DUMMY_PARENT_NAME,
             settings=DummyParentSettings() if settings is None else settings,
         )
         self._links.add_mqtt_link(

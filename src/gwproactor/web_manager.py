@@ -46,7 +46,7 @@ class _RunWebServer:
         routes: list[RouteDef],
     ):
         self.config = config
-        self.routes = routes[:]
+        self.routes = routes.copy()
 
     async def __call__(self) -> None:
         app = web.Application()

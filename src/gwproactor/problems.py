@@ -58,7 +58,7 @@ class Problems(ValueError):
     def error_traceback_str(self) -> str:
         s = ""
         for i, error in enumerate(self.errors):
-            s += f"Traceback for error {i+1} / {len(self.errors)}:\n"
+            s += f"Traceback for error {i + 1} / {len(self.errors)}:\n"
             for line in traceback.format_exception(error):
                 s += textwrap.indent(line, "  ")
         return s

@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
-from gwcert import DEFAULT_CA_DIR  # noqa
+from gwcert import DEFAULT_CA_DIR
 from pydantic import BaseModel, BaseSettings
 
 from gwproactor.config.mqtt import MQTTClient
@@ -77,10 +77,10 @@ def _copy_keys(test_cert_dir: Path, dst_paths: TLSPaths) -> None:
             f"One or more TLS test keys at {test_cert_dir} does not exist. Recreating."
         )
         print(
-            f"  Cert path        exists:{str(src_paths.cert_path.exists()):5s}  {src_paths.cert_path}"
+            f"  Cert path        exists:{src_paths.cert_path.exists()!s:5s}  {src_paths.cert_path}"
         )
         print(
-            f"  Private key path exists:{str(src_paths.private_key_path.exists()):5s}  {src_paths.private_key_path}"
+            f"  Private key path exists:{src_paths.private_key_path.exists()!s:5s}  {src_paths.private_key_path}"
         )
         gwcert_command = [
             "gwcert",

@@ -23,7 +23,7 @@ async def async_polling_thread_join(
     raise_errors: bool = False,
 ) -> Optional[BaseException]:
     if t is None:
-        return
+        return None
     if timeout_seconds is None:
         timeout_seconds = JOIN_NEVER_TIMEOUT
     end = time.time() + timeout_seconds

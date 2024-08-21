@@ -24,18 +24,18 @@ from gwproactor.persister import (
     TrimFailed,
     UIDExistedWarning,
     UIDMissingWarning,
-    _PersistedItem,  # noqa
+    _PersistedItem,
 )
 
 pendulum_version = get_package_version("pendulum")
 if Version(get_package_version("pendulum")) < Version("3.0.0"):
-    pendulum_travel_to_context = pendulum.test  # noqa
-    pendulum_travel_to = pendulum.set_test_now  # noqa
-    pendulum_travel_back = pendulum.set_test_now  # noqa
+    pendulum_travel_to_context = pendulum.test
+    pendulum_travel_to = pendulum.set_test_now
+    pendulum_travel_back = pendulum.set_test_now
 else:
-    pendulum_travel_to_context = pendulum_travel_to  # noqa
+    pendulum_travel_to_context = pendulum_travel_to
     pendulum_travel_to = pendulum_travel_to  # noqa
-    pendulum_travel_back = pendulum.travel_back  # noqa
+    pendulum_travel_back = pendulum.travel_back
 
 
 class PatWatchdogWithFile(ExternalWatchdogCommandBuilder):
@@ -127,10 +127,10 @@ def test_persister_exception():
     assert e.uid == "bar"
     assert e.path is None
 
-    e = PersisterException(uid="bar", path=Path("."))
+    e = PersisterException(uid="bar", path=Path())
     assert str(e)
     assert e.uid == "bar"
-    assert e.path == Path(".")
+    assert e.path == Path()
 
 
 def assert_contents(

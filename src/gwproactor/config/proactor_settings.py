@@ -34,13 +34,11 @@ class ProactorSettings(BaseSettings):
         """
         if "paths" not in values:
             values["paths"] = Paths(name=name)
-        else:
-            if isinstance(values["paths"], BaseModel):
-                if "name" not in values["paths"].__fields_set__:
-                    values["paths"] = values["paths"].copy(name=name, deep=True)
-            else:
-                if "name" not in values["paths"]:
-                    values["paths"]["name"] = name
+        elif isinstance(values["paths"], BaseModel):
+            if "name" not in values["paths"].__fields_set__:
+                values["paths"] = values["paths"].copy(name=name, deep=True)
+        elif "name" not in values["paths"]:
+            values["paths"]["name"] = name
         return values
 
     @root_validator(skip_on_failure=True)

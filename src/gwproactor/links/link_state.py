@@ -473,8 +473,7 @@ class LinkStates:
                     errors.append(exception)
         if errors:
             return Err(errors)
-        else:
-            return Ok()
+        return Ok()
 
     def start(self, name: str) -> Result[Transition, InvalidCommStateInput]:
         return self[name].start()

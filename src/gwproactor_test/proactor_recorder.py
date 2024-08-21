@@ -117,9 +117,8 @@ class RecorderLinks(LinkManager):
         if self.acks_paused:
             self.needs_ack.append(_PausedAck(client, message, qos, context))
             return MQTTMessageInfo(-1)
-        else:
-            # noinspection PyProtectedMember
-            return super().publish_message(client, message, qos=qos, context=context)
+        # noinspection PyProtectedMember
+        return super().publish_message(client, message, qos=qos, context=context)
 
     def release_acks(self, clear: bool = False, num_to_release: int = -1) -> int:
         # self._logger.info(
@@ -295,7 +294,7 @@ def make_recorder_class(
 
         def mqtt_quiescent(self) -> bool:
             if hasattr(super(), "mqtt_quiescent"):
-                return getattr(super(), "mqtt_quiescent")()
+                return super().mqtt_quiescent()
             return self._links.link(self.upstream_client).active_for_send()
 
         def _call_super_if_present(self, function_name: str) -> None:

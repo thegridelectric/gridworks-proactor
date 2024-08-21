@@ -54,7 +54,7 @@ class _EventGen:
             raise ret.err()
         entry = _EventEntry(
             event.MessageId,
-            self.persister.get_path(event.MessageId),  # noqa
+            self.persister.get_path(event.MessageId),
         )
         getattr(self, member_name).append(entry)
         return entry
@@ -556,7 +556,7 @@ class ProactorCommTests:
             await await_for(
                 lambda: link.in_state(StateName.awaiting_peer),
                 1,
-                f"ERROR waiting mqtt_suback",
+                "ERROR waiting mqtt_suback",
                 err_str_f=child.summary_str,
             )
             assert link.active_for_send()
@@ -623,7 +623,7 @@ class ProactorCommTests:
             await await_for(
                 lambda: link.in_state(StateName.awaiting_peer),
                 1,
-                f"ERROR waiting mqtt_suback",
+                "ERROR waiting mqtt_suback",
                 err_str_f=child.summary_str,
             )
             assert link.active_for_send()
@@ -966,7 +966,7 @@ class ProactorCommTests:
             await await_for(
                 lambda: link.in_state(StateName.awaiting_setup),
                 3,
-                f"ERROR waiting for message from peer",
+                "ERROR waiting for message from peer",
                 err_str_f=_err_str,
             )
 
@@ -976,7 +976,7 @@ class ProactorCommTests:
             await await_for(
                 lambda: link.in_state(StateName.active),
                 1,
-                f"ERROR waiting for active",
+                "ERROR waiting for active",
                 err_str_f=_err_str,
             )
 
@@ -1295,7 +1295,8 @@ class ProactorCommTests:
             for i in range(events_to_generate):
                 child.generate_event(
                     DBGEvent(
-                        Command=DBGPayload(), Msg=f"event {i+1} / {events_to_generate}"
+                        Command=DBGPayload(),
+                        Msg=f"event {i + 1} / {events_to_generate}",
                     )
                 )
             child.logger.info(
@@ -1356,7 +1357,8 @@ class ProactorCommTests:
             for i in range(events_to_generate):
                 child.generate_event(
                     DBGEvent(
-                        Command=DBGPayload(), Msg=f"event {i+1} / {events_to_generate}"
+                        Command=DBGPayload(),
+                        Msg=f"event {i + 1} / {events_to_generate}",
                     )
                 )
             child.logger.info(

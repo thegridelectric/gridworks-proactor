@@ -11,7 +11,6 @@ import dotenv
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from gwproactor import ProactorSettings
 from gwproactor.config import DEFAULT_LAYOUT_FILE, Paths
 from gwproactor_test.dummies import DUMMY_CHILD_ENV_PREFIX, DUMMY_PARENT_ENV_PREFIX
 

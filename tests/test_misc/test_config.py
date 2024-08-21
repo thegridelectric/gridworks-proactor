@@ -419,7 +419,7 @@ def test_proactor_settings_root_validators(clean_test_env) -> None:
             "/z/gridworks/child/certs/parent_mqtt/private/parent_mqtt.pem",
             [
                 ("obj", DummyChildSettings(paths=Paths())),
-                ("dict", DummyChildSettings(paths={})),  # noqa
+                ("dict", DummyChildSettings(paths={})),
             ],
         ],
         [

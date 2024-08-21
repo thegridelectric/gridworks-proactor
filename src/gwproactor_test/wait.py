@@ -84,29 +84,27 @@ async def await_for(
                         result = f()
     if result:
         return True
-    else:
-        caller = getframeinfo(stack()[1][0])
-        format_dict = dict(
-            tag=tag,
-            file=Path(caller.filename).name,
-            line=caller.lineno,
-            seconds=time.time() - start,
-            f=f,
-            p=f(),
-            err_str=err_str_f_(),
+    caller = getframeinfo(stack()[1][0])
+    format_dict = dict(
+        tag=tag,
+        file=Path(caller.filename).name,
+        line=caller.lineno,
+        seconds=time.time() - start,
+        f=f,
+        p=f(),
+        err_str=err_str_f_(),
+    )
+    err_str = err_format.format(**format_dict)
+    if error_dict is not None:
+        error_dict.update(
+            format_dict,
+            err_str=err_str,
         )
-        err_str = err_format.format(**format_dict)
-        if error_dict is not None:
-            error_dict.update(
-                format_dict,
-                err_str=err_str,
-            )
-        if logger is not None:
-            logger.error(err_str)
-        if raise_timeout:
-            raise ValueError(err_str)
-        else:
-            return False
+    if logger is not None:
+        logger.error(err_str)
+    if raise_timeout:
+        raise ValueError(err_str)
+    return False
 
 
 def wait_for(
@@ -137,5 +135,4 @@ def wait_for(
         raise ValueError(
             f"ERROR. Function {f} timed out after {timeout} seconds. {tag}"
         )
-    else:
-        return False
+    return False

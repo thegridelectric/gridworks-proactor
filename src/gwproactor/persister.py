@@ -165,19 +165,18 @@ class SimpleDirectoryWriter(StubPersister):
             except BaseException as e:  # pragma: no cover
                 return Err(
                     problems.add_error(e).add_error(
-                        WriteFailed(f"Open or write failed", uid=uid, path=path)
+                        WriteFailed("Open or write failed", uid=uid, path=path)
                     )
                 )
         except BaseException as e:
             return Err(
                 problems.add_error(e).add_error(
-                    PersisterError(f"Unexpected error", uid=uid)
+                    PersisterError("Unexpected error", uid=uid)
                 )
             )
         if problems:
             return Err(problems)
-        else:
-            return Ok()
+        return Ok()
 
 
 class TimedRollingFilePersister(PersisterInterface):
@@ -266,21 +265,18 @@ class TimedRollingFilePersister(PersisterInterface):
             except BaseException as e:  # pragma: no cover
                 return Err(
                     problems.add_error(e).add_error(
-                        WriteFailed(
-                            f"Open or write failed", uid=uid, path=existing_path
-                        )
+                        WriteFailed("Open or write failed", uid=uid, path=existing_path)
                     )
                 )
         except BaseException as e:
             return Err(
                 problems.add_error(e).add_error(
-                    PersisterError(f"Unexpected error", uid=uid)
+                    PersisterError("Unexpected error", uid=uid)
                 )
             )
         if problems:
             return Err(problems)
-        else:
-            return Ok()
+        return Ok()
 
     def _trim_old_storage(self, needed_bytes: int) -> Result[bool, Problems]:
         problems = Problems()
@@ -314,8 +310,7 @@ class TimedRollingFilePersister(PersisterInterface):
             problems.add_error(PersisterError("Unexpected error"))
         if problems:
             return Err(problems)
-        else:
-            return Ok()
+        return Ok()
 
     def clear(self, uid: str) -> Result[bool, Problems]:
         problems = Problems()
@@ -337,8 +332,7 @@ class TimedRollingFilePersister(PersisterInterface):
             problems.add_warning(UIDMissingWarning(uid=uid, path=path))
         if problems:
             return Err(problems)
-        else:
-            return Ok()
+        return Ok()
 
     def pending(self) -> list[str]:
         return list(self._pending.keys())
@@ -364,14 +358,13 @@ class TimedRollingFilePersister(PersisterInterface):
                         content: bytes = f.read()
                 except BaseException as e:  # pragma: no cover
                     problems.add_error(e).add_error(
-                        ReadFailed(f"Open or read failed", uid=uid, path=path)
+                        ReadFailed("Open or read failed", uid=uid, path=path)
                     )
             else:
                 problems.add_error(FileMissing(uid=uid, path=path))
         if problems:
             return Err(problems)
-        else:
-            return Ok(content)
+        return Ok(content)
 
     def reindex(self) -> Result[bool, Problems]:
         problems = Problems()
@@ -401,11 +394,10 @@ class TimedRollingFilePersister(PersisterInterface):
                             )
             except BaseException as e:
                 problems.add_error(e).add_error(ReindexError())
-        self._pending = dict(sorted(paths, key=lambda item: item.path))  # noqa
+        self._pending = dict(sorted(paths, key=lambda item: item.path))
         if problems:
             return Err(problems)
-        else:
-            return Ok()
+        return Ok()
 
     def _today_dir(self) -> Path:
         return self._base_dir / pendulum.today("utc").isoformat()

@@ -321,7 +321,7 @@ class Proactor(ServicesInterface, Runnable):
                 self._receive_queue.task_done()
         except BaseException as e:
             if not isinstance(e, asyncio.exceptions.CancelledError):
-                self._logger.exception(f"ERROR in process_message")
+                self._logger.exception("ERROR in process_message")
                 self._logger.error("Stopping proactor")
                 # noinspection PyBroadException
                 try:
@@ -334,12 +334,12 @@ class Proactor(ServicesInterface, Runnable):
                         )
                     )
                 except:
-                    self._logger.exception(f"ERROR generating exception event")
+                    self._logger.exception("ERROR generating exception event")
         # noinspection PyBroadException
         try:
             self.stop()
         except:
-            self._logger.exception(f"ERROR stopping proactor")
+            self._logger.exception("ERROR stopping proactor")
 
     def start_tasks(self):
         self._tasks = [
@@ -463,7 +463,7 @@ class Proactor(ServicesInterface, Runnable):
                     Details=(
                         f"Topic: {mqtt_payload.message.topic}\n"
                         f"Message: {mqtt_payload.message.payload[:70]}"
-                        f"{'...' if len(mqtt_payload.message.payload)> 70 else ''}\n"
+                        f"{'...' if len(mqtt_payload.message.payload) > 70 else ''}\n"
                         f"{traceback.format_exception(e)}\n"
                         f"Exception: {e}"
                     ),

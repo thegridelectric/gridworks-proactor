@@ -11,13 +11,13 @@ from gwproactor_test.dummies.parent.config import DummyParentSettings
 from gwproactor_test.dummies.parent.dummy import DummyParent
 
 __all__ = [
-    "DUMMY_CHILD_NAME",
-    "DUMMY_PARENT_NAME",
-    "DUMMY_ENV_PREFIX",
     "DUMMY_CHILD_ENV_PREFIX",
+    "DUMMY_CHILD_NAME",
+    "DUMMY_ENV_PREFIX",
     "DUMMY_PARENT_ENV_PREFIX",
-    "DummyParent",
-    "DummyParentSettings",
+    "DUMMY_PARENT_NAME",
     "DummyChild",
     "DummyChildSettings",
+    "DummyParent",
+    "DummyParentSettings",
 ]

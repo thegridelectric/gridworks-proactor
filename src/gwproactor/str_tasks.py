@@ -34,7 +34,7 @@ def str_tasks(
     except BaseException as e:
         # noinspection PyBroadException
         try:
-            s += f"ERROR in str_tasks:\n"
+            s += "ERROR in str_tasks:\n"
             s += "".join(traceback.format_exception(e))
             s += "\n"
         except:

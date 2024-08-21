@@ -75,15 +75,15 @@ class Paths(BaseModel):
 
     @validator("data_home", always=True)
     def get_data_home(cls, v: str | Path) -> Path:
-        return Path(v if v else xdg.xdg_data_home())
+        return Path(v or xdg.xdg_data_home())
 
     @validator("state_home", always=True)
     def get_state_home(cls, v: str | Path) -> Path:
-        return Path(v if v else xdg.xdg_state_home())
+        return Path(v or xdg.xdg_state_home())
 
     @validator("config_home", always=True)
     def get_config_home(cls, v: str | Path) -> Path:
-        return Path(v if v else xdg.xdg_config_home())
+        return Path(v or xdg.xdg_config_home())
 
     @validator("config_dir", always=True)
     def get_config_dir(cls, v: str | Path, values: Dict[str, Path | str]) -> Path:
