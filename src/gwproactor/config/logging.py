@@ -4,11 +4,9 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Iterable
 
-from pydantic import BaseModel
-from pydantic import validator
+from pydantic import BaseModel, validator
 
 from .paths import DEFAULT_BASE_NAME
-
 
 DEFAULT_LOGGING_FORMAT = "%(asctime)s %(message)s"
 DEFAULT_FRACTIONAL_SECOND_FORMAT = "%s.%03d"

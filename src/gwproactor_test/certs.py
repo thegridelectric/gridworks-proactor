@@ -7,12 +7,10 @@ from pathlib import Path
 from typing import Optional
 
 from gwcert import DEFAULT_CA_DIR  # noqa
-from pydantic import BaseModel
-from pydantic import BaseSettings
+from pydantic import BaseModel, BaseSettings
 
 from gwproactor.config.mqtt import MQTTClient
 from gwproactor.config.paths import TLSPaths
-
 
 TEST_CA_CERTIFICATE_PATH_VAR = "GWPROACTOR_TEST_CA_CERT_PATH"
 """Environment variable containing the path to the CA certificate used by the tests."""

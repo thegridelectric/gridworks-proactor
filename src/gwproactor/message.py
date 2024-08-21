@@ -2,23 +2,13 @@
 
 import uuid
 from enum import Enum
-from typing import Any
-from typing import Dict
-from typing import Generic
-from typing import List
-from typing import Literal
-from typing import Optional
-from typing import TypeVar
+from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar
 
 from gwproto import as_enum
-from gwproto.message import Header
-from gwproto.message import Message
-from gwproto.message import ensure_arg
+from gwproto.message import Header, Message, ensure_arg
 from gwproto.messages import EventBase
-from paho.mqtt.client import MQTT_ERR_UNKNOWN
-from paho.mqtt.client import MQTTMessage
-from pydantic import BaseModel
-from pydantic import validator
+from paho.mqtt.client import MQTT_ERR_UNKNOWN, MQTTMessage
+from pydantic import BaseModel, validator
 
 from gwproactor.config import LoggerLevels
 from gwproactor.problems import Problems

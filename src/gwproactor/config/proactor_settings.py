@@ -1,12 +1,8 @@
-from pydantic import BaseModel
-from pydantic import BaseSettings
-from pydantic import root_validator
-from pydantic import validator
+from pydantic import BaseModel, BaseSettings, root_validator, validator
 
 from gwproactor.config.logging import LoggingSettings
 from gwproactor.config.mqtt import MQTTClient
 from gwproactor.config.paths import Paths
-
 
 MQTT_LINK_POLL_SECONDS = 60.0
 ACK_TIMEOUT_SECONDS = 5.0

@@ -5,19 +5,17 @@ SyncAsyncInteractionThread
 """
 
 from abc import ABC
-from typing import Any
-from typing import Generic
-from typing import Sequence
-from typing import TypeVar
+from typing import Any, Generic, Sequence, TypeVar
 
-from gwproto import Message
-from gwproto import ShNode
+from gwproto import Message, ShNode
 from result import Result
 
-from gwproactor.proactor_interface import ActorInterface
-from gwproactor.proactor_interface import Communicator
-from gwproactor.proactor_interface import MonitoredName
-from gwproactor.proactor_interface import ServicesInterface
+from gwproactor.proactor_interface import (
+    ActorInterface,
+    Communicator,
+    MonitoredName,
+    ServicesInterface,
+)
 from gwproactor.sync_thread import SyncAsyncInteractionThread
 
 

@@ -1,18 +1,17 @@
 import abc
 import enum
 from dataclasses import dataclass
-from typing import Optional
-from typing import Sequence
+from typing import Optional, Sequence
 
 from gwproto import Message
-from result import Err
-from result import Ok
-from result import Result
+from result import Err, Ok, Result
 
-from gwproactor.message import MQTTConnectFailPayload
-from gwproactor.message import MQTTConnectPayload
-from gwproactor.message import MQTTDisconnectPayload
-from gwproactor.message import MQTTReceiptPayload
+from gwproactor.message import (
+    MQTTConnectFailPayload,
+    MQTTConnectPayload,
+    MQTTDisconnectPayload,
+    MQTTReceiptPayload,
+)
 
 
 class StateName(enum.Enum):

@@ -1,8 +1,6 @@
 from collections import defaultdict
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Optional
-from typing import Sequence
+from dataclasses import dataclass, field
+from typing import Optional, Sequence
 
 from gwproto import Message
 

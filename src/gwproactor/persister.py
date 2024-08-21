@@ -5,14 +5,11 @@ import subprocess
 import time
 from abc import abstractmethod
 from pathlib import Path
-from typing import NamedTuple
-from typing import Optional
+from typing import NamedTuple, Optional
 
 import pendulum
 from pendulum import DateTime
-from result import Err
-from result import Ok
-from result import Result
+from result import Err, Ok, Result
 
 from gwproactor.problems import Problems
 

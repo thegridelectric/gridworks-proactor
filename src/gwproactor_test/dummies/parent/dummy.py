@@ -1,21 +1,15 @@
 """Scada implementation"""
 
-from typing import Optional
-from typing import cast
+from typing import Optional, cast
 
-from gwproto import Decoders
-from gwproto import MQTTCodec
-from gwproto import MQTTTopic
-from gwproto import create_message_payload_discriminator
+from gwproto import Decoders, MQTTCodec, MQTTTopic, create_message_payload_discriminator
 
 from gwproactor.links import QOS
 from gwproactor.message import Message
 from gwproactor.persister import SimpleDirectoryWriter
 from gwproactor.proactor_implementation import Proactor
-from gwproactor_test.dummies.names import DUMMY_CHILD_NAME
-from gwproactor_test.dummies.names import DUMMY_PARENT_NAME
+from gwproactor_test.dummies.names import DUMMY_CHILD_NAME, DUMMY_PARENT_NAME
 from gwproactor_test.dummies.parent.config import DummyParentSettings
-
 
 ParentMessageDecoder = create_message_payload_discriminator(
     model_name="ParentMessageDecoder",

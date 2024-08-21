@@ -1,11 +1,9 @@
 import dataclasses
 import time
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from typing import Optional
 
 from gwproactor.config.proactor_settings import MQTT_LINK_POLL_SECONDS
-
 
 import_time = time.time()
 

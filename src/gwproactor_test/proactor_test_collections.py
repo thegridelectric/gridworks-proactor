@@ -12,8 +12,7 @@ from paho.mqtt.client import MQTT_ERR_CONN_LOST
 
 from gwproactor import ServicesInterface
 from gwproactor.links import StateName
-from gwproactor.message import DBGEvent
-from gwproactor.message import DBGPayload
+from gwproactor.message import DBGEvent, DBGPayload
 from gwproactor.persister import TimedRollingFilePersister
 from gwproactor_test.certs import uses_tls
 from gwproactor_test.comm_test_helper import CommTestHelper

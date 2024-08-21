@@ -1,36 +1,22 @@
 import dataclasses
 from abc import abstractmethod
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Any
-from typing import Callable
-from typing import Optional
-from typing import Tuple
-from typing import Type
-from typing import TypeVar
-from typing import cast
+from dataclasses import dataclass, field
+from typing import Any, Callable, Optional, Tuple, Type, TypeVar, cast
 
 from gwproto import Message
-from gwproto.messages import CommEvent
-from gwproto.messages import EventT
-from gwproto.messages import PingMessage
-from paho.mqtt.client import MQTT_ERR_SUCCESS
-from paho.mqtt.client import MQTTMessageInfo
+from gwproto.messages import CommEvent, EventT, PingMessage
+from paho.mqtt.client import MQTT_ERR_SUCCESS, MQTTMessageInfo
 
-from gwproactor import Proactor
-from gwproactor import ProactorSettings
-from gwproactor import Runnable
-from gwproactor import ServicesInterface
+from gwproactor import Proactor, ProactorSettings, Runnable, ServicesInterface
 from gwproactor.config import LoggerLevels
-from gwproactor.links import LinkManager
-from gwproactor.links import MQTTClients
-from gwproactor.links import MQTTClientWrapper
-from gwproactor.message import DBGCommands
-from gwproactor.message import DBGPayload
-from gwproactor.message import MQTTReceiptPayload
-from gwproactor.message import MQTTSubackPayload
-from gwproactor.stats import LinkStats
-from gwproactor.stats import ProactorStats
+from gwproactor.links import LinkManager, MQTTClients, MQTTClientWrapper
+from gwproactor.message import (
+    DBGCommands,
+    DBGPayload,
+    MQTTReceiptPayload,
+    MQTTSubackPayload,
+)
+from gwproactor.stats import LinkStats, ProactorStats
 
 
 def split_subscriptions(client_wrapper: MQTTClientWrapper) -> Tuple[int, Optional[int]]:

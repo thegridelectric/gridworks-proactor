@@ -3,8 +3,7 @@ import shutil
 import time
 from importlib.metadata import version as get_package_version
 from pathlib import Path
-from typing import Optional
-from typing import Union
+from typing import Optional, Union
 
 import gwproto.messages
 import pendulum
@@ -12,22 +11,21 @@ from gwproto.messages import ProblemEvent
 from packaging.version import Version
 from result import Result
 
-from gwproactor import ExternalWatchdogCommandBuilder
-from gwproactor import ProactorSettings
-from gwproactor import Problems
-from gwproactor.persister import FileExistedWarning
-from gwproactor.persister import FileMissing
-from gwproactor.persister import FileMissingWarning
-from gwproactor.persister import PersisterError
-from gwproactor.persister import PersisterException
-from gwproactor.persister import PersisterWarning
-from gwproactor.persister import ReindexError
-from gwproactor.persister import TimedRollingFilePersister
-from gwproactor.persister import TrimFailed
-from gwproactor.persister import UIDExistedWarning
-from gwproactor.persister import UIDMissingWarning
-from gwproactor.persister import _PersistedItem  # noqa
-
+from gwproactor import ExternalWatchdogCommandBuilder, ProactorSettings, Problems
+from gwproactor.persister import (
+    FileExistedWarning,
+    FileMissing,
+    FileMissingWarning,
+    PersisterError,
+    PersisterException,
+    PersisterWarning,
+    ReindexError,
+    TimedRollingFilePersister,
+    TrimFailed,
+    UIDExistedWarning,
+    UIDMissingWarning,
+    _PersistedItem,  # noqa
+)
 
 pendulum_version = get_package_version("pendulum")
 if Version(get_package_version("pendulum")) < Version("3.0.0"):

@@ -15,32 +15,29 @@ Particular questions:
 * Test support should be implemented / cleaner.
 """
 
-from gwproactor.actors import Actor
-from gwproactor.actors import SyncThreadActor
-from gwproactor.actors import SyncThreadT
+from gwproactor.actors import Actor, SyncThreadActor, SyncThreadT
 from gwproactor.config import ProactorSettings
 from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
-from gwproactor.links.mqtt import QOS
-from gwproactor.links.mqtt import MQTTClients
-from gwproactor.links.mqtt import MQTTClientWrapper
-from gwproactor.links.mqtt import Subscription
+from gwproactor.links.mqtt import QOS, MQTTClients, MQTTClientWrapper, Subscription
 from gwproactor.logger import ProactorLogger
-from gwproactor.logging_setup import format_exceptions
-from gwproactor.logging_setup import setup_logging
+from gwproactor.logging_setup import format_exceptions, setup_logging
 from gwproactor.proactor_implementation import Proactor
-from gwproactor.proactor_interface import INVALID_IO_TASK_HANDLE
-from gwproactor.proactor_interface import ActorInterface
-from gwproactor.proactor_interface import Communicator
-from gwproactor.proactor_interface import CommunicatorInterface
-from gwproactor.proactor_interface import MonitoredName
-from gwproactor.proactor_interface import Runnable
-from gwproactor.proactor_interface import ServicesInterface
+from gwproactor.proactor_interface import (
+    INVALID_IO_TASK_HANDLE,
+    ActorInterface,
+    Communicator,
+    CommunicatorInterface,
+    MonitoredName,
+    Runnable,
+    ServicesInterface,
+)
 from gwproactor.problems import Problems
-from gwproactor.sync_thread import AsyncQueueWriter
-from gwproactor.sync_thread import SyncAsyncInteractionThread
-from gwproactor.sync_thread import SyncAsyncQueueWriter
-from gwproactor.sync_thread import responsive_sleep
-
+from gwproactor.sync_thread import (
+    AsyncQueueWriter,
+    SyncAsyncInteractionThread,
+    SyncAsyncQueueWriter,
+    responsive_sleep,
+)
 
 __all__ = [
     "Actor",

@@ -9,9 +9,7 @@ from gwproto import Message
 from gwproto.types import WebServerGt
 from result import Result
 
-from gwproactor.proactor_interface import Communicator
-from gwproactor.proactor_interface import Runnable
-from gwproactor.proactor_interface import ServicesInterface
+from gwproactor.proactor_interface import Communicator, Runnable, ServicesInterface
 
 
 def enable_aiohttp_logging() -> None:

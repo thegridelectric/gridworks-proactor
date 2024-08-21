@@ -1,15 +1,10 @@
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import root_validator
-from pydantic import validator
+from pydantic import root_validator, validator
 
 from gwproactor import ProactorSettings
-from gwproactor.config import LoggingSettings
-from gwproactor.config import MQTTClient
-from gwproactor.config import Paths
-from gwproactor_test.dummies.names import DUMMY_PARENT_ENV_PREFIX
-from gwproactor_test.dummies.names import DUMMY_PARENT_NAME
+from gwproactor.config import LoggingSettings, MQTTClient, Paths
+from gwproactor_test.dummies.names import DUMMY_PARENT_ENV_PREFIX, DUMMY_PARENT_NAME
 
 
 class DummyParentSettings(ProactorSettings):

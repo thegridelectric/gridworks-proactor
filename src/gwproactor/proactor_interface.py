@@ -5,19 +5,12 @@ create forward references for implementation hiearchies
 import asyncio
 import importlib
 import sys
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
-from typing import Coroutine
-from typing import Optional
-from typing import Sequence
-from typing import Type
-from typing import TypeVar
+from typing import Any, Coroutine, Optional, Sequence, Type, TypeVar
 
 from aiohttp.typedefs import Handler as HTTPHandler
-from gwproto import HardwareLayout
-from gwproto import ShNode
+from gwproto import HardwareLayout, ShNode
 from gwproto.messages import EventT
 from result import Result
 
@@ -26,7 +19,6 @@ from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
 from gwproactor.logger import ProactorLogger
 from gwproactor.message import Message
 from gwproactor.stats import ProactorStats
-
 
 T = TypeVar("T")
 

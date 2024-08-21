@@ -1,8 +1,6 @@
 import functools
 from dataclasses import dataclass
-from typing import Any
-from typing import Callable
-from typing import Optional
+from typing import Any, Callable, Optional
 
 from gwproactor.links.timer_interface import TimerManagerInterface
 

@@ -1,27 +1,20 @@
 import argparse
 import asyncio
 import logging
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
-from typing import Optional
-from typing import Type
-from typing import TypeVar
+from typing import Callable, Optional, Type, TypeVar
 
-from gwproactor import Proactor
-from gwproactor import ProactorSettings
-from gwproactor import setup_logging
-from gwproactor.config import DEFAULT_BASE_NAME
-from gwproactor.config import LoggingSettings
-from gwproactor.config import MQTTClient
-from gwproactor.config import Paths
+from gwproactor import Proactor, ProactorSettings, setup_logging
+from gwproactor.config import DEFAULT_BASE_NAME, LoggingSettings, MQTTClient, Paths
 from gwproactor_test import copy_keys
 from gwproactor_test.certs import uses_tls
 from gwproactor_test.logger_guard import LoggerGuards
-from gwproactor_test.proactor_recorder import ProactorT
-from gwproactor_test.proactor_recorder import RecorderInterface
-from gwproactor_test.proactor_recorder import make_recorder_class
+from gwproactor_test.proactor_recorder import (
+    ProactorT,
+    RecorderInterface,
+    make_recorder_class,
+)
 
 
 @dataclass

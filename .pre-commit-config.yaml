@@ -26,5 +26,6 @@ repos:
     # Ruff version.
     rev: v0.6.1
     hooks:
-      # - id: ruff
+      - id: ruff
+        args: ["--select", "I"]
       - id: ruff-format

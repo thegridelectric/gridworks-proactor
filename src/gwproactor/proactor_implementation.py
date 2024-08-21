@@ -4,65 +4,57 @@ import asyncio
 import sys
 import traceback
 import uuid
-from typing import Any
-from typing import Awaitable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Sequence
-from typing import Type
-from typing import TypeVar
+from typing import Any, Awaitable, Dict, List, Optional, Sequence, Type, TypeVar
 
 import gwproto
 from aiohttp.typedefs import Handler as HTTPHandler
 from gwproto.data_classes.components.web_server_component import WebServerComponent
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
-from gwproto.messages import Ack
-from gwproto.messages import EventBase
-from gwproto.messages import EventT
-from gwproto.messages import Ping
-from gwproto.messages import ProblemEvent
-from gwproto.messages import ShutdownEvent
-from result import Err
-from result import Ok
-from result import Result
+from gwproto.messages import Ack, EventBase, EventT, Ping, ProblemEvent, ShutdownEvent
+from result import Err, Ok, Result
 
 from gwproactor import ProactorSettings
-from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
-from gwproactor.external_watchdog import SystemDWatchdogCommandBuilder
+from gwproactor.external_watchdog import (
+    ExternalWatchdogCommandBuilder,
+    SystemDWatchdogCommandBuilder,
+)
 from gwproactor.io_loop import IOLoop
-from gwproactor.links import AckWaitInfo
-from gwproactor.links import AsyncioTimerManager
-from gwproactor.links import LinkManager
-from gwproactor.links import LinkManagerTransition
-from gwproactor.links import Transition
+from gwproactor.links import (
+    AckWaitInfo,
+    AsyncioTimerManager,
+    LinkManager,
+    LinkManagerTransition,
+    Transition,
+)
 from gwproactor.logger import ProactorLogger
-from gwproactor.message import DBGCommands
-from gwproactor.message import DBGEvent
-from gwproactor.message import DBGPayload
-from gwproactor.message import Message
-from gwproactor.message import MQTTConnectFailPayload
-from gwproactor.message import MQTTConnectPayload
-from gwproactor.message import MQTTDisconnectPayload
-from gwproactor.message import MQTTProblemsPayload
-from gwproactor.message import MQTTReceiptPayload
-from gwproactor.message import MQTTSubackPayload
-from gwproactor.message import PatWatchdog
-from gwproactor.message import Shutdown
-from gwproactor.persister import PersisterInterface
-from gwproactor.persister import StubPersister
-from gwproactor.proactor_interface import CommunicatorInterface
-from gwproactor.proactor_interface import IOLoopInterface
-from gwproactor.proactor_interface import MonitoredName
-from gwproactor.proactor_interface import Runnable
-from gwproactor.proactor_interface import ServicesInterface
+from gwproactor.message import (
+    DBGCommands,
+    DBGEvent,
+    DBGPayload,
+    Message,
+    MQTTConnectFailPayload,
+    MQTTConnectPayload,
+    MQTTDisconnectPayload,
+    MQTTProblemsPayload,
+    MQTTReceiptPayload,
+    MQTTSubackPayload,
+    PatWatchdog,
+    Shutdown,
+)
+from gwproactor.persister import PersisterInterface, StubPersister
+from gwproactor.proactor_interface import (
+    CommunicatorInterface,
+    IOLoopInterface,
+    MonitoredName,
+    Runnable,
+    ServicesInterface,
+)
 from gwproactor.problems import Problems
 from gwproactor.stats import ProactorStats
 from gwproactor.str_tasks import str_tasks
 from gwproactor.watchdog import WatchdogManager
 from gwproactor.web_manager import _WebManager
-
 
 T = TypeVar("T")
 

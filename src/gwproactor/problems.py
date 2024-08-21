@@ -1,7 +1,6 @@
 import textwrap
 import traceback
-from typing import Optional
-from typing import Sequence
+from typing import Optional, Sequence
 
 from gwproto.messages import ProblemEvent
 from gwproto.messages import Problems as ProblemType

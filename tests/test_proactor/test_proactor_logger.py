@@ -2,9 +2,7 @@ import argparse
 import logging
 import warnings
 
-from gwproactor import ProactorLogger
-from gwproactor import ProactorSettings
-from gwproactor import setup_logging
+from gwproactor import ProactorLogger, ProactorSettings, setup_logging
 from gwproactor.config import Paths
 from gwproactor_test import LoggerGuards
 

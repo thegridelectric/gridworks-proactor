@@ -1,21 +1,23 @@
 from dataclasses import dataclass
-from typing import Any
-from typing import Optional
-from typing import Sequence
+from typing import Any, Optional, Sequence
 
 import pytest
 from paho.mqtt.client import MQTTMessage
 from result import Result
 
-from gwproactor.links import InvalidCommStateInput
-from gwproactor.links import LinkStates
-from gwproactor.links import StateName
-from gwproactor.links import Transition
-from gwproactor.links import TransitionName
-from gwproactor.message import MQTTConnectFailMessage
-from gwproactor.message import MQTTConnectMessage
-from gwproactor.message import MQTTDisconnectMessage
-from gwproactor.message import MQTTReceiptMessage
+from gwproactor.links import (
+    InvalidCommStateInput,
+    LinkStates,
+    StateName,
+    Transition,
+    TransitionName,
+)
+from gwproactor.message import (
+    MQTTConnectFailMessage,
+    MQTTConnectMessage,
+    MQTTDisconnectMessage,
+    MQTTReceiptMessage,
+)
 
 
 def assert_transition(got: Transition, exp: Transition):

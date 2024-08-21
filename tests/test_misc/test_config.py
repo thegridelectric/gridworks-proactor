@@ -8,8 +8,7 @@ from typing import Any
 import pytest
 from pydantic import SecretStr
 
-from gwproactor.config import MQTTClient
-from gwproactor.config import Paths
+from gwproactor.config import MQTTClient, Paths
 from gwproactor.config.mqtt import TLSInfo
 from gwproactor.config.paths import TLSPaths
 from gwproactor_test.dummies import DummyChildSettings

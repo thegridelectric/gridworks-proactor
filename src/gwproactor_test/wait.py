@@ -3,14 +3,9 @@ import inspect
 import logging
 import textwrap
 import time
-from inspect import getframeinfo
-from inspect import stack
+from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Awaitable
-from typing import Callable
-from typing import Optional
-from typing import Union
-
+from typing import Awaitable, Callable, Optional, Union
 
 Predicate = Callable[[], bool]
 AwaitablePredicate = Callable[[], Awaitable[bool]]

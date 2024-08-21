@@ -1,11 +1,8 @@
 from pathlib import Path
-from typing import Dict
-from typing import Optional
+from typing import Dict, Optional
 
 import xdg
-from pydantic import BaseModel
-from pydantic import validator
-
+from pydantic import BaseModel, validator
 
 DEFAULT_BASE_NAME = "gridworks"
 DEFAULT_BASE_DIR = Path(DEFAULT_BASE_NAME)

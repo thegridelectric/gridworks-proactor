@@ -3,12 +3,13 @@ import logging
 import logging.handlers
 from typing import Optional
 
-from gwproactor import ProactorSettings
-from gwproactor import setup_logging
-from gwproactor.config import DEFAULT_LOG_FILE_NAME
-from gwproactor.config import LoggingSettings
-from gwproactor.config import Paths
-from gwproactor.config import RotatingFileHandlerSettings
+from gwproactor import ProactorSettings, setup_logging
+from gwproactor.config import (
+    DEFAULT_LOG_FILE_NAME,
+    LoggingSettings,
+    Paths,
+    RotatingFileHandlerSettings,
+)
 from tests.test_misc.test_logging_config import get_exp_formatted_time
 
 

@@ -1,7 +1,4 @@
-from gwproactor.actors.actor import Actor
-from gwproactor.actors.actor import SyncThreadActor
-from gwproactor.actors.actor import SyncThreadT
-
+from gwproactor.actors.actor import Actor, SyncThreadActor, SyncThreadT
 
 __all__ = [
     "Actor",

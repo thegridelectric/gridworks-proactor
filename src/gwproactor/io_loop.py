@@ -1,22 +1,20 @@
 import asyncio
 import threading
 import time
-from typing import Coroutine
-from typing import Optional
-from typing import Sequence
+from typing import Coroutine, Optional, Sequence
 
 from gwproto import Message
 from result import Result
 
 from gwproactor import ProactorLogger
 from gwproactor.actors.actor import MonitoredName
-from gwproactor.message import KnownNames
-from gwproactor.message import PatInternalWatchdogMessage
-from gwproactor.message import ShutdownMessage
-from gwproactor.proactor_interface import INVALID_IO_TASK_HANDLE
-from gwproactor.proactor_interface import Communicator
-from gwproactor.proactor_interface import IOLoopInterface
-from gwproactor.proactor_interface import ServicesInterface
+from gwproactor.message import KnownNames, PatInternalWatchdogMessage, ShutdownMessage
+from gwproactor.proactor_interface import (
+    INVALID_IO_TASK_HANDLE,
+    Communicator,
+    IOLoopInterface,
+    ServicesInterface,
+)
 from gwproactor.problems import Problems
 from gwproactor.sync_thread import SyncAsyncInteractionThread
 

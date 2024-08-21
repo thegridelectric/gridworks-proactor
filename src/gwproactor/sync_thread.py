@@ -6,12 +6,9 @@ import threading
 import time
 import traceback
 from abc import ABC
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
-from gwproactor.message import InternalShutdownMessage
-from gwproactor.message import PatInternalWatchdogMessage
-
+from gwproactor.message import InternalShutdownMessage, PatInternalWatchdogMessage
 
 DEFAULT_STEP_DURATION = 0.1
 

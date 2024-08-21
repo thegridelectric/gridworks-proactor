@@ -4,31 +4,19 @@ REST commands into a message posted to main processing thread.
 """
 
 import asyncio
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Any
-from typing import Awaitable
-from typing import Callable
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Any, Awaitable, Callable, Optional
 
 import aiohttp as aiohttp
 import yarl
-from aiohttp import ClientResponse
-from aiohttp import ClientSession
-from aiohttp import ClientTimeout
+from aiohttp import ClientResponse, ClientSession, ClientTimeout
 from gwproto import Message
 from gwproto.data_classes.components.rest_poller_component import RESTPollerComponent
-from gwproto.type_helpers import AioHttpClientTimeout
-from gwproto.type_helpers import RESTPollerSettings
-from gwproto.type_helpers import URLConfig
+from gwproto.type_helpers import AioHttpClientTimeout, RESTPollerSettings, URLConfig
 from result import Result
 
-from gwproactor import Actor
-from gwproactor import Problems
-from gwproactor import ServicesInterface
-from gwproactor.proactor_interface import INVALID_IO_TASK_HANDLE
-from gwproactor.proactor_interface import IOLoopInterface
-
+from gwproactor import Actor, Problems, ServicesInterface
+from gwproactor.proactor_interface import INVALID_IO_TASK_HANDLE, IOLoopInterface
 
 Converter = Callable[[ClientResponse], Awaitable[Optional[Message]]]
 ThreadSafeForwarder = Callable[[Message], Any]

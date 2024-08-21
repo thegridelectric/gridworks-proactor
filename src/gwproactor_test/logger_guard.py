@@ -1,12 +1,10 @@
 import logging
 import sys
-from typing import Optional
-from typing import Sequence
+from typing import Optional, Sequence
 
 import pytest
 
-from gwproactor.config import DEFAULT_BASE_NAME
-from gwproactor.config import LoggerLevels
+from gwproactor.config import DEFAULT_BASE_NAME, LoggerLevels
 
 
 class LoggerGuard:
