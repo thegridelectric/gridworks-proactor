@@ -121,6 +121,10 @@ class LinkManager:
     def num_reuploaded_unacked(self) -> int:
         return self._reuploads.num_reuploaded_unacked
 
+    @property
+    def ack_manager(self) -> AckManager:
+        return self._acks
+
     def reuploading(self) -> bool:
         return self._reuploads.reuploading()
 
@@ -256,7 +260,7 @@ class LinkManager:
     def _start_reupload(self) -> None:
         if not self._reuploads.reuploading():
             self._continue_reupload(
-                self._reuploads.start_reupload(self._event_persister.pending())
+                self._reuploads.start_reupload(self._event_persister.pending_ids())
             )
 
     def _continue_reupload(self, event_ids: list[str]) -> None:

@@ -182,6 +182,10 @@ class MQTTClientWrapper:
     def subscription_items(self) -> list[Tuple[str, int]]:
         return list(cast(list[Tuple[str, int]], self._subscriptions.items()))
 
+    @property
+    def mqtt_client(self) -> PahoMQTTClient:
+        return self._client
+
     def on_message(self, _, userdata, message) -> None:
         self._receive_queue.put(
             MQTTReceiptMessage(

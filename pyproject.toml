@@ -152,6 +152,7 @@ ignore = [
     "RUF100", # ruff and IDE often disagree about whether a 'noqa' is in use.
     "W191",
     "W291", # Formatter
+    "W293", # Formatter
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]

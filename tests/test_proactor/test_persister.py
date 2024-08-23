@@ -111,8 +111,8 @@ def test_problems() -> None:
     p2.add_warning(PersisterWarning(uid="12"))
     assert len(p2.errors) == 4
     assert len(p2.warnings) == 4
-    assert [int(entry.uid) for entry in p2.errors] == [3, 4, 1, 7]  # noqa: type
-    assert [int(entry.uid) for entry in p2.warnings] == [5, 6, 2, 9]  # noqa: type
+    assert [int(entry.uid) for entry in p2.errors] == [3, 4, 1, 7]
+    assert [int(entry.uid) for entry in p2.warnings] == [5, 6, 2, 9]
     assert str(p2)
 
 
@@ -146,7 +146,7 @@ def assert_contents(
     check_index: bool = True,
     max_bytes: Optional[int] = None,
 ) -> None:
-    assert p.num_pending == len(p.pending())
+    assert p.num_pending == len(p.pending_ids())
     if num_pending is not None:
         assert p.num_pending == num_pending
     if curr_bytes is not None:
@@ -162,11 +162,11 @@ def assert_contents(
         assert p.max_bytes == max_bytes
     if uids is not None:
         str_uids = [str(uid) for uid in uids]
-        assert p.pending() == str_uids
+        assert p.pending_ids() == str_uids
         assert p.num_pending == len(str_uids)
         for str_uid in str_uids:
             assert str_uid in p
-    got_paths = [p.get_path(uid) for uid in p.pending()]
+    got_paths = [p.get_path(uid) for uid in p.pending_ids()]
     if exp_paths is not None:
         assert exp_paths == got_paths
     if nearby_days:
@@ -203,12 +203,12 @@ def assert_contents(
         assert p2.reindex().is_ok()
         if p.num_pending == 0:
             assert p.curr_bytes == 0
-        assert p.pending() == p2.pending()
+        assert p.pending_ids() == p2.pending_ids()
         # noinspection PyProtectedMember
-        assert p.pending() == list(p._pending.keys())
+        assert p.pending_ids() == list(p.pending_ids())
         # noinspection PyProtectedMember
-        assert got_paths == list(p._pending.values())
-        for uid, path in zip(p.pending(), got_paths):
+        assert got_paths == list(p.pending_paths())
+        for uid, path in zip(p.pending_ids(), got_paths):
             assert path.exists()
             assert uid in str(path.name)
 
@@ -284,7 +284,7 @@ def test_persister_happy_path(tmp_path) -> None:
     # clear second one
     cleared = persister.clear(event2.MessageId)
     assert cleared.is_ok()
-    assert event2.MessageId not in persister.pending()
+    assert event2.MessageId not in persister.pending_ids()
     assert persister.get_path(event2.MessageId) is None
     assert_contents(
         persister,
@@ -299,7 +299,7 @@ def test_persister_happy_path(tmp_path) -> None:
     cleared = persister.clear(event.MessageId)
     assert cleared.is_ok()
     assert not old_path.exists()
-    assert event.MessageId not in persister.pending()
+    assert event.MessageId not in persister.pending_ids()
     assert persister.get_path(event.MessageId) is None
     assert_contents(
         persister,
@@ -309,7 +309,7 @@ def test_persister_happy_path(tmp_path) -> None:
 
     # reindex
     assert persister.reindex().is_ok()
-    assert len(persister.pending()) == persister.num_pending == 0
+    assert len(persister.pending_ids()) == persister.num_pending == 0
     assert persister.curr_dir.name in [
         pendulum.today("utc").isoformat(),
         pendulum.yesterday("utc").isoformat(),
@@ -452,7 +452,7 @@ def test_persister_roll_day() -> None:
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
 
         # verify first day directory is present
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -469,7 +469,7 @@ def test_persister_roll_day() -> None:
 
         # Repeat with d2.
         # Clear the first entry from d2, verify d2 is gone
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -483,7 +483,7 @@ def test_persister_roll_day() -> None:
         assert_contents(p, num_pending=2, uids=uids, exact_days=exact_days)
 
         # clear first entry from third day, verify third day dir still exists
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -495,7 +495,7 @@ def test_persister_roll_day() -> None:
         uids = uids[1:]
         assert_contents(p, num_pending=1, uids=uids, exact_days=exact_days[1:])
 
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         assert path.exists()
         assert path.parent == day_dir
@@ -620,7 +620,7 @@ def test_persister_size_and_roll() -> None:
         assert p.curr_bytes == p.max_bytes
 
         # add one more, which keeps size the same but removes first entry. First day dir should remain.
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -640,7 +640,7 @@ def test_persister_size_and_roll() -> None:
         assert day_dir.exists()
 
         # add one more, which now should first day dir to be gone.
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -659,9 +659,9 @@ def test_persister_size_and_roll() -> None:
         assert not day_dir.exists()
 
         # add a large one, 2x size, which now should remove two entries and second day
-        uid0 = p.pending()[0]
+        uid0 = p.pending_ids()[0]
         path0 = p.get_path(uid0)
-        uid1 = p.pending()[1]
+        uid1 = p.pending_ids()[1]
         path1 = p.get_path(uid1)
         day_dir = path0.parent
         assert path1.parent == day_dir
@@ -683,7 +683,7 @@ def test_persister_size_and_roll() -> None:
         assert not day_dir.exists()
 
         # add a large one, 4x size, which now should third day and one entry of fourth day
-        removed_uids = p.pending()[:4]
+        removed_uids = p.pending_ids()[:4]
         paths = [p.get_path(uid) for uid in removed_uids]
         day_dirs = [path.parent for path in paths]
         assert all([path.exists() for path in paths])
@@ -704,7 +704,7 @@ def test_persister_size_and_roll() -> None:
         assert day_dirs[3].exists()
 
         # clear last entry in fourth day
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -724,7 +724,7 @@ def test_persister_size_and_roll() -> None:
         # clear the rest
         num_pending = p.num_pending
         while p.num_pending:
-            uid = p.pending()[0]
+            uid = p.pending_ids()[0]
             path = p.get_path(uid)
             path_size = path.stat().st_size
             assert path.parent == p.curr_dir
@@ -786,24 +786,24 @@ def test_persister_indexing() -> None:
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        index = dict(p._pending)
+        index = p.pending_dict()
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
-        assert p._pending == index
+        assert p.pending_dict() == index
 
         # removed dir
-        shutil.rmtree(p.get_path(p.pending()[0]).parent, ignore_errors=True)
-        index.pop(p.pending()[0])
-        index.pop(p.pending()[1])
+        shutil.rmtree(p.get_path(p.pending_ids()[0]).parent, ignore_errors=True)
+        index.pop(p.pending_ids()[0])
+        index.pop(p.pending_ids()[1])
         # removed file
-        p.get_path(p.pending()[2]).unlink()
-        index.pop(p.pending()[2])
+        p.get_path(p.pending_ids()[2]).unlink()
+        index.pop(p.pending_ids()[2])
         # removed all files in dir, left dir
-        p.get_path(p.pending()[4]).unlink()
-        index.pop(p.pending()[4])
-        p.get_path(p.pending()[5]).unlink()
-        index.pop(p.pending()[5])
-        p6 = p.get_path(p.pending()[6])
+        p.get_path(p.pending_ids()[4]).unlink()
+        index.pop(p.pending_ids()[4])
+        p.get_path(p.pending_ids()[5]).unlink()
+        index.pop(p.pending_ids()[5])
+        p6 = p.get_path(p.pending_ids()[6])
         p6_dir = p6.parent
         # invalid file - rgx failure
         shutil.copy(p6, p6_dir / (p6.name + "x"))
@@ -811,7 +811,7 @@ def test_persister_indexing() -> None:
         shutil.copy(p6, p6_dir / ("x" + p6.name))
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
-        assert p._pending == index
+        assert p.pending_dict() == index
 
     finally:
         pendulum_travel_back()

@@ -91,3 +91,7 @@ class AckManager:
         if (client_acks := self._acks.get(link_name, None)) is not None:
             return len(client_acks)
         return 0
+
+    @property
+    def default_delay_seconds(self) -> float:
+        return self._default_delay_seconds

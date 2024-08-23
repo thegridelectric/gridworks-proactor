@@ -305,5 +305,5 @@ all_cases = _Cases(
 
 
 @pytest.mark.parametrize("case", all_cases.cases(), ids=_Case.__str__)
-def test_transitions(case) -> None:
-    case._test()
+def test_transitions(case) -> None:  # noqa: ANN001
+    case._test()  # noqa: SLF001

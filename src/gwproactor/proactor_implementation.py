@@ -204,6 +204,14 @@ class Proactor(ServicesInterface, Runnable):
         return self._stats
 
     @property
+    def links(self) -> LinkManager:
+        return self._links
+
+    @property
+    def event_persister(self) -> PersisterInterface:
+        return self._event_persister
+
+    @property
     def io_loop_manager(self) -> IOLoopInterface:
         return self._io_loop_manager
 
@@ -372,7 +380,7 @@ class Proactor(ServicesInterface, Runnable):
     def _second_caller(cls) -> str:
         try:
             # noinspection PyProtectedMember,PyUnresolvedReferences
-            return sys._getframe(2).f_back.f_code.co_name
+            return sys._getframe(2).f_back.f_code.co_name  # noqa: SLF001
         except BaseException as e:
             return f"[ERROR extracting caller of _report_errors: {e}"
 

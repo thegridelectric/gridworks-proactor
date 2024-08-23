@@ -92,7 +92,7 @@ class PersisterInterface(abc.ABC):
         """Delete content persisted for uid. It is error to clear a uid which is not currently persisted."""
 
     @abstractmethod
-    def pending(self) -> list[str]:
+    def pending_ids(self) -> list[str]:
         """Get list of pending (persisted and not cleared) uids"""
 
     @property
@@ -125,7 +125,7 @@ class StubPersister(PersisterInterface):
     def clear(self, uid: str) -> Result[bool, Problems]:
         return Ok()
 
-    def pending(self) -> list[str]:
+    def pending_ids(self) -> list[str]:
         return []
 
     @property
@@ -336,8 +336,14 @@ class TimedRollingFilePersister(PersisterInterface):
             return Err(problems)
         return Ok()
 
-    def pending(self) -> list[str]:
+    def pending_ids(self) -> list[str]:
         return list(self._pending.keys())
+
+    def pending_paths(self) -> list[Path]:
+        return list(self._pending.values())
+
+    def pending_dict(self) -> dict[str, Path]:
+        return dict(self._pending)
 
     @property
     def num_pending(self) -> int:
