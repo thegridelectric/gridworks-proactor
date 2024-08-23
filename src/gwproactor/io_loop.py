@@ -93,7 +93,7 @@ class IOLoop(Communicator, IOLoopInterface):
     def _thread_run(self) -> None:
         try:
             self._io_loop.run_until_complete(self._async_run())
-        except BaseException as e:  # noqa
+        except Exception as e:  # noqa
             try:
                 summary = f"Unexpected IOLoop exception <{e}>"
             except:  # noqa
@@ -149,7 +149,7 @@ class IOLoop(Communicator, IOLoopInterface):
                                 exception = task.exception()
                                 if exception is not None:
                                     errors.append(exception)
-                            except BaseException as retrieve_exception:
+                            except Exception as retrieve_exception:
                                 errors.append(retrieve_exception)
                     if errors:
                         raise Problems(
@@ -169,7 +169,7 @@ class IOLoop(Communicator, IOLoopInterface):
             self._last_pat_time = time.time()
             self._services.send_threadsafe(PatInternalWatchdogMessage(src=self.name))
 
-    def process_message(self, message: Message) -> Result[bool, BaseException]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:
         raise ValueError("IOLoop does not currently process any messages")
 
     def _send(self, message: Message) -> None:

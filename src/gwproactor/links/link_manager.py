@@ -240,7 +240,7 @@ class LinkManager:
             self._mqtt_clients.upstream_client, message, qos=qos
         )
 
-    def generate_event(self, event: EventT) -> Result[bool, BaseException]:
+    def generate_event(self, event: EventT) -> Result[bool, Exception]:
         if isinstance(event, CommEvent):
             self._stats.link(event.PeerName).comm_event_counts[event.TypeName] += 1
         if isinstance(event, ProblemEvent) and self._logger.path_enabled:
@@ -458,7 +458,7 @@ class LinkManager:
 
     def process_ack_timeout(
         self, wait_info: AckWaitInfo
-    ) -> Result[LinkManagerTransition, BaseException]:
+    ) -> Result[LinkManagerTransition, Exception]:
         self._logger.path("++LinkManager.process_ack_timeout %s", wait_info.message_id)
         path_dbg = 0
         self._stats.link(wait_info.link_name).timeouts += 1

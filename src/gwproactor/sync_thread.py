@@ -21,19 +21,19 @@ async def async_polling_thread_join(
     timeout_seconds: float = JOIN_NEVER_TIMEOUT,
     check_thread_seconds: float = JOIN_CHECK_THREAD_SECONDS,
     raise_errors: bool = False,
-) -> Optional[BaseException]:
+) -> Optional[Exception]:
     if t is None:
         return None
     if timeout_seconds is None:
         timeout_seconds = JOIN_NEVER_TIMEOUT
     end = time.time() + timeout_seconds
     remaining = timeout_seconds
-    returned_e: Optional[BaseException] = None
+    returned_e: Optional[Exception] = None
     try:
         while t.is_alive() and remaining > 0:
             await asyncio.sleep(min(check_thread_seconds, remaining))
             remaining = end - time.time()
-    except BaseException as e:
+    except Exception as e:
         returned_e = e
         if raise_errors:
             raise e
@@ -170,7 +170,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
         pass
 
     # noinspection PyUnusedLocal,PyMethodMayBeStatic
-    def _handle_exception(self, exception: BaseException) -> bool:
+    def _handle_exception(self, exception: Exception) -> bool:
         return False
 
     def request_stop(self) -> None:
@@ -220,11 +220,11 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
                                 self._handle_message(message)
                         except queue.Empty:
                             pass
-                except BaseException as e:
+                except Exception as e:
                     handle_exception_str = ""
                     try:
                         handled = self._handle_exception(e)
-                    except BaseException as e2:
+                    except Exception as e2:
                         handled = False
                         handle_exception_str = traceback.format_exception(e2)
                     if not handled:

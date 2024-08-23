@@ -9,7 +9,7 @@ from typing import Optional
 from gwproactor.config.proactor_settings import ProactorSettings
 
 
-def format_exceptions(exceptions: list[BaseException]) -> str:
+def format_exceptions(exceptions: list[Exception]) -> str:
     s = ""
     # noinspection PyBroadException
     try:
@@ -19,7 +19,7 @@ def format_exceptions(exceptions: list[BaseException]) -> str:
                 try:
                     s += "".join(traceback.format_exception(exception))
                     s += "\n"
-                except BaseException as e:
+                except Exception as e:
                     # noinspection PyBroadException
                     try:
                         s += f"ERROR formatting traceback for {e}\n"
@@ -34,7 +34,7 @@ def format_exceptions(exceptions: list[BaseException]) -> str:
 def setup_logging(
     args: argparse.Namespace,
     settings: ProactorSettings,
-    errors: Optional[list[BaseException]] = None,
+    errors: Optional[list[Exception]] = None,
     add_screen_handler: bool = True,
     root_gets_handlers: bool = True,
 ) -> None:
@@ -48,7 +48,7 @@ def setup_logging(
 
     """
     if errors is None:
-        errors: list[BaseException] = []
+        errors: list[Exception] = []
     else:
         errors.clear()
     config_finished = False
@@ -60,13 +60,13 @@ def setup_logging(
                 settings.logging.levels.message_summary = logging.DEBUG
             elif getattr(args, "message_summary", None):
                 settings.logging.levels.message_summary = logging.INFO
-        except BaseException as e:
+        except Exception as e:
             errors.append(e)
 
         # Create formatter from settings
         try:
             formatter = settings.logging.formatter.create()
-        except BaseException as e:
+        except Exception as e:
             formatter = None
             errors.append(e)
 
@@ -75,7 +75,7 @@ def setup_logging(
             try:
                 logger = logging.getLogger(logger_name)
                 logger.setLevel(logger_settings["level"])
-            except BaseException as e:
+            except Exception as e:
                 errors.append(e)
 
         # Create handlers from settings, add them to root logger
@@ -99,7 +99,7 @@ def setup_logging(
                     if formatter is not None:
                         screen_handler.setFormatter(formatter)
                     base_logger.addHandler(screen_handler)
-            except BaseException as e:
+            except Exception as e:
                 errors.append(e)
         screen_handlers = [
             h
@@ -122,10 +122,10 @@ def setup_logging(
             if formatter is not None:
                 file_handler.setFormatter(formatter)
             base_logger.addHandler(file_handler)
-        except BaseException as e:
+        except Exception as e:
             errors.append(e)
         config_finished = True
-    except BaseException as e:
+    except Exception as e:
         config_finished = False
         errors.append(e)
     finally:

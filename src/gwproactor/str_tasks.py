@@ -31,7 +31,7 @@ def str_tasks(
                 f"exception:{_get_task_exception(task)}  "
                 f"{task.get_coro()}\n"
             )
-    except BaseException as e:
+    except Exception as e:
         # noinspection PyBroadException
         try:
             s += "ERROR in str_tasks:\n"

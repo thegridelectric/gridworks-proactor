@@ -42,7 +42,7 @@ class CommunicatorInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def process_message(self, message: Message) -> Result[bool, BaseException]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:
         raise NotImplementedError
 
     @property

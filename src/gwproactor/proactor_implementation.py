@@ -258,7 +258,7 @@ class Proactor(ServicesInterface, Runnable):
     def _send(self, message: Message) -> None:
         self.send(message)
 
-    def generate_event(self, event: EventT) -> Result[bool, BaseException]:
+    def generate_event(self, event: EventT) -> Result[bool, Exception]:
         return self._links.generate_event(event)
 
     def _process_ack_timeout(self, wait_info: AckWaitInfo) -> None:
@@ -337,7 +337,7 @@ class Proactor(ServicesInterface, Runnable):
                 if not self._stop_requested:
                     await self.process_message(message)
                 self._receive_queue.task_done()
-        except BaseException as e:
+        except Exception as e:
             if not isinstance(e, asyncio.exceptions.CancelledError):
                 self._logger.exception("ERROR in process_message")
                 self._logger.error("Stopping proactor")
@@ -381,28 +381,26 @@ class Proactor(ServicesInterface, Runnable):
         try:
             # noinspection PyProtectedMember,PyUnresolvedReferences
             return sys._getframe(2).f_back.f_code.co_name  # noqa: SLF001
-        except BaseException as e:
+        except Exception as e:
             return f"[ERROR extracting caller of _report_errors: {e}"
 
-    def _report_error(
-        self, error: BaseException, msg: str = ""
-    ) -> Result[bool, BaseException]:
+    def _report_error(self, error: Exception, msg: str = "") -> Result[bool, Exception]:
         try:
             if not msg:
                 msg = self._second_caller()
             self._report_errors([error], msg)
-        except BaseException as e2:
+        except Exception as e2:
             return Err(e2)
         return Ok()
 
     def _report_errors(
-        self, errors: Sequence[BaseException], msg: str = ""
-    ) -> Result[bool, BaseException]:
+        self, errors: Sequence[Exception], msg: str = ""
+    ) -> Result[bool, Exception]:
         try:
             if not msg:
                 msg = self._second_caller()
             self.generate_event(Problems(errors=errors).problem_event(msg))
-        except BaseException as e2:
+        except Exception as e2:
             return Err(e2)
         return Ok()
 
@@ -463,7 +461,7 @@ class Proactor(ServicesInterface, Runnable):
                 "--Proactor.process_message  path:0x%08X", path_dbg
             )
 
-    def _decode_mqtt_message(self, mqtt_payload) -> Result[Message[Any], BaseException]:
+    def _decode_mqtt_message(self, mqtt_payload) -> Result[Message[Any], Exception]:
         try:
             result = Ok(
                 self._links.decode(
@@ -492,7 +490,7 @@ class Proactor(ServicesInterface, Runnable):
 
     def _process_mqtt_message(
         self, mqtt_receipt_message: Message[MQTTReceiptPayload]
-    ) -> Result[Message[Any], BaseException]:
+    ) -> Result[Message[Any], Exception]:
         self._logger.path(
             "++Proactor._process_mqtt_message %s/%s",
             mqtt_receipt_message.Header.Src,
@@ -560,18 +558,18 @@ class Proactor(ServicesInterface, Runnable):
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def _derived_recv_deactivated(
         self, transition: LinkManagerTransition
-    ) -> Result[bool, BaseException]:
+    ) -> Result[bool, Exception]:
         return Ok()
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def _derived_recv_activated(
         self, transition: Transition
-    ) -> Result[bool, BaseException]:
+    ) -> Result[bool, Exception]:
         return Ok()
 
     def _process_mqtt_disconnected(
         self, message: Message[MQTTDisconnectPayload]
-    ) -> Result[bool, BaseException]:
+    ) -> Result[bool, Exception]:
         link_mgr_result = self._links.process_mqtt_disconnected(message)
         if link_mgr_result.is_ok() and link_mgr_result.value.recv_deactivated():
             result = self._derived_recv_deactivated(link_mgr_result.value)
@@ -581,12 +579,12 @@ class Proactor(ServicesInterface, Runnable):
 
     def _process_mqtt_connect_fail(
         self, message: Message[MQTTConnectFailPayload]
-    ) -> Result[bool, BaseException]:
+    ) -> Result[bool, Exception]:
         return self._links.process_mqtt_connect_fail(message)
 
     def _process_mqtt_suback(
         self, message: Message[MQTTSubackPayload]
-    ) -> Result[bool, BaseException]:
+    ) -> Result[bool, Exception]:
         self._logger.path(
             "++Proactor._process_mqtt_suback client:%s", message.Payload.client_name
         )
@@ -612,7 +610,7 @@ class Proactor(ServicesInterface, Runnable):
 
     def _process_mqtt_problems(
         self, message: Message[MQTTProblemsPayload]
-    ) -> Result[bool, BaseException]:
+    ) -> Result[bool, Exception]:
         self.generate_event(
             ProblemEvent(
                 ProblemType=gwproto.messages.Problems.error,
@@ -696,6 +694,6 @@ class Proactor(ServicesInterface, Runnable):
                             f"EXCEPTION in task {task.get_name()}  {exception}"
                         )
                         self._logger.error(traceback.format_tb(exception.__traceback__))
-        except BaseException as e:
+        except Exception as e:
             self._logger.exception("ERROR in Proactor.join: %s <%s>", type(e), e)
         self._logger.lifecycle("--Proactor.join()")

@@ -164,13 +164,13 @@ class SimpleDirectoryWriter(StubPersister):
             try:
                 with path.open("wb") as f:
                     f.write(content)
-            except BaseException as e:  # pragma: no cover
+            except Exception as e:  # pragma: no cover
                 return Err(
                     problems.add_error(e).add_error(
                         WriteFailed("Open or write failed", uid=uid, path=path)
                     )
                 )
-        except BaseException as e:
+        except Exception as e:
             return Err(
                 problems.add_error(e).add_error(
                     PersisterError("Unexpected error", uid=uid)
@@ -264,13 +264,13 @@ class TimedRollingFilePersister(PersisterInterface):
                 with self._pending[uid].open("wb") as f:
                     f.write(content)
                 self._curr_bytes += len(content)
-            except BaseException as e:  # pragma: no cover
+            except Exception as e:  # pragma: no cover
                 return Err(
                     problems.add_error(e).add_error(
                         WriteFailed("Open or write failed", uid=uid, path=existing_path)
                     )
                 )
-        except BaseException as e:
+        except Exception as e:
             return Err(
                 problems.add_error(e).add_error(
                     PersisterError("Unexpected error", uid=uid)
@@ -293,7 +293,7 @@ class TimedRollingFilePersister(PersisterInterface):
                 if last_day_dir is not None and last_day_dir != day_dir:
                     shutil.rmtree(last_day_dir, ignore_errors=True)
                 last_day_dir = day_dir
-            except BaseException as e:
+            except Exception as e:
                 problems.add_error(e)
                 problems.add_error(
                     PersisterError("Unexpected error", uid=uid, path=path)
@@ -307,7 +307,7 @@ class TimedRollingFilePersister(PersisterInterface):
                     or next(iter(self._pending.values())).parent != last_day_dir
                 ):
                     shutil.rmtree(last_day_dir, ignore_errors=True)
-        except BaseException as e:  # pragma: no cover
+        except Exception as e:  # pragma: no cover
             problems.add_error(e)
             problems.add_error(PersisterError("Unexpected error"))
         if problems:
@@ -364,7 +364,7 @@ class TimedRollingFilePersister(PersisterInterface):
                 try:
                     with path.open("rb") as f:
                         content: bytes = f.read()
-                except BaseException as e:  # pragma: no cover
+                except Exception as e:  # pragma: no cover
                     problems.add_error(e).add_error(
                         ReadFailed("Open or read failed", uid=uid, path=path)
                     )
@@ -396,11 +396,11 @@ class TimedRollingFilePersister(PersisterInterface):
                             ):
                                 self._curr_bytes += persisted_item.path.stat().st_size
                                 paths.append(persisted_item)
-                        except BaseException as e:
+                        except Exception as e:
                             problems.add_error(e).add_error(
                                 ReindexError(path=day_dir_entry)
                             )
-            except BaseException as e:
+            except Exception as e:
                 problems.add_error(e).add_error(ReindexError())
         self._pending = dict(sorted(paths, key=lambda item: item.path))
         if problems:

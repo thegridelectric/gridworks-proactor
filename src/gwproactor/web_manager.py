@@ -79,7 +79,7 @@ class _WebManager(Communicator, Runnable):
         self._configs = {}
         self._routes = defaultdict(list)
 
-    def process_message(self, message: Message) -> Result[bool, BaseException]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:
         raise ValueError("_WebManager does not currently process any messages")
 
     def disable(self) -> None:

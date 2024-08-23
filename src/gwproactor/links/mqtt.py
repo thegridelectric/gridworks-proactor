@@ -101,7 +101,7 @@ class MQTTClientWrapper:
                     self._client_config.host, port=self._client_config.effective_port()
                 )
                 self._client.loop_forever(retry_first_connection=True)
-            except BaseException as e:
+            except Exception as e:
                 self._receive_queue.put(
                     MQTTProblemsMessage(
                         client_name=self.name, problems=Problems(errors=[e])

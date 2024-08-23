@@ -462,7 +462,7 @@ class LinkStates:
         self._links[name] = LinkState(name, state)
         return self._links[name]
 
-    def start_all(self) -> Result[bool, Sequence[BaseException]]:
+    def start_all(self) -> Result[bool, Sequence[Exception]]:
         errors = []
         for link in self._links.values():
             match link.start():

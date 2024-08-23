@@ -119,7 +119,7 @@ class RESTPoller:
             response = await session.request(args.method, args.url, **args.kwargs)
             if self._rest.errors.request.error_for_http_status:
                 response.raise_for_status()
-        except BaseException as e:
+        except Exception as e:
             response = None
             if self._rest.errors.request.report:
                 try:
@@ -141,7 +141,7 @@ class RESTPoller:
     async def _convert(self, response: ClientResponse) -> Optional[Message]:
         try:
             message = await self._converter(response)
-        except BaseException as convert_exception:
+        except Exception as convert_exception:
             message = None
             if self._rest.errors.convert.report:
                 try:
@@ -183,7 +183,7 @@ class RESTPoller:
                         sleep_seconds = self._get_next_sleep_seconds()
                         await asyncio.sleep(sleep_seconds)
 
-        except BaseException as e:
+        except Exception as e:
             raise e
 
     def start(self) -> None:
@@ -228,7 +228,7 @@ class RESTPollerActor(Actor):
             cache_request_args=cache_request_args,
         )
 
-    def process_message(self, message: Message) -> Result[bool, BaseException]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:
         pass
 
     def start(self) -> None:
