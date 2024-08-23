@@ -6,7 +6,7 @@ import time
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Type
+from typing import Any, Type
 
 import pytest
 from gwproto import MQTTTopic
@@ -287,7 +287,9 @@ class ProactorCommTests:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("suppress_tls", [False, True])
-    async def test_basic_comm_parent_first(self, request, suppress_tls: bool) -> None:
+    async def test_basic_comm_parent_first(
+        self, request: Any, suppress_tls: bool
+    ) -> None:
         async with self.CTH() as h:
             base_logger = logging.getLogger(
                 h.child_helper.settings.logging.base_log_name
@@ -639,7 +641,7 @@ class ProactorCommTests:
                 assert comm_event.MessageId in child.event_persister
 
     @pytest.mark.asyncio
-    async def test_awaiting_setup_and_peer_corner_cases(self, request) -> None:
+    async def test_awaiting_setup_and_peer_corner_cases(self, request: Any) -> None:
         """
         Test corner cases:
          (connecting -> connected -> awaiting_setup_and_peer)
@@ -799,7 +801,7 @@ class ProactorCommTests:
     # @pytest.mark.skip
 
     @pytest.mark.asyncio
-    async def test_awaiting_setup2__(self, request) -> None:
+    async def test_awaiting_setup2__(self, request: Any) -> None:
         """
         Test awaiting_setup (corner state):
          (awaiting_setup_and_peer -> message_from_peer -> awaiting_setup)

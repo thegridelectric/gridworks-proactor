@@ -3,6 +3,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import TracebackType
 from typing import Callable, Optional, Type, TypeVar
 
 from gwproactor import Proactor, ProactorSettings, setup_logging
@@ -258,7 +259,12 @@ class CommTestHelper:
     async def __aenter__(self) -> "CommTestHelper":
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> bool:
         await self.stop_and_join()
         if exc is not None:
             logging.getLogger("gridworks").error(
@@ -268,6 +274,7 @@ class CommTestHelper:
                 self.parent_helper.settings.paths.log_dir,
             )
         self.logger_guards.restore()
+        return False
 
     def summary_str(self) -> str:
         return (

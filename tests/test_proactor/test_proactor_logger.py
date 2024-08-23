@@ -1,13 +1,14 @@
 import argparse
 import logging
 import warnings
+from typing import Any
 
 from gwproactor import ProactorLogger, ProactorSettings, setup_logging
 from gwproactor.config import Paths
 from gwproactor_test import LoggerGuards
 
 
-def test_proactor_logger(caplog) -> None:
+def test_proactor_logger(caplog: Any) -> None:
     paths = Paths()
     paths.mkdirs()
     settings = ProactorSettings()

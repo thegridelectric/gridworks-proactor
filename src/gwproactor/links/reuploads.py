@@ -188,7 +188,9 @@ class Reuploads:
     def __str__(self) -> str:
         return self.get_str(verbose=False)
 
-    def _log_start_reupload(self, num_pending_events, num_reupload_now) -> None:
+    def _log_start_reupload(
+        self, num_pending_events: int, num_reupload_now: int
+    ) -> None:
         if self._logger.general_enabled:
             if self.reuploading():
                 state_str = f"{self.num_reupload_pending} reupload events pending."

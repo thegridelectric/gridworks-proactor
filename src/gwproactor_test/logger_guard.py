@@ -1,6 +1,7 @@
 import logging
 import sys
-from typing import Optional, Sequence
+from types import TracebackType
+from typing import Optional, Sequence, Type
 
 import pytest
 
@@ -52,7 +53,12 @@ class LoggerGuard:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> bool:
         self.restore()
         return True
 
@@ -76,7 +82,12 @@ class LoggerGuards:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> bool:
         self.restore()
         return True
 

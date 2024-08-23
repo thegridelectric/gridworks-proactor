@@ -169,7 +169,8 @@ class State(abc.ABC):
         )
 
     def process_mqtt_suback(
-        self, num_pending_subscriptions: int
+        self,
+        num_pending_subscriptions: int,  # noqa: ARG002
     ) -> Result[Transition, InvalidCommStateInput]:
         return Err(
             InvalidCommStateInput(
@@ -352,7 +353,9 @@ class LinkState:
     states: dict[StateName, State]
     curr_state: State
 
-    def __init__(self, name, curr_state: StateName = StateName.not_started) -> None:
+    def __init__(
+        self, name: str, curr_state: StateName = StateName.not_started
+    ) -> None:
         self.name = name
         self.states = {
             state.name: state
@@ -384,7 +387,7 @@ class LinkState:
     def active_for_recv(self) -> bool:
         return self.curr_state.active_for_recv()
 
-    def _handle(self, result) -> Result[Transition, InvalidCommStateInput]:
+    def _handle(self, result: Result) -> Result[Transition, InvalidCommStateInput]:
         match result:
             case Ok(transition):
                 transition.link_name = self.name

@@ -3,6 +3,8 @@ import logging
 import logging.handlers
 from typing import Optional
 
+import pytest
+
 from gwproactor import ProactorSettings, setup_logging
 from gwproactor.config import (
     DEFAULT_LOG_FILE_NAME,
@@ -13,7 +15,9 @@ from gwproactor.config import (
 from tests.test_misc.test_logging_config import get_exp_formatted_time
 
 
-def test_get_default_logging_config(caplog, capsys) -> None:
+def test_get_default_logging_config(
+    caplog: pytest.LogCaptureFixture, capsys: pytest.LogCaptureFixture
+) -> None:
     paths = Paths()
     paths.mkdirs()
     settings = ProactorSettings(logging=LoggingSettings(base_log_level=logging.INFO))

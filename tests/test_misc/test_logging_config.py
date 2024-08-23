@@ -2,6 +2,7 @@
 
 import logging
 import time
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -192,7 +193,7 @@ def test_formatter_settings() -> None:
     assert formatted.endswith(record.msg % record.args)
 
 
-def test_rotating_file_handler_settings(tmp_path) -> None:
+def test_rotating_file_handler_settings(tmp_path: Path) -> None:
     settings = RotatingFileHandlerSettings()
     handler = settings.create(tmp_path, FormatterSettings().create())
     assert handler.level == logging.NOTSET

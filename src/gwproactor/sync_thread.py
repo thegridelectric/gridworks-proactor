@@ -41,7 +41,7 @@ async def async_polling_thread_join(
 
 
 def responsive_sleep(
-    obj,
+    obj: Any,
     seconds: float,
     step_duration: float = DEFAULT_STEP_DURATION,
     running_field_name: str = "_main_loop_running",

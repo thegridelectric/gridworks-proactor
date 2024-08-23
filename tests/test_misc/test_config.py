@@ -69,7 +69,7 @@ def test_tls_paths() -> None:
         assert getattr(paths, k) == v
 
 
-def test_tls_paths_mkdirs(clean_test_env, tmp_path) -> None:
+def test_tls_paths_mkdirs(clean_test_env: Any, tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         TLSPaths().mkdirs()
     paths = Paths()
@@ -180,7 +180,7 @@ def test_mqtt_client_settings() -> None:
         assert getattr(settings, k) == v
 
 
-def exp_paths_dict(**kwargs) -> dict:
+def exp_paths_dict(**kwargs: Any) -> dict:
     default_base = Path("gridworks")
     default_name = Path("scada")
     default_relative_path = default_base / default_name
@@ -207,7 +207,7 @@ def exp_paths_dict(**kwargs) -> dict:
     return exp
 
 
-def assert_paths(paths: Paths, **kwargs) -> None:
+def assert_paths(paths: Paths, **kwargs: Any) -> None:
     exp = exp_paths_dict(**kwargs)
     for field, exp_value in exp.items():
         got_value = getattr(paths, field)
@@ -220,11 +220,11 @@ def assert_paths(paths: Paths, **kwargs) -> None:
     assert paths.dict() == exp
 
 
-def test_paths_defaults(clean_test_env, tmp_path) -> None:
+def test_paths_defaults(clean_test_env: Any, tmp_path: Path) -> None:
     assert_paths(Paths(), home=tmp_path)
 
 
-def test_paths(clean_test_env, tmp_path) -> None:
+def test_paths(clean_test_env: Any, tmp_path: Path) -> None:
     # base, name
     assert_paths(
         Paths(base="foo", name="bar"),
@@ -324,7 +324,7 @@ def test_paths(clean_test_env, tmp_path) -> None:
     )
 
 
-def test_paths_mkdirs(clean_test_env, tmp_path):  # noqa
+def test_paths_mkdirs(clean_test_env: Any, tmp_path: Path):
     paths = Paths()
     assert not paths.data_dir.exists()
     # Get rid of the config dir created inside of tmp_path by clean_test_env
@@ -377,7 +377,7 @@ def _assert_child_paths_update(
     )
 
 
-def test_proactor_settings_root_validators(clean_test_env) -> None:
+def test_proactor_settings_root_validators(clean_test_env: Any) -> None:
     clean_test_env.setenv("XDG_CONFIG_HOME", "/z")
 
     # no paths specification

@@ -461,7 +461,9 @@ class Proactor(ServicesInterface, Runnable):
                 "--Proactor.process_message  path:0x%08X", path_dbg
             )
 
-    def _decode_mqtt_message(self, mqtt_payload) -> Result[Message[Any], Exception]:
+    def _decode_mqtt_message(
+        self, mqtt_payload: MQTTReceiptPayload
+    ) -> Result[Message[Any], Exception]:
         try:
             result = Ok(
                 self._links.decode(

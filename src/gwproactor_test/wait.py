@@ -5,7 +5,8 @@ import textwrap
 import time
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Awaitable, Callable, Optional, Union
+from types import TracebackType
+from typing import Awaitable, Callable, Optional, Type, Union
 
 Predicate = Callable[[], bool]
 AwaitablePredicate = Callable[[], Awaitable[bool]]
@@ -22,9 +23,15 @@ class StopWatch:
     def __enter__(self):
         self.start = time.time()
 
-    def __exit__(self, type_, value, traceback):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> bool:
         self.end = time.time()
         self.elapsed = self.end - self.start
+        return False
 
 
 async def await_for(

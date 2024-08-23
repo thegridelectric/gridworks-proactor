@@ -199,7 +199,7 @@ class TimedRollingFilePersister(PersisterInterface):
         base_dir: Path | str,
         max_bytes: int = DEFAULT_MAX_BYTES,
         pat_watchdog_args: Optional[list[str]] = None,
-        reindex_pat_seconds=REINDEX_PAT_SECONDS,
+        reindex_pat_seconds: float = REINDEX_PAT_SECONDS,
     ) -> None:
         self._base_dir = Path(base_dir).resolve()
         self._max_bytes = max_bytes

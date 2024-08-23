@@ -5,7 +5,7 @@ import shutil
 import time
 from importlib.metadata import version as get_package_version
 from pathlib import Path
-from typing import NoReturn, Optional, Union
+from typing import Any, NoReturn, Optional, Union
 
 import gwproto.messages
 import pendulum
@@ -215,7 +215,7 @@ def assert_contents(
             assert uid in str(path.name)
 
 
-def test_persister_happy_path(tmp_path) -> None:
+def test_persister_happy_path(tmp_path: Path) -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     event = ProblemEvent(
@@ -950,7 +950,7 @@ def test_persister_problems() -> None:
         pendulum_travel_back()
 
 
-def test_reindex_pat(tmp_path, monkeypatch) -> None:
+def test_reindex_pat(tmp_path: Path, monkeypatch: Any) -> None:
     PatWatchdogWithFile.pat_dir = tmp_path / "pats"
     PatWatchdogWithFile.pat_dir.mkdir(parents=True)
     service_name = "foo"

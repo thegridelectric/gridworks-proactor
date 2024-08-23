@@ -14,7 +14,7 @@ def str_tasks(
             tasks = asyncio.all_tasks(loop_)
         s += f"Tasks: {len(tasks)}  [{tag}]\n"
 
-        def _get_task_exception(task_):
+        def _get_task_exception(task_: asyncio.Task) -> BaseException:
             try:
                 exception_ = task_.exception()
             except asyncio.CancelledError as _e:

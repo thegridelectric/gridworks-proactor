@@ -13,9 +13,9 @@ import logging
 import ssl
 import threading
 import uuid
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union, cast
+from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union, cast
 
-from paho.mqtt.client import MQTT_ERR_SUCCESS, MQTTMessageInfo
+from paho.mqtt.client import MQTT_ERR_SUCCESS, MQTTMessage, MQTTMessageInfo
 from paho.mqtt.client import Client as PahoMQTTClient
 
 from gwproactor import config
@@ -186,7 +186,7 @@ class MQTTClientWrapper:
     def mqtt_client(self) -> PahoMQTTClient:
         return self._client
 
-    def on_message(self, _, userdata, message) -> None:
+    def on_message(self, _: Any, userdata: Any, message: MQTTMessage) -> None:
         self._receive_queue.put(
             MQTTReceiptMessage(
                 client_name=self.name,
@@ -202,7 +202,9 @@ class MQTTClientWrapper:
                 self._pending_subscriptions.remove(topic)
         return len(self._pending_subscriptions)
 
-    def on_subscribe(self, _, userdata, mid, granted_qos) -> None:
+    def on_subscribe(
+        self, _: Any, userdata: Any, mid: int, granted_qos: list[int]
+    ) -> None:
         self._receive_queue.put(
             MQTTSubackMessage(
                 client_name=self.name,
@@ -212,7 +214,7 @@ class MQTTClientWrapper:
             )
         )
 
-    def on_connect(self, _, userdata, flags, rc) -> None:
+    def on_connect(self, _: Any, userdata: Any, flags: dict, rc: int) -> None:
         self._receive_queue.put(
             MQTTConnectMessage(
                 client_name=self.name,
@@ -222,7 +224,7 @@ class MQTTClientWrapper:
             )
         )
 
-    def on_connect_fail(self, _, userdata) -> None:
+    def on_connect_fail(self, _: Any, userdata: Any) -> None:
         self._receive_queue.put(
             MQTTConnectFailMessage(
                 client_name=self.name,
@@ -230,7 +232,7 @@ class MQTTClientWrapper:
             )
         )
 
-    def on_disconnect(self, _, userdata, rc) -> None:
+    def on_disconnect(self, _: Any, userdata: Any, rc: int) -> None:
         self._pending_subscriptions = set(self._subscriptions.keys())
         self._receive_queue.put(
             MQTTDisconnectMessage(
