@@ -60,9 +60,8 @@ class MessageSummary:
                 payload_str = payload_object.__class__.__name__
             else:
                 payload_str = type(payload_object)
-            if message_id:
-                if len(message_id) > 11:
-                    message_id = f"{message_id[:8]}..."
+            if message_id and len(message_id) > logging.DEBUG + 1:
+                message_id = f"{message_id[:8]}..."
             return format_.format(
                 timestamp=timestamp.isoformat(),
                 direction=direction,

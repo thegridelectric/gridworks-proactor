@@ -472,14 +472,15 @@ class Proactor(ServicesInterface, Runnable):
             )
         except Exception as e:
             self._logger.exception("ERROR decoding [%s]", mqtt_payload)
+            clip_len = 70
             self.generate_event(
                 ProblemEvent(
                     ProblemType=gwproto.messages.Problems.warning,
                     Summary=f"Decoding error topic [{mqtt_payload.message.topic}]  error [{type(e)}]",
                     Details=(
                         f"Topic: {mqtt_payload.message.topic}\n"
-                        f"Message: {mqtt_payload.message.payload[:70]}"
-                        f"{'...' if len(mqtt_payload.message.payload) > 70 else ''}\n"
+                        f"Message: {mqtt_payload.message.payload[:clip_len]}"
+                        f"{'...' if len(mqtt_payload.message.payload) > clip_len else ''}\n"
                         f"{traceback.format_exception(e)}\n"
                         f"Exception: {e}"
                     ),
