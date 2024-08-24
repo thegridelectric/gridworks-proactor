@@ -30,7 +30,7 @@ def format_exceptions(exceptions: list[Exception]) -> str:
     return s
 
 
-def setup_logging(
+def setup_logging(  # noqa: C901, PLR0912, PLR0915
     args: argparse.Namespace,
     settings: ProactorSettings,
     *,
@@ -88,12 +88,10 @@ def setup_logging(
             try:
                 # try not to add more than one screen handler.
                 if not any(
-                    [
-                        h
-                        for h in base_logger.handlers
-                        if isinstance(h, logging.StreamHandler)
-                        and (h.stream is sys.stderr or h.stream is sys.stdout)
-                    ]
+                    h
+                    for h in base_logger.handlers
+                    if isinstance(h, logging.StreamHandler)
+                    and (h.stream is sys.stderr or h.stream is sys.stdout)
                 ):
                     screen_handler = logging.StreamHandler()
                     if formatter is not None:
@@ -140,4 +138,4 @@ def setup_logging(
                     logging.error(s)
                 else:
                     syslog.syslog(s)
-                    print(s)
+                    print(s)  # noqa: T201

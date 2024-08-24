@@ -14,7 +14,7 @@ class MessageSummary:
     )
 
     @classmethod
-    def format(
+    def format(  # noqa: PLR0913
         cls,
         direction: str,
         actor_alias: str,
@@ -50,9 +50,9 @@ class MessageSummary:
             else:
                 format_ = cls.DEFAULT_FORMAT
             direction = direction.strip()
-            if direction.startswith("OUT") or direction.startswith("SND"):
+            if direction.startswith(("OUT", "SND")):
                 arrow = "->"
-            elif direction.startswith("IN") or direction.startswith("RCV"):
+            elif direction.startswith(("IN", "RCV")):  # noqa: PIE810
                 arrow = "<-"
             else:
                 arrow = "? "
@@ -119,7 +119,7 @@ class ProactorLogger(logging.LoggerAdapter):
     def comm_event_enabled(self) -> bool:
         return self.comm_event_logger.isEnabledFor(logging.INFO)
 
-    def message_summary(
+    def message_summary(  # noqa: PLR0913
         self,
         direction: str,
         actor_alias: str,
@@ -142,22 +142,22 @@ class ProactorLogger(logging.LoggerAdapter):
                 )
             )
 
-    def path(self, msg: str, *args, **kwargs) -> None:
+    def path(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self.message_summary_logger.debug(msg, *args, **kwargs)
 
-    def lifecycle(self, msg: str, *args, **kwargs) -> None:
+    def lifecycle(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self.lifecycle_logger.info(msg, *args, **kwargs)
 
-    def comm_event(self, msg: str, *args, **kwargs) -> None:
+    def comm_event(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self.comm_event_logger.info(msg, *args, **kwargs)
 
-    def message_enter(self, msg: str, *args, **kwargs) -> None:
+    def message_enter(self, msg: str, *args: Any, **kwargs: Any) -> None:
         if self.path_enabled:
             self.path("")
             self.path(self.MESSAGE_ENTRY_DELIMITER)
             self.path(msg, *args, **kwargs)
 
-    def message_exit(self, msg: str, *args, **kwargs) -> None:
+    def message_exit(self, msg: str, *args: Any, **kwargs: Any) -> None:
         if self.path_enabled:
             self.path(msg, *args, **kwargs)
             self.path(self.MESSAGE_EXIT_DELIMITER)

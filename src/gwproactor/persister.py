@@ -120,10 +120,10 @@ class _PersistedItem(NamedTuple):
 
 
 class StubPersister(PersisterInterface):
-    def persist(self, uid: str, content: bytes) -> Result[bool, Problems]:
+    def persist(self, uid: str, content: bytes) -> Result[bool, Problems]:  # noqa: ARG002
         return Ok()
 
-    def clear(self, uid: str) -> Result[bool, Problems]:
+    def clear(self, uid: str) -> Result[bool, Problems]:  # noqa: ARG002
         return Ok()
 
     def pending_ids(self) -> list[str]:
@@ -136,7 +136,7 @@ class StubPersister(PersisterInterface):
     def __contains__(self, uid: str) -> bool:
         return False
 
-    def retrieve(self, uid: str) -> Result[Optional[bytes], Problems]:
+    def retrieve(self, uid: str) -> Result[Optional[bytes], Problems]:  # noqa: ARG002
         return Ok(None)
 
     def reindex(self) -> Result[Optional[bool], Problems]:
@@ -302,12 +302,11 @@ class TimedRollingFilePersister(PersisterInterface):
             if self._curr_bytes <= self._max_bytes - needed_bytes:
                 break
         try:
-            if last_day_dir is not None:
-                if (
-                    not self._pending
-                    or next(iter(self._pending.values())).parent != last_day_dir
-                ):
-                    shutil.rmtree(last_day_dir, ignore_errors=True)
+            if last_day_dir is not None and (
+                not self._pending
+                or next(iter(self._pending.values())).parent != last_day_dir
+            ):
+                shutil.rmtree(last_day_dir, ignore_errors=True)
         except Exception as e:  # pragma: no cover  # noqa: BLE001
             problems.add_error(e)
             problems.add_error(PersisterError("Unexpected error"))
@@ -386,7 +385,7 @@ class TimedRollingFilePersister(PersisterInterface):
                             now = time.time()
                             if now > last_pat + self._reindex_pat_seconds:
                                 last_pat = now
-                                subprocess.run(self._pat_watchdog_args, check=True)
+                                subprocess.run(self._pat_watchdog_args, check=True)  # noqa: S603
                         try:
                             if persisted_item := self._persisted_item_from_file_path(
                                 day_dir_entry

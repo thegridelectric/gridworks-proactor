@@ -117,7 +117,7 @@ class IOLoop(Communicator, IOLoopInterface):
         finally:
             self._io_loop.stop()
 
-    async def _async_run(self) -> None:  # noqa: PLR0912
+    async def _async_run(self) -> None:  # noqa: C901, PLR0912
         try:  # noqa: PLR1702
             while not self._stop_requested:
                 with self._lock:
@@ -130,7 +130,7 @@ class IOLoop(Communicator, IOLoopInterface):
                     except GeneratorExit:
                         pass
                 else:
-                    done, running = await asyncio.wait(
+                    done, _ = await asyncio.wait(
                         tasks, timeout=1.0, return_when="FIRST_COMPLETED"
                     )
                     if self._stop_requested:
@@ -166,7 +166,7 @@ class IOLoop(Communicator, IOLoopInterface):
             self._last_pat_time = time.time()
             self._services.send_threadsafe(PatInternalWatchdogMessage(src=self.name))
 
-    def process_message(self, message: Message) -> Result[bool, Exception]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:  # noqa: ARG002
         raise ValueError("IOLoop does not currently process any messages")
 
     def _send(self, message: Message) -> None:
