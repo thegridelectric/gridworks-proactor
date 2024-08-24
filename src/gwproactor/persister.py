@@ -398,7 +398,10 @@ class TimedRollingFilePersister(PersisterInterface):
                             )
             except Exception as e:  # noqa: BLE001, PERF203
                 problems.add_error(e).add_error(ReindexError())
-        self._pending = dict(sorted(paths, key=lambda item: item.path))
+        # The next line is correct, though PyCharm gives a false-positive warning.
+        # paths is a list of tuples, which the dict constructor will treat
+        # as a list of key-values pairs, which is the intended behavior.
+        self._pending = dict(sorted(paths, key=lambda item: item.path))  # noqa
         if problems:
             return Err(problems)
         return Ok()
