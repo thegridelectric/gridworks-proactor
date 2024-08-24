@@ -116,7 +116,7 @@ exclude = [
     "build",
     "dist",
 ]
-output-format = "grouped"
+output-format = "concise"
 fix = false
 show-fixes = true
 

@@ -28,6 +28,7 @@ class _ReuploadDiffLogger:  # pragma: no cover
     def init(
         self,
         reuploads: Optional["Reuploads"] = None,
+        *,
         verbose: bool = False,
     ) -> None:
         self.reuploads = reuploads
@@ -171,7 +172,7 @@ class Reuploads:
         self._reupload_pending.clear()
         self._reuploaded_unacked.clear()
 
-    def get_str(self, verbose: bool = True, num_events: int = 5) -> str:
+    def get_str(self, *, verbose: bool = True, num_events: int = 5) -> str:
         s = f"Reuploads  reuploading:{int(self.reuploading())}  unacked/sent:{len(self._reuploaded_unacked)}  pending/unsent:{len(self._reupload_pending)}"
         if verbose:
             s += f"  num initial:{self._num_initial_events}\n"

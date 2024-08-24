@@ -19,6 +19,7 @@ class MessageSummary:
         direction: str,
         actor_alias: str,
         topic: str,
+        *,
         payload_object: Any = None,
         broker_flag: str = " ",
         timestamp: Optional[pendulum.datetime] = None,

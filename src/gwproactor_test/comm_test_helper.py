@@ -223,7 +223,7 @@ class CommTestHelper:
         setup_logging(
             argparse.Namespace(verbose=self.verbose or self.child_verbose),
             self.child_helper.settings,
-            errors,
+            errors=errors,
             add_screen_handler=True,
             root_gets_handlers=False,
         )
@@ -231,7 +231,7 @@ class CommTestHelper:
         setup_logging(
             argparse.Namespace(verbose=self.verbose or self.parent_verbose),
             self.parent_helper.settings,
-            errors,
+            errors=errors,
             add_screen_handler=self.parent_on_screen,
             root_gets_handlers=False,
         )

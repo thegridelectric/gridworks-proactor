@@ -263,6 +263,7 @@ class MQTTClients:
         self,
         name: str,
         client_config: config.MQTTClient,
+        *,
         upstream: bool = False,
         primary_peer: bool = False,
     ) -> None:

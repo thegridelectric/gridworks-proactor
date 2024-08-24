@@ -23,7 +23,10 @@ class LinkMessageTimes:
         return time.time() > self.next_ping_second(link_poll_seconds)
 
     def get_str(
-        self, link_poll_seconds: float = MQTT_LINK_POLL_SECONDS, relative: bool = True
+        self,
+        *,
+        link_poll_seconds: float = MQTT_LINK_POLL_SECONDS,
+        relative: bool = True,
     ) -> str:
         if relative:
             adjust = import_time

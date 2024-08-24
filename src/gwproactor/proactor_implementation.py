@@ -598,7 +598,7 @@ class Proactor(ServicesInterface, Runnable):
                 result = self._derived_recv_activated(link_mgr_result.value)
             else:
                 path_dbg |= 0x00000004
-                result = Ok(True)
+                result = Ok(value=True)
         else:
             path_dbg |= 0x00000008
             result = Err(link_mgr_result.err())

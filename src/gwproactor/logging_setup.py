@@ -33,6 +33,7 @@ def format_exceptions(exceptions: list[Exception]) -> str:
 def setup_logging(
     args: argparse.Namespace,
     settings: ProactorSettings,
+    *,
     errors: Optional[list[Exception]] = None,
     add_screen_handler: bool = True,
     root_gets_handlers: bool = True,

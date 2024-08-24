@@ -19,6 +19,7 @@ JOIN_CHECK_THREAD_SECONDS = 1.0
 async def async_polling_thread_join(
     t: Optional[threading.Thread],
     timeout_seconds: float = JOIN_NEVER_TIMEOUT,
+    *,
     check_thread_seconds: float = JOIN_CHECK_THREAD_SECONDS,
     raise_errors: bool = False,
 ) -> Optional[Exception]:
@@ -43,6 +44,7 @@ async def async_polling_thread_join(
 def responsive_sleep(
     obj: Any,
     seconds: float,
+    *,
     step_duration: float = DEFAULT_STEP_DURATION,
     running_field_name: str = "_main_loop_running",
     running_field: bool = True,
@@ -104,7 +106,7 @@ class SyncAsyncQueueWriter:
         self._async_queue = async_queue
 
     def put_to_sync_queue(
-        self, item: Any, block: bool = True, timeout: Optional[float] = None
+        self, item: Any, *, block: bool = True, timeout: Optional[float] = None
     ) -> None:
         """Write to synchronous queue in a threadsafe way."""
         self.sync_queue.put(item, block=block, timeout=timeout)
@@ -118,7 +120,7 @@ class SyncAsyncQueueWriter:
         self._loop.call_soon_threadsafe(self._async_queue.put_nowait, item)
 
     def get_from_sync_queue(
-        self, block: bool = True, timeout: Optional[float] = None
+        self, *, block: bool = True, timeout: Optional[float] = None
     ) -> Any:
         """Read from synchronous queue in a threadsafe way."""
         return self.sync_queue.get(block=block, timeout=timeout)
@@ -144,6 +146,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
         self,
         channel: Optional[SyncAsyncQueueWriter] = None,
         name: Optional[str] = None,
+        *,
         iterate_sleep_seconds: Optional[float] = None,
         responsive_sleep_step_seconds: float = SLEEP_STEP_SECONDS,
         pat_timeout: Optional[float] = PAT_TIMEOUT,
@@ -187,7 +190,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
         self.start()
 
     def put_to_sync_queue(
-        self, message: Any, block: bool = True, timeout: Optional[float] = None
+        self, message: Any, *, block: bool = True, timeout: Optional[float] = None
     ) -> None:
         self._channel.put_to_sync_queue(message, block=block, timeout=timeout)
 
