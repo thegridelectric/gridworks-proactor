@@ -36,7 +36,7 @@ if Version(get_package_version("pendulum")) < Version("3.0.0"):
     pendulum_travel_back = pendulum.set_test_now
 else:
     pendulum_travel_to_context = pendulum_travel_to
-    pendulum_travel_to = pendulum_travel_to  # noqa
+    pendulum_travel_to = pendulum_travel_to
     pendulum_travel_back = pendulum.travel_back
 
 

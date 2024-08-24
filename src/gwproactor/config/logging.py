@@ -79,7 +79,6 @@ class LoggerLevels(BaseModel):
 
     @validator("*")
     def logging_level_str_to_int(cls, v: int | str) -> int:
-        # noinspection PyBroadException
         try:
             int_v = int(v)
         except:

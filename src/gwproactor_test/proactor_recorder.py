@@ -1,3 +1,4 @@
+# ruff: noqa: ERA001
 import dataclasses
 from abc import abstractmethod
 from dataclasses import dataclass, field
@@ -215,7 +216,7 @@ def make_recorder_class(
             return self._links.release_acks(clear, num_to_release=num_to_release)
 
         def set_ack_timeout_seconds(self, delay: float) -> None:
-            self._links._acks._default_delay_seconds = delay  # noqa
+            self._links._acks._default_delay_seconds = delay
 
         def drop_mqtt(self, drop: bool) -> None:
             self.mqtt_messages_dropped = drop

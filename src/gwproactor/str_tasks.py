@@ -31,12 +31,11 @@ def str_tasks(
                 f"exception:{_get_task_exception(task)}  "
                 f"{task.get_coro()}\n"
             )
-    except Exception as e:
-        # noinspection PyBroadException
+    except Exception as e:  # noqa: BLE001
         try:
             s += "ERROR in str_tasks:\n"
             s += "".join(traceback.format_exception(e))
             s += "\n"
-        except:
+        except:  # noqa: E722, S110
             pass
     return s

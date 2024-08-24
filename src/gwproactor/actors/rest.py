@@ -22,11 +22,11 @@ Converter = Callable[[ClientResponse], Awaitable[Optional[Message]]]
 ThreadSafeForwarder = Callable[[Message], Any]
 
 
-async def null_converter(response: ClientResponse) -> Optional[Message]:  # noqa
+async def null_converter(response: ClientResponse) -> Optional[Message]:
     return None
 
 
-def null_forwarder(message: Message) -> None:  # noqa
+def null_forwarder(message: Message) -> None:
     return None
 
 
@@ -132,7 +132,7 @@ class RESTPoller:
                             )
                         )
                     )
-                except:  # noqa
+                except:
                     pass
             if self._rest.errors.request.raise_exception:
                 raise e
@@ -154,7 +154,7 @@ class RESTPoller:
                             )
                         )
                     )
-                except:  # noqa
+                except:
                     pass
             if self._rest.errors.convert.raise_exception:
                 raise convert_exception

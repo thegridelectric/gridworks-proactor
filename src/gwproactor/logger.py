@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from typing import Any, Optional
 
@@ -40,7 +41,7 @@ class MessageSummary:
         Returns:
             Formatted string.
         """
-        try:
+        with contextlib.suppress(Exception):
             if timestamp is None:
                 timestamp = pendulum.now("UTC")
             if include_timestamp:
@@ -72,9 +73,7 @@ class MessageSummary:
                 payload_type=payload_str,
                 message_id=message_id,
             )
-        except Exception as e:
-            print(f"ouch got {e}")
-            return ""
+        return ""
 
 
 class ProactorLogger(logging.LoggerAdapter):

@@ -430,7 +430,7 @@ def test_proactor_settings_root_validators(clean_test_env: Any) -> None:
             "/z/gridworks/foo/certs/parent_mqtt/private/parent_mqtt.pem",
             [
                 ("obj", DummyChildSettings(paths=Paths(name="foo"))),
-                ("dict", DummyChildSettings(paths=dict(name="foo"))),  # noqa
+                ("dict", DummyChildSettings(paths=dict(name="foo"))),
             ],
         ],
         [
@@ -454,8 +454,8 @@ def test_proactor_settings_root_validators(clean_test_env: Any) -> None:
                 (
                     "dict",
                     DummyChildSettings(
-                        paths=dict(name="foo"),  # noqa
-                        parent_mqtt=dict(  # noqa
+                        paths=dict(name="foo"),
+                        parent_mqtt=dict(
                             tls={"paths": {"ca_cert_path": explicit_ca_cert_path}}
                         ),
                     ),

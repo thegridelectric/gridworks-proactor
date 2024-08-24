@@ -1,4 +1,5 @@
 import abc
+import contextlib
 import re
 import shutil
 import subprocess
@@ -164,13 +165,13 @@ class SimpleDirectoryWriter(StubPersister):
             try:
                 with path.open("wb") as f:
                     f.write(content)
-            except Exception as e:  # pragma: no cover
+            except Exception as e:  # pragma: no cover  # noqa: BLE001
                 return Err(
                     problems.add_error(e).add_error(
                         WriteFailed("Open or write failed", uid=uid, path=path)
                     )
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Err(
                 problems.add_error(e).add_error(
                     PersisterError("Unexpected error", uid=uid)
@@ -264,13 +265,13 @@ class TimedRollingFilePersister(PersisterInterface):
                 with self._pending[uid].open("wb") as f:
                     f.write(content)
                 self._curr_bytes += len(content)
-            except Exception as e:  # pragma: no cover
+            except Exception as e:  # pragma: no cover  # noqa: BLE001
                 return Err(
                     problems.add_error(e).add_error(
                         WriteFailed("Open or write failed", uid=uid, path=existing_path)
                     )
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return Err(
                 problems.add_error(e).add_error(
                     PersisterError("Unexpected error", uid=uid)
@@ -293,7 +294,7 @@ class TimedRollingFilePersister(PersisterInterface):
                 if last_day_dir is not None and last_day_dir != day_dir:
                     shutil.rmtree(last_day_dir, ignore_errors=True)
                 last_day_dir = day_dir
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 problems.add_error(e)
                 problems.add_error(
                     PersisterError("Unexpected error", uid=uid, path=path)
@@ -307,7 +308,7 @@ class TimedRollingFilePersister(PersisterInterface):
                     or next(iter(self._pending.values())).parent != last_day_dir
                 ):
                     shutil.rmtree(last_day_dir, ignore_errors=True)
-        except Exception as e:  # pragma: no cover
+        except Exception as e:  # pragma: no cover  # noqa: BLE001
             problems.add_error(e)
             problems.add_error(PersisterError("Unexpected error"))
         if problems:
@@ -324,10 +325,8 @@ class TimedRollingFilePersister(PersisterInterface):
                 path_dir = path.parent
                 # Remove directory if empty.
                 # This is much faster than using iterdir.
-                try:
+                with contextlib.suppress(OSError):
                     path_dir.rmdir()
-                except OSError:
-                    ...
             else:
                 problems.add_warning(FileMissingWarning(uid=uid, path=path))
         else:
@@ -364,7 +363,7 @@ class TimedRollingFilePersister(PersisterInterface):
                 try:
                     with path.open("rb") as f:
                         content: bytes = f.read()
-                except Exception as e:  # pragma: no cover
+                except Exception as e:  # pragma: no cover  # noqa: BLE001
                     problems.add_error(e).add_error(
                         ReadFailed("Open or read failed", uid=uid, path=path)
                     )
@@ -379,8 +378,7 @@ class TimedRollingFilePersister(PersisterInterface):
         self._curr_bytes = 0
         paths: list[_PersistedItem] = []
         last_pat = time.time()
-        for base_dir_entry in self._base_dir.iterdir():
-            # noinspection PyBroadException
+        for base_dir_entry in self._base_dir.iterdir():  # noqa: PLR1702
             try:
                 if base_dir_entry.is_dir() and self._is_iso_parseable(base_dir_entry):
                     for day_dir_entry in base_dir_entry.iterdir():
@@ -389,18 +387,17 @@ class TimedRollingFilePersister(PersisterInterface):
                             if now > last_pat + self._reindex_pat_seconds:
                                 last_pat = now
                                 subprocess.run(self._pat_watchdog_args, check=True)
-                        # noinspection PyBroadException
                         try:
                             if persisted_item := self._persisted_item_from_file_path(
                                 day_dir_entry
                             ):
                                 self._curr_bytes += persisted_item.path.stat().st_size
                                 paths.append(persisted_item)
-                        except Exception as e:
+                        except Exception as e:  # noqa: BLE001
                             problems.add_error(e).add_error(
                                 ReindexError(path=day_dir_entry)
                             )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001, PERF203
                 problems.add_error(e).add_error(ReindexError())
         self._pending = dict(sorted(paths, key=lambda item: item.path))
         if problems:
@@ -424,21 +421,20 @@ class TimedRollingFilePersister(PersisterInterface):
     @classmethod
     def _persisted_item_from_file_path(cls, filepath: Path) -> Optional[_PersistedItem]:
         item = None
-        # noinspection PyBroadException
+
         try:
             match = cls.FILENAME_RGX.match(filepath.name)
             if match and cls._is_iso_parseable(match.group("dt")):
                 item = _PersistedItem(match.group("uid"), filepath)
-        except:  # pragma: no cover
+        except:  # pragma: no cover  # noqa: E722, S110
             pass
         return item
 
     @classmethod
     def _is_iso_parseable(cls, s: str | Path) -> bool:
-        # noinspection PyBroadException
         try:
             if isinstance(s, Path):
                 s = s.name
             return isinstance(pendulum.parse(s), DateTime)
-        except:
+        except:  # noqa: E722
             return False

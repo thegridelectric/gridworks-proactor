@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, ERA001
 
 import asyncio
 import logging
@@ -43,7 +43,7 @@ class _EventGen:
         self.corrupt = []
         self.empty = []
         self.missing = []
-        persister = proactor._event_persister  # noqa
+        persister = proactor._event_persister
         assert isinstance(persister, TimedRollingFilePersister)
         self.persister = persister
 

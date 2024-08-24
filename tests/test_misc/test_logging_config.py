@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, ERA001
 
 import logging
 import time

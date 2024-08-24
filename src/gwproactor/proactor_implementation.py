@@ -329,7 +329,6 @@ class Proactor(ServicesInterface, Runnable):
         return self._loop
 
     async def process_messages(self) -> None:
-        # noinspection PyBroadException
         try:
             self._start_processing_messages()
             while not self._stop_requested:
@@ -341,7 +340,6 @@ class Proactor(ServicesInterface, Runnable):
             if not isinstance(e, asyncio.exceptions.CancelledError):
                 self._logger.exception("ERROR in process_message")
                 self._logger.error("Stopping proactor")
-                # noinspection PyBroadException
                 try:
                     self.generate_event(
                         ShutdownEvent(
@@ -351,12 +349,12 @@ class Proactor(ServicesInterface, Runnable):
                             )
                         )
                     )
-                except:
+                except:  # noqa: E722
                     self._logger.exception("ERROR generating exception event")
-        # noinspection PyBroadException
+
         try:
             self.stop()
-        except:
+        except:  # noqa: E722
             self._logger.exception("ERROR stopping proactor")
 
     def start_tasks(self) -> None:
@@ -381,7 +379,7 @@ class Proactor(ServicesInterface, Runnable):
         try:
             # noinspection PyProtectedMember,PyUnresolvedReferences
             return sys._getframe(2).f_back.f_code.co_name  # noqa: SLF001
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return f"[ERROR extracting caller of _report_errors: {e}"
 
     def _report_error(self, error: Exception, msg: str = "") -> Result[bool, Exception]:
@@ -389,7 +387,7 @@ class Proactor(ServicesInterface, Runnable):
             if not msg:
                 msg = self._second_caller()
             self._report_errors([error], msg)
-        except Exception as e2:
+        except Exception as e2:  # noqa: BLE001
             return Err(e2)
         return Ok()
 
@@ -400,7 +398,7 @@ class Proactor(ServicesInterface, Runnable):
             if not msg:
                 msg = self._second_caller()
             self.generate_event(Problems(errors=errors).problem_event(msg))
-        except Exception as e2:
+        except Exception as e2:  # noqa: BLE001
             return Err(e2)
         return Ok()
 
@@ -660,10 +658,9 @@ class Proactor(ServicesInterface, Runnable):
         self._links.stop()
         for communicator in self._communicators.values():
             if isinstance(communicator, Runnable):
-                # noinspection PyBroadException
-                try:
+                try:  # noqa: SIM105
                     communicator.stop()
-                except:
+                except:  # noqa: E722, S110
                     pass
 
     async def join(self) -> None:
@@ -678,7 +675,7 @@ class Proactor(ServicesInterface, Runnable):
                         communicator.join(), name=f"{communicator_name}.join"
                     )
                 )
-        # noinspection PyBroadException
+
         try:
             while running:
                 self._logger.lifecycle(

@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import threading
 import time
 from typing import Coroutine, Optional, Sequence
@@ -88,17 +89,17 @@ class IOLoop(Communicator, IOLoopInterface):
     async def join(self) -> None:
         pass
         # this often generates errors, although tests pass:
-        # await async_polling_thread_join(self._io_thread)
+        # await async_polling_thread_join(self._io_thread)  # noqa: ERA001
 
     def _thread_run(self) -> None:
         try:
             self._io_loop.run_until_complete(self._async_run())
-        except Exception as e:  # noqa
+        except Exception as e:  # noqa: BLE001
             try:
                 summary = f"Unexpected IOLoop exception <{e}>"
-            except:  # noqa
+            except:  # noqa: E722
                 summary = "Unexpected IOLoop exception"
-            try:
+            with contextlib.suppress(Exception):
                 self._services.send_threadsafe(
                     Message(
                         Payload=Problems(errors=[e]).problem_event(
@@ -106,22 +107,18 @@ class IOLoop(Communicator, IOLoopInterface):
                         )
                     )
                 )
-            except:  # noqa
-                pass
-            try:
+            with contextlib.suppress(Exception):
                 self._services.send_threadsafe(
                     ShutdownMessage(
                         Src=self.name,
                         Reason=summary,
                     )
                 )
-            except:  # noqa
-                pass
         finally:
             self._io_loop.stop()
 
-    async def _async_run(self) -> None:
-        try:
+    async def _async_run(self) -> None:  # noqa: PLR0912
+        try:  # noqa: PLR1702
             while not self._stop_requested:
                 with self._lock:
                     tasks = self._started_tasks()
@@ -149,7 +146,7 @@ class IOLoop(Communicator, IOLoopInterface):
                                 exception = task.exception()
                                 if exception is not None:
                                     errors.append(exception)
-                            except Exception as retrieve_exception:
+                            except Exception as retrieve_exception:  # noqa: BLE001
                                 errors.append(retrieve_exception)
                     if errors:
                         raise Problems(

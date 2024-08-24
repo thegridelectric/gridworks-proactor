@@ -8,6 +8,7 @@ Main current limitation: each interaction between asyncio code and the mqtt clie
 """
 
 import asyncio
+import contextlib
 import enum
 import logging
 import ssl
@@ -101,18 +102,15 @@ class MQTTClientWrapper:
                     self._client_config.host, port=self._client_config.effective_port()
                 )
                 self._client.loop_forever(retry_first_connection=True)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 self._receive_queue.put(
                     MQTTProblemsMessage(
                         client_name=self.name, problems=Problems(errors=[e])
                     )
                 )
             finally:
-                # noinspection PyBroadException
-                try:
+                with contextlib.suppress(Exception):
                     self._client.disconnect()
-                except:
-                    pass
             if not self._stop_requested:
                 if backoff >= MAX_BACK_OFF:
                     backoff = 1
@@ -133,7 +131,7 @@ class MQTTClientWrapper:
         try:
             self._client.disconnect()
             self._thread.join()
-        except:  # noqa
+        except:  # noqa: E722, S110
             pass
 
     def publish(self, topic: str, payload: bytes, qos: int) -> MQTTMessageInfo:

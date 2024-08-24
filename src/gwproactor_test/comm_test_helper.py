@@ -181,7 +181,7 @@ class CommTestHelper:
         cls, settings: ProactorSettings
     ) -> list[MQTTClient]:
         clients = []
-        for _, v in settings._iter():  # noqa
+        for _, v in settings._iter():
             if isinstance(v, MQTTClient):
                 clients.append(v)
         return clients
@@ -244,13 +244,11 @@ class CommTestHelper:
             if helper.proactor is not None
         ]
         for proactor in proactors:
-            # noinspection PyBroadException
             try:
                 proactor.stop()
             except:
                 pass
         for proactor in proactors:
-            # noinspection PyBroadException
             try:
                 await proactor.join()
             except:

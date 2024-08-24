@@ -169,7 +169,6 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
     def _handle_message(self, message: Any) -> None:
         pass
 
-    # noinspection PyUnusedLocal,PyMethodMayBeStatic
     def _handle_exception(self, exception: Exception) -> bool:
         return False
 
@@ -195,8 +194,8 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
     def _put_to_async_queue(self, message: Any) -> None:
         self._channel.put_to_async_queue(message)
 
-    def run(self) -> None:
-        if self.running is None:
+    def run(self) -> None:  # noqa: C901
+        if self.running is None:  # noqa: PLR1702
             self.running = True
             self._last_pat_time = time.time()
             self._preiterate()
@@ -220,11 +219,11 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
                                 self._handle_message(message)
                         except queue.Empty:
                             pass
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001, PERF203
                     handle_exception_str = ""
                     try:
                         handled = self._handle_exception(e)
-                    except Exception as e2:
+                    except Exception as e2:  # noqa: BLE001
                         handled = False
                         handle_exception_str = traceback.format_exception(e2)
                     if not handled:

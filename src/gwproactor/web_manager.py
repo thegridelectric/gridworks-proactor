@@ -66,7 +66,7 @@ class _RunWebServer:
         finally:
             try:
                 await runner.cleanup()
-            except:  # noqa
+            except:
                 pass
 
 

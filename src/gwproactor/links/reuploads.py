@@ -57,8 +57,8 @@ class _ReuploadDiffLogger:  # pragma: no cover
         return f"--process_ack_for_reupload  {self.diff_str(path_dbg)}"
 
     def log_ack(self, path_dbg: int) -> None:
-        if self.reuploads is not None and self.reuploads._logger.path_enabled:  # noqa
-            self.reuploads._logger.path(self.ack_str(path_dbg))  # noqa
+        if self.reuploads is not None and self.reuploads._logger.path_enabled:
+            self.reuploads._logger.path(self.ack_str(path_dbg))
 
 
 class Reuploads:
