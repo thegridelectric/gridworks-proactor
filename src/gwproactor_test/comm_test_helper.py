@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import contextlib
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -154,7 +155,7 @@ class CommTestHelper:
         return self
 
     def start_proactor(self, proactor: Proactor) -> "CommTestHelper":
-        asyncio.create_task(proactor.run_forever(), name=f"{proactor.name}_run_forever")
+        asyncio.create_task(proactor.run_forever(), name=f"{proactor.name}_run_forever")  # noqa: RUF006
         return self
 
     def start(self) -> "CommTestHelper":
@@ -244,15 +245,11 @@ class CommTestHelper:
             if helper.proactor is not None
         ]
         for proactor in proactors:
-            try:
+            with contextlib.suppress(Exception):
                 proactor.stop()
-            except:
-                pass
         for proactor in proactors:
-            try:
+            with contextlib.suppress(Exception):
                 await proactor.join()
-            except:
-                pass
 
     async def __aenter__(self) -> "CommTestHelper":
         return self

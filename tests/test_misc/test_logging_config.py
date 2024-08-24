@@ -57,8 +57,7 @@ def test_logger_levels() -> None:
     # qualified_names()
     base_name = "foo"
     assert levels.qualified_logger_names(base_name) == {
-        field_name: f"{base_name}.{field_name}"
-        for field_name in levels.__fields__.keys()
+        field_name: f"{base_name}.{field_name}" for field_name in levels.__fields__
     }
 
     # logger_names_to_levels()
@@ -117,7 +116,7 @@ def test_logging_settings() -> None:
     logging_settings = LoggingSettings()
     exp_logger_names = {
         field_name: f"gridworks.{field_name}"
-        for field_name in logging_settings.levels.__fields__.keys()
+        for field_name in logging_settings.levels.__fields__
     }
     exp_logger_names["base"] = logging_settings.base_log_name
     assert logging_settings.qualified_logger_names() == exp_logger_names

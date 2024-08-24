@@ -14,7 +14,6 @@ class StopMe:
 
     def loop(self) -> None:
         while self.running:
-            print(".")
             responsive_sleep(
                 self,
                 1.0,

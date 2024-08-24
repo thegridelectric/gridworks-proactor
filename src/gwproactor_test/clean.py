@@ -20,6 +20,10 @@ TEST_HARDWARE_LAYOUT_PATH = Path(__file__).parent / "config" / DEFAULT_LAYOUT_FI
 DUMMY_TEST_HARDWARE_LAYOUT_PATH = (
     Path(__file__).parent / "config" / "dummy-hardware-layout.json"
 )
+DEFAULT_PREFIXES = [
+    DUMMY_CHILD_ENV_PREFIX,
+    DUMMY_PARENT_ENV_PREFIX,
+]
 
 
 class DefaultTestEnv:
@@ -45,10 +49,7 @@ class DefaultTestEnv:
     Working test directory creation can be suppressed by passing xdg_home as None.
     """
 
-    DEFAULT_PREFIXES = [
-        DUMMY_CHILD_ENV_PREFIX,
-        DUMMY_PARENT_ENV_PREFIX,
-    ]
+    DEFAULT_PREFIXES = DEFAULT_PREFIXES
 
     xdg_home: Path | NoneType = None
     src_test_layout: Path = TEST_HARDWARE_LAYOUT_PATH
@@ -58,6 +59,7 @@ class DefaultTestEnv:
 
     def __init__(
         self,
+        *,
         xdg_home: Path | str | None = None,
         src_test_layout: Path = TEST_HARDWARE_LAYOUT_PATH,
         copy_test_layout: bool = True,
@@ -76,7 +78,7 @@ class DefaultTestEnv:
             self.prefixes = prefixes[:]
 
     @classmethod
-    def get_default_prefixes(cls):
+    def get_default_prefixes(cls) -> list[str]:
         return cls.DEFAULT_PREFIXES[:]
 
     @contextlib.contextmanager

@@ -6,7 +6,7 @@ import time
 from inspect import getframeinfo, stack
 from pathlib import Path
 from types import TracebackType
-from typing import Awaitable, Callable, Optional, Type, Union
+from typing import Awaitable, Callable, Optional, Self, Type, Union
 
 Predicate = Callable[[], bool]
 AwaitablePredicate = Callable[[], Awaitable[bool]]
@@ -20,8 +20,9 @@ class StopWatch:
     end: float = 0
     elapsed: float = 0
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.start = time.time()
+        return self
 
     def __exit__(
         self,
@@ -34,9 +35,9 @@ class StopWatch:
         return False
 
 
-async def await_for(
+async def await_for(  # noqa: C901
     f: Union[Predicate, AwaitablePredicate],
-    timeout: float,
+    timeout: float,  # noqa: ASYNC109
     tag: str = "",
     raise_timeout: bool = True,
     retry_duration: float = 0.1,
@@ -128,9 +129,8 @@ def wait_for(
     """
     now = time.time()
     until = now + timeout
-    if now >= until:
-        if f():
-            return True
+    if now >= until and f():
+        return True
     while now < until:
         if f():
             return True

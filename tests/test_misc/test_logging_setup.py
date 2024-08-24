@@ -69,7 +69,7 @@ def test_get_default_logging_config(
     formatter = settings.logging.formatter.create()
     text = ""
     for i, logger_name in enumerate(
-        [settings.logging.base_log_name] + list(logger_names.values())
+        [settings.logging.base_log_name, *list(logger_names.values())]
     ):
         logger = logging.getLogger(logger_name)
         msg = "%d: %s"

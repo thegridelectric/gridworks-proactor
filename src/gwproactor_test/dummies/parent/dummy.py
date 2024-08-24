@@ -25,7 +25,7 @@ class ParentMQTTCodec(MQTTCodec):
 
     def validate_source_alias(self, source_alias: str) -> None:
         if source_alias != DUMMY_CHILD_NAME:
-            raise Exception(f"alias {source_alias} not my Scada!")
+            raise ValueError(f"alias {source_alias} not my Scada!")
 
 
 class DummyParent(Proactor):

@@ -1,7 +1,7 @@
 import logging
 import sys
 from types import TracebackType
-from typing import Optional, Sequence, Type
+from typing import Optional, Self, Sequence, Type
 
 import pytest
 
@@ -50,7 +50,7 @@ class LoggerGuard:
         assert set(self.logger.handlers) == self.handlers
         assert set(self.logger.filters) == self.filters
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
@@ -79,7 +79,7 @@ class LoggerGuards:
         for guard in self.guards.values():
             guard.restore()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(

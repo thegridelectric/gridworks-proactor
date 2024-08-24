@@ -45,7 +45,7 @@ class PatWatchdogWithFile(ExternalWatchdogCommandBuilder):
     """Explicitly set this path on the class before running tests"""
 
     @classmethod
-    def default_pat_args(cls, pid: Optional[int] = None) -> list[str]:
+    def default_pat_args(cls, pid: Optional[int] = None) -> list[str]:  # noqa: ARG003
         pat_code = "from pathlib import Path; import time; p = Path(f'"
         pat_code += str(cls.pat_dir / "pat")
         pat_code += "{time.time()}.txt'); p.open('w')"
@@ -359,7 +359,7 @@ def test_persister_max_size() -> None:
             )
 
         # a few more - now size should not change
-        for i in range(1, num_events_supported * 2):
+        for _ in range(1, num_events_supported * 2):
             inc_event()
             uids.append(event.MessageId)
             uids = uids[1:]
@@ -688,8 +688,8 @@ def test_persister_size_and_roll() -> None:
         removed_uids = p.pending_ids()[:4]
         paths = [p.get_path(uid) for uid in removed_uids]
         day_dirs = [path.parent for path in paths]
-        assert all([path.exists() for path in paths])
-        assert all([day_dir.exists() for day_dir in day_dirs])
+        assert all(path.exists() for path in paths)
+        assert all(day_dir.exists() for day_dir in day_dirs)
         uids.append(inc_uid())
         uids = uids[4:]
         exact_days.append(d5)
@@ -699,7 +699,7 @@ def test_persister_size_and_roll() -> None:
         assert_contents(
             p, num_pending=6, curr_bytes=max_size, uids=uids, exact_days=exact_days
         )
-        assert all([not path.exists() for path in paths])
+        assert all(not path.exists() for path in paths)
         assert not day_dirs[0].exists()
         assert not day_dirs[1].exists()
         assert not day_dirs[2].exists()

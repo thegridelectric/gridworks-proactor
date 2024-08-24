@@ -21,7 +21,7 @@ from gwproactor.stats import LinkStats, ProactorStats
 
 
 def split_subscriptions(client_wrapper: MQTTClientWrapper) -> Tuple[int, Optional[int]]:
-    for i, (topic, qos) in enumerate(client_wrapper.subscription_items()):
+    for topic, qos in client_wrapper.subscription_items():
         MQTTClientWrapper.subscribe(client_wrapper, topic, qos)
     return MQTT_ERR_SUCCESS, None
 
@@ -54,25 +54,25 @@ class RecorderInterface(ServicesInterface, Runnable):
     def make_stats(cls) -> RecorderStats: ...
 
     @abstractmethod
-    def split_client_subacks(self, client_name: str): ...
+    def split_client_subacks(self, client_name: str) -> None: ...
 
     @abstractmethod
-    def restore_client_subacks(self, client_name: str): ...
+    def restore_client_subacks(self, client_name: str) -> None: ...
 
     @abstractmethod
-    def pause_subacks(self): ...
+    def pause_subacks(self) -> None: ...
 
     @abstractmethod
-    def release_subacks(self, num_released: int = -1): ...
+    def release_subacks(self, num_released: int = -1) -> None: ...
 
     @abstractmethod
-    def ping_peer(self): ...
+    def ping_peer(self) -> None: ...
 
     @abstractmethod
-    def summary_str(self): ...
+    def summary_str(self) -> None: ...
 
     @abstractmethod
-    def summarize(self): ...
+    def summarize(self) -> None: ...
 
     @property
     @abstractmethod
@@ -156,7 +156,7 @@ class RecorderLinks(LinkManager):
         super().generate_event(event)
 
 
-def make_recorder_class(
+def make_recorder_class(  # noqa: C901
     proactor_type: Type[ProactorT],
 ) -> Callable[..., RecorderInterface]:
     class Recorder(proactor_type):
@@ -164,7 +164,9 @@ def make_recorder_class(
         pending_subacks: list[Message]
         mqtt_messages_dropped: bool
 
-        def __init__(self, name: str, settings: ProactorSettings, **kwargs_) -> None:
+        def __init__(
+            self, name: str, settings: ProactorSettings, **kwargs_: Any
+        ) -> None:
             super().__init__(name=name, settings=settings, **kwargs_)
             self.subacks_paused = False
             self.pending_subacks = []
@@ -182,7 +184,7 @@ def make_recorder_class(
         def split_client_subacks(self: ProactorT, client_name: str) -> None:
             client_wrapper = self.mqtt_client_wrapper(client_name)
 
-            def member_split_subscriptions():
+            def member_split_subscriptions() -> Tuple[int, Optional[int]]:
                 return split_subscriptions(client_wrapper)
 
             client_wrapper.subscribe_all = member_split_subscriptions
@@ -216,7 +218,7 @@ def make_recorder_class(
             return self._links.release_acks(clear, num_to_release=num_to_release)
 
         def set_ack_timeout_seconds(self, delay: float) -> None:
-            self._links._acks._default_delay_seconds = delay
+            self.links.ack_manager._default_delay_seconds = delay  # noqa: SLF001
 
         def drop_mqtt(self, drop: bool) -> None:
             self.mqtt_messages_dropped = drop

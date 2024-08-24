@@ -133,7 +133,7 @@ def test_tls_info() -> None:
 
 def test_mqtt_client_settings() -> None:
     """Test MQTTClient"""
-    password = "d"
+    password = "d"  # noqa: S105
     port = 1883
     exp: dict = {
         "host": "a",
@@ -212,7 +212,7 @@ def assert_paths(paths: Paths, **kwargs: Any) -> None:
     for field, exp_value in exp.items():
         got_value = getattr(paths, field)
         if isinstance(got_value, Path) and not isinstance(exp_value, Path):
-            exp_value = Path(exp_value)
+            exp_value = Path(exp_value)  # noqa: PLW2901
             exp[field] = exp_value
         assert (
             got_value == exp_value
@@ -324,7 +324,7 @@ def test_paths(clean_test_env: Any, tmp_path: Path) -> None:
     )
 
 
-def test_paths_mkdirs(clean_test_env: Any, tmp_path: Path):
+def test_paths_mkdirs(clean_test_env: Any, tmp_path: Path) -> None:
     paths = Paths()
     assert not paths.data_dir.exists()
     # Get rid of the config dir created inside of tmp_path by clean_test_env
@@ -419,7 +419,7 @@ def test_proactor_settings_root_validators(clean_test_env: Any) -> None:
             "/z/gridworks/child/certs/parent_mqtt/private/parent_mqtt.pem",
             [
                 ("obj", DummyChildSettings(paths=Paths())),
-                ("dict", DummyChildSettings(paths={})),
+                ("dict", DummyChildSettings(paths={})),  # noqa
             ],
         ],
         [
@@ -430,7 +430,7 @@ def test_proactor_settings_root_validators(clean_test_env: Any) -> None:
             "/z/gridworks/foo/certs/parent_mqtt/private/parent_mqtt.pem",
             [
                 ("obj", DummyChildSettings(paths=Paths(name="foo"))),
-                ("dict", DummyChildSettings(paths=dict(name="foo"))),
+                ("dict", DummyChildSettings(paths=dict(name="foo"))),  # noqa
             ],
         ],
         [
@@ -454,8 +454,8 @@ def test_proactor_settings_root_validators(clean_test_env: Any) -> None:
                 (
                     "dict",
                     DummyChildSettings(
-                        paths=dict(name="foo"),
-                        parent_mqtt=dict(
+                        paths=dict(name="foo"),  # noqa
+                        parent_mqtt=dict(  # noqa
                             tls={"paths": {"ca_cert_path": explicit_ca_cert_path}}
                         ),
                     ),

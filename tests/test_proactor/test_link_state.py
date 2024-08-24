@@ -160,11 +160,11 @@ class _State:
             cases: list[_Case] = case
             starts = [case.start for case in cases]
             inputs = [case.input for case in cases]
-            if any([start != cases[0].start for start in starts]):
+            if any(start != cases[0].start for start in starts):
                 raise ValueError(
                     f"If multiple cases added they must share the same start state. Found states: {starts}"
                 )
-            if any([input_ != cases[0].input for input_ in inputs]):
+            if any(input_ != cases[0].input for input_ in inputs):
                 raise ValueError(
                     f"If multiple cases added they must share the same input. Found inputs: {inputs}"
                 )
@@ -193,7 +193,7 @@ class _Cases:
         else:
             cases: list[_Case] = case
             starts = [case.start for case in cases]
-            if any([start != cases[0].start for start in starts]):
+            if any(start != cases[0].start for start in starts):
                 raise ValueError(
                     f"If multiple cases added they must share the same start state. Found states: {starts}"
                 )

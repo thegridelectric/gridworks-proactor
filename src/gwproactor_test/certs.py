@@ -1,5 +1,7 @@
 """Generate or copy test certificates for MQTT using TLS."""
 
+# ruff: noqa: T201
+
 import os
 import shutil
 import subprocess
@@ -94,7 +96,7 @@ def _copy_keys(test_cert_dir: Path, dst_paths: TLSPaths) -> None:
             str(src_paths.cert_path),
         ]
         print(f"Generating keys with command:\n  {' '.join(gwcert_command)}")
-        result = subprocess.run(gwcert_command, capture_output=True, check=True)
+        result = subprocess.run(gwcert_command, capture_output=True, check=True)  # noqa: S603
         print(result.stdout.decode("utf-8"))
     dst_paths.mkdirs()
     shutil.copy2(src_paths.ca_cert_path, dst_paths.ca_cert_path)
@@ -104,11 +106,7 @@ def _copy_keys(test_cert_dir: Path, dst_paths: TLSPaths) -> None:
 
 def uses_tls(model: BaseModel | BaseSettings) -> bool:
     """Check whether any MQTTClient in the model have MQTTClient.tls.use_tls == True."""
-    for k, v in model._iter():
-        if isinstance(v, MQTTClient):
-            if v.tls.use_tls:
-                return True
-    return False
+    return any(isinstance(v, MQTTClient) and v.tls.use_tls for k, v in model._iter())
 
 
 def copy_keys(
