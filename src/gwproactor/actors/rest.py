@@ -7,7 +7,7 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Optional
 
-import aiohttp as aiohttp
+import aiohttp
 import yarl
 from aiohttp import ClientResponse, ClientSession, ClientTimeout
 from gwproto import Message
@@ -22,11 +22,11 @@ Converter = Callable[[ClientResponse], Awaitable[Optional[Message]]]
 ThreadSafeForwarder = Callable[[Message], Any]
 
 
-async def null_converter(response: ClientResponse) -> Optional[Message]:
+async def null_converter(_response: ClientResponse) -> Optional[Message]:
     return None
 
 
-def null_forwarder(message: Message) -> None:
+def null_forwarder(_message: Message) -> None:
     return None
 
 
@@ -61,7 +61,7 @@ class RESTPoller:
     _converter: Converter
     _forward: ThreadSafeForwarder
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         name: str,
         rest: RESTPollerSettings,
@@ -123,7 +123,7 @@ class RESTPoller:
         except Exception as e:
             response = None
             if self._rest.errors.request.report:
-                try:
+                try:  # noqa: SIM105
                     self._forward(
                         Message(
                             Payload=Problems(errors=[e]).problem_event(
@@ -133,10 +133,10 @@ class RESTPoller:
                             )
                         )
                     )
-                except:
+                except:  # noqa: E722, S110
                     pass
             if self._rest.errors.request.raise_exception:
-                raise e
+                raise
         return response
 
     async def _convert(self, response: ClientResponse) -> Optional[Message]:
@@ -145,7 +145,7 @@ class RESTPoller:
         except Exception as convert_exception:
             message = None
             if self._rest.errors.convert.report:
-                try:
+                try:  # noqa: SIM105
                     self._forward(
                         Message(
                             Payload=Problems(errors=[convert_exception]).problem_event(
@@ -155,37 +155,31 @@ class RESTPoller:
                             )
                         )
                     )
-                except:
+                except:  # noqa: E722, S110
                     pass
             if self._rest.errors.convert.raise_exception:
-                raise convert_exception
+                raise
         return message
 
     def _get_next_sleep_seconds(self) -> float:
         return self._rest.poll_period_seconds
 
     async def _run(self) -> None:
-        try:
-            reconnect = True
-            while reconnect:
-                args = self._session_args
-                if args is None:
-                    args = self._make_session_args()
-                async with aiohttp.ClientSession(
-                    args.base_url, **args.kwargs
-                ) as session:
-                    while True:
-                        response = await self._make_request(session)
-                        if response is not None:
-                            async with response:
-                                message = await self._convert(response)
-                            if message is not None:
-                                self._forward(message)
-                        sleep_seconds = self._get_next_sleep_seconds()
-                        await asyncio.sleep(sleep_seconds)
-
-        except Exception as e:
-            raise e
+        reconnect = True
+        while reconnect:
+            args = self._session_args
+            if args is None:
+                args = self._make_session_args()
+            async with aiohttp.ClientSession(args.base_url, **args.kwargs) as session:
+                while True:
+                    response = await self._make_request(session)
+                    if response is not None:
+                        async with response:
+                            message = await self._convert(response)
+                        if message is not None:
+                            self._forward(message)
+                    sleep_seconds = self._get_next_sleep_seconds()
+                    await asyncio.sleep(sleep_seconds)
 
     def start(self) -> None:
         self._task_id = self._io_loop_manager.add_io_coroutine(
@@ -215,7 +209,7 @@ class RESTPollerActor(Actor):
             display_name = getattr(
                 component, "display_name", "MISSING ATTRIBUTE display_name"
             )
-            raise ValueError(
+            raise TypeError(
                 f"ERROR. Component <{display_name}> has type {type(component)}. "
                 f"Expected RESTPollerComponent.\n"
                 f"  Node: {self.name}\n"

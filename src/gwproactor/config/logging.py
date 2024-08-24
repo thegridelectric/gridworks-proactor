@@ -78,15 +78,16 @@ class LoggerLevels(BaseModel):
         return self._logger_levels(base_log_name, self.__fields_set__)
 
     @validator("*")
+    @classmethod
     def logging_level_str_to_int(cls, v: int | str) -> int:
         try:
             int_v = int(v)
-        except:
+        except:  # noqa: E722
             if hasattr(v, "upper"):
                 v = v.upper()
             int_v = logging.getLevelName(v)
             if not isinstance(int_v, int):
-                raise ValueError(
+                raise ValueError(  # noqa: B904, TRY004
                     f"Could not convert level ({v}/{type(v)}) to an int, either by cast or by logging.getLevelName()"
                 )
         return int_v

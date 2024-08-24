@@ -67,10 +67,9 @@ class Problems(ValueError):
         return str(self)
 
     def problem_event(self, summary: str, src: str = "") -> ProblemEvent:
-        if self.errors:
-            problem_type = ProblemType.error
-        else:
-            problem_type = ProblemType.warning
         return ProblemEvent(
-            Src=src, ProblemType=problem_type, Summary=summary, Details=str(self)
+            Src=src,
+            ProblemType=ProblemType.error if self.errors else ProblemType.warning,
+            Summary=summary,
+            Details=str(self),
         )

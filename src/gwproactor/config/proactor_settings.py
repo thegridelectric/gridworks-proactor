@@ -21,6 +21,7 @@ class ProactorSettings(BaseSettings):
         env_nested_delimiter = "__"
 
     @validator("paths", always=True)
+    @classmethod
     def get_paths(cls, v: Paths) -> Paths:
         if v is None:
             v = Paths()
@@ -42,10 +43,11 @@ class ProactorSettings(BaseSettings):
         return values
 
     @root_validator(skip_on_failure=True)
+    @classmethod
     def post_root_validator(cls, values: dict) -> dict:
         """Update unset paths of any member MQTTClient's TLS paths based on ProactorSettings 'paths' member."""
         if not isinstance(values["paths"], Paths):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 f"ERROR. 'paths' member must be instance of Paths. Got: {type(values['paths'])}"
             )
         for k, v in values.items():

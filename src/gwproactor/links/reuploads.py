@@ -58,8 +58,8 @@ class _ReuploadDiffLogger:  # pragma: no cover
         return f"--process_ack_for_reupload  {self.diff_str(path_dbg)}"
 
     def log_ack(self, path_dbg: int) -> None:
-        if self.reuploads is not None and self.reuploads._logger.path_enabled:
-            self.reuploads._logger.path(self.ack_str(path_dbg))
+        if self.reuploads is not None and self.reuploads.logger.path_enabled:
+            self.reuploads.logger.path(self.ack_str(path_dbg))
 
 
 class Reuploads:
@@ -165,6 +165,10 @@ class Reuploads:
     def num_reuploaded_unacked(self) -> int:
         return len(self._reuploaded_unacked)
 
+    @property
+    def logger(self) -> ProactorLogger:
+        return self._logger
+
     def reuploading(self) -> bool:
         return bool(len(self._reuploaded_unacked) + len(self._reupload_pending))
 
@@ -198,7 +202,7 @@ class Reuploads:
             else:
                 state_str = "reupload complete."
             self._logger.info(
-                f"start_reupload: sent {num_reupload_now} events. "
+                f"start_reupload: sent {num_reupload_now} events. "  # noqa: G004
                 f"{state_str} "
                 f"Total events in reupload: {num_pending_events}."
             )

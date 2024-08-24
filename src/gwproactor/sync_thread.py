@@ -37,7 +37,7 @@ async def async_polling_thread_join(
     except Exception as e:
         returned_e = e
         if raise_errors:
-            raise e
+            raise
     return returned_e
 
 
@@ -142,7 +142,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
     pat_timeout: Optional[float]
     _last_pat_time: float
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         channel: Optional[SyncAsyncQueueWriter] = None,
         name: Optional[str] = None,
@@ -172,7 +172,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
     def _handle_message(self, message: Any) -> None:
         pass
 
-    def _handle_exception(self, exception: Exception) -> bool:
+    def _handle_exception(self, exception: Exception) -> bool:  # noqa
         return False
 
     def request_stop(self) -> None:
@@ -251,5 +251,5 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
         self._last_pat_time = time.time()
         self._put_to_async_queue(PatInternalWatchdogMessage(src=self.name))
 
-    async def async_join(self, timeout: float = None) -> None:
+    async def async_join(self, timeout: Optional[float] = None) -> None:  # noqa: ASYNC109
         await async_polling_thread_join(self, timeout)

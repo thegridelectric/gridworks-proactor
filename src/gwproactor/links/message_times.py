@@ -28,10 +28,7 @@ class LinkMessageTimes:
         link_poll_seconds: float = MQTT_LINK_POLL_SECONDS,
         relative: bool = True,
     ) -> str:
-        if relative:
-            adjust = import_time
-        else:
-            adjust = 0
+        adjust = import_time if relative else 0
         return (
             f"n:{time.time() - adjust:5.2f}  lps:{link_poll_seconds:5.2f}  "
             f"ls:{self.last_send - adjust:5.2f}  lr:{self.last_recv - adjust:5.2f}  "

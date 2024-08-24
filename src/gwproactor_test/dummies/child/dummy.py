@@ -1,3 +1,4 @@
+import typing
 from typing import Optional
 
 from gwproto import (
@@ -33,7 +34,7 @@ class ChildMQTTCodec(MQTTCodec):
 
     def validate_source_alias(self, source_alias: str) -> None:
         if source_alias != DUMMY_PARENT_NAME:
-            raise Exception(
+            raise ValueError(
                 f"alias {source_alias} not my AtomicTNode ({DUMMY_PARENT_NAME})!"
             )
 
@@ -81,5 +82,5 @@ class DummyChild(Proactor):
         return self.name
 
     @property
-    def settings(self):
-        return self._settings
+    def settings(self) -> DummyChildSettings:
+        return typing.cast(DummyChildSettings, self._settings)

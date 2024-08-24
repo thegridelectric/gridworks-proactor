@@ -14,5 +14,6 @@ class DummyChildSettings(ProactorSettings):
         env_prefix = DUMMY_CHILD_ENV_PREFIX
 
     @root_validator(pre=True)
+    @classmethod
     def pre_root_validator(cls, values: dict) -> dict:
         return ProactorSettings.update_paths_name(values, DUMMY_CHILD_NAME)

@@ -94,7 +94,7 @@ class MQTTClientWrapper:
         self._stop_requested = False
 
     def _client_thread(self) -> None:
-        MAX_BACK_OFF = 1024
+        max_back_off = 1024
         backoff = 1
         while not self._stop_requested:
             try:
@@ -112,10 +112,10 @@ class MQTTClientWrapper:
                 with contextlib.suppress(Exception):
                     self._client.disconnect()
             if not self._stop_requested:
-                if backoff >= MAX_BACK_OFF:
+                if backoff >= max_back_off:
                     backoff = 1
                 else:
-                    backoff = min(backoff * 2, MAX_BACK_OFF)
+                    backoff = min(backoff * 2, max_back_off)
                 responsive_sleep(
                     self,
                     backoff,

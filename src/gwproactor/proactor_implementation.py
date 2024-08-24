@@ -151,7 +151,7 @@ class Proactor(ServicesInterface, Runnable):
         return ProactorStats()
 
     @classmethod
-    def make_event_persister(cls, settings: ProactorSettings) -> PersisterInterface:
+    def make_event_persister(cls, settings: ProactorSettings) -> PersisterInterface:  # noqa: ARG003
         return StubPersister()
 
     def send(self, message: Message) -> None:
@@ -339,7 +339,7 @@ class Proactor(ServicesInterface, Runnable):
         except Exception as e:
             if not isinstance(e, asyncio.exceptions.CancelledError):
                 self._logger.exception("ERROR in process_message")
-                self._logger.error("Stopping proactor")
+                self._logger.error("Stopping proactor")  # noqa: TRY400
                 try:
                     self.generate_event(
                         ShutdownEvent(
@@ -360,7 +360,8 @@ class Proactor(ServicesInterface, Runnable):
     def start_tasks(self) -> None:
         self._tasks = [
             asyncio.create_task(self.process_messages(), name="process_messages"),
-        ] + self._links.start_ping_tasks()
+            *self._links.start_ping_tasks(),
+        ]
         self._start_derived_tasks()
 
     def _start_derived_tasks(self) -> None:
@@ -405,7 +406,7 @@ class Proactor(ServicesInterface, Runnable):
     def _start_processing_messages(self) -> None:
         """Hook for processing before any messages are pulled from queue"""
 
-    async def process_message(self, message: Message) -> None:
+    async def process_message(self, message: Message) -> None:  # noqa: C901, PLR0912
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_enter(
                 "++Proactor.process_message %s/%s",
@@ -558,13 +559,15 @@ class Proactor(ServicesInterface, Runnable):
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def _derived_recv_deactivated(
-        self, transition: LinkManagerTransition
+        self,
+        transition: LinkManagerTransition,  # noqa: ARG002
     ) -> Result[bool, Exception]:
         return Ok()
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def _derived_recv_activated(
-        self, transition: Transition
+        self,
+        transition: Transition,  # noqa: ARG002
     ) -> Result[bool, Exception]:
         return Ok()
 
@@ -652,7 +655,6 @@ class Proactor(ServicesInterface, Runnable):
     def stop(self) -> None:
         self._stop_requested = True
         for task in self._tasks:
-            # TODO: CS - Send self a shutdown message instead?
             if not task.done():
                 task.cancel()
         self._links.stop()
@@ -691,9 +693,11 @@ class Proactor(ServicesInterface, Runnable):
                 for task in done:
                     if not task.cancelled() and (exception := task.exception()):
                         self._logger.error(
-                            f"EXCEPTION in task {task.get_name()}  {exception}"
+                            "EXCEPTION in task %(name)s  %(exception)s",
+                            name=task.get_name(),
+                            exception=exception,
                         )
                         self._logger.error(traceback.format_tb(exception.__traceback__))
-        except Exception as e:
-            self._logger.exception("ERROR in Proactor.join: %s <%s>", type(e), e)
+        except Exception:
+            self._logger.exception("ERROR in Proactor.join")
         self._logger.lifecycle("--Proactor.join()")

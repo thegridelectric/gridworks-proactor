@@ -61,12 +61,12 @@ class _RunWebServer:
                 **self.config.Kwargs,
             )
             await site.start()
-            while True:
+            while True:  # noqa: ASYNC110
                 await asyncio.sleep(10)
         finally:
-            try:
+            try:  # noqa: SIM105
                 await runner.cleanup()
-            except:
+            except:  # noqa: E722, S110
                 pass
 
 
@@ -79,7 +79,7 @@ class _WebManager(Communicator, Runnable):
         self._configs = {}
         self._routes = defaultdict(list)
 
-    def process_message(self, message: Message) -> Result[bool, Exception]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:  # noqa: ARG002
         raise ValueError("_WebManager does not currently process any messages")
 
     def disable(self) -> None:
