@@ -8,7 +8,7 @@ from gwproto import as_enum
 from gwproto.message import Header, Message, ensure_arg
 from gwproto.messages import EventBase
 from paho.mqtt.client import MQTT_ERR_UNKNOWN, MQTTMessage
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from gwproactor.config import LoggerLevels
 from gwproactor.problems import Problems
@@ -34,7 +34,7 @@ class KnownNames(Enum):
 
 class MQTTClientsPayload(BaseModel):
     client_name: str
-    userdata: Optional[Any]
+    userdata: Optional[Any] = None
 
 
 MQTTClientsPayloadT = TypeVar("MQTTClientsPayloadT", bound=MQTTClientsPayload)
@@ -69,7 +69,7 @@ class MQTTMessageModel(BaseModel):
     @classmethod
     def from_mqtt_message(cls, message: MQTTMessage) -> "MQTTMessageModel":
         model = MQTTMessageModel()
-        for field_name in model.__fields__:
+        for field_name in model.model_fields:
             setattr(model, field_name, getattr(message, field_name))
         return model
 
@@ -179,9 +179,7 @@ class MQTTDisconnectMessage(MQTTClientMessage[MQTTDisconnectPayload]):
 
 class MQTTProblemsPayload(MQTTCommEventPayload):
     problems: Problems
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class MQTTProblemsMessage(MQTTClientMessage[MQTTCommEventPayload]):
@@ -270,7 +268,7 @@ class DBGPayload(BaseModel):
     Command: Optional[DBGCommands] = None
     TypeName: Literal["gridworks.proactor.dbg"] = "gridworks.proactor.dbg"
 
-    @validator("Command", pre=True)
+    @field_validator("Command", mode="before")
     @classmethod
     def command_value(cls, v: Any) -> Optional[DBGCommands]:
         return as_enum(v, DBGCommands)

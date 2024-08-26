@@ -34,7 +34,7 @@ def to_client_timeout(
     timeout: Optional[AioHttpClientTimeout],
 ) -> Optional[ClientTimeout]:
     if timeout is not None:
-        return ClientTimeout(**timeout.dict())
+        return ClientTimeout(**timeout.model_dump())
     return None
 
 
@@ -91,7 +91,7 @@ class RESTPoller:
         return SessionArgs(
             self._make_base_url(),
             dict(
-                self._rest.session.dict(
+                self._rest.session.model_dump(
                     exclude={"base_url", "timeout"},
                     exclude_unset=True,
                 ),
@@ -104,7 +104,7 @@ class RESTPoller:
             self._rest.request.method,
             self._make_url(),
             dict(
-                self._rest.request.dict(
+                self._rest.request.model_dump(
                     exclude={"method", "url", "timeout"},
                     exclude_unset=True,
                 ),

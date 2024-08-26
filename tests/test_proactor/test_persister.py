@@ -232,7 +232,7 @@ def test_persister_happy_path(tmp_path: Path) -> None:
         Summary="Problems, I've got a few",
         Details="Too numerous to name",
     )
-    event_bytes = event.json().encode()
+    event_bytes = event.model_dump_json().encode()
 
     # empty persister
     persister = TimedRollingFilePersister(settings.paths.event_dir)
@@ -262,8 +262,8 @@ def test_persister_happy_path(tmp_path: Path) -> None:
 
     # deserialize
     loaded = json.loads(retrieved.value.decode("utf-8"))
-    assert loaded == json.loads(event.json())
-    loaded_event = ProblemEvent.parse_raw(retrieved.value)
+    assert loaded == json.loads(event.model_dump_json())
+    loaded_event = ProblemEvent.model_validate_json(retrieved.value)
     assert loaded_event == event
 
     # add another
@@ -272,8 +272,8 @@ def test_persister_happy_path(tmp_path: Path) -> None:
         Summary="maybe not great",
         ProblemType=gwproto.messages.Problems.warning,
     )
-    event2_bytes = event2.json().encode()
-    result = persister.persist(event2.MessageId, event2.json().encode())
+    event2_bytes = event2.model_dump_json().encode()
+    result = persister.persist(event2.MessageId, event2.model_dump_json().encode())
     assert result.is_ok()
     assert_contents(
         persister,
@@ -346,7 +346,7 @@ def test_persister_max_size() -> None:
     def inc_event() -> None:
         event.MessageId = f"{int(event.MessageId) + 1:2d}"
 
-    event_bytes = event.json().encode()
+    event_bytes = event.model_dump_json().encode()
     num_events_supported = 4
     with freeze_time(_today()):
         # empty persister
@@ -360,7 +360,7 @@ def test_persister_max_size() -> None:
         for i in range(1, num_events_supported + 1):
             inc_event()
             uids.append(event.MessageId)
-            result = p.persist(event.MessageId, event.json().encode())
+            result = p.persist(event.MessageId, event.model_dump_json().encode())
             assert result.is_ok(), str(result)
             assert_contents(
                 p, num_pending=i, curr_bytes=i * len(event_bytes), uids=uids
@@ -371,7 +371,7 @@ def test_persister_max_size() -> None:
             inc_event()
             uids.append(event.MessageId)
             uids = uids[1:]
-            result = p.persist(event.MessageId, event.json().encode())
+            result = p.persist(event.MessageId, event.model_dump_json().encode())
             assert result.is_ok(), str(result)
             assert_contents(
                 p,
@@ -384,7 +384,7 @@ def test_persister_max_size() -> None:
         inc_event()
         old_size = len(event_bytes)
         event.Details *= 2
-        big_event_bytes = event.json().encode()
+        big_event_bytes = event.model_dump_json().encode()
         exp_size = p.curr_bytes - (2 * old_size) + len(big_event_bytes)
         exp_pending = num_events_supported - 1
         uids.append(event.MessageId)
@@ -396,7 +396,7 @@ def test_persister_max_size() -> None:
         # Cannot add one too large, state of persister doesn't change
         inc_event()
         event.Details = "." * (max_bytes + 1)
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert not result.is_ok()
         assert_contents(p, num_pending=exp_pending, curr_bytes=exp_size, uids=uids)
 
@@ -425,7 +425,7 @@ def test_persister_roll_day() -> None:
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
         assert_contents(p, num_pending=0, curr_dir=d1.isoformat())
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert result.is_ok()
         assert_contents(p, num_pending=1, uids=uids, exact_days=exact_days)
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
@@ -434,7 +434,7 @@ def test_persister_roll_day() -> None:
         exact_days.append(d2)
         inc_event()
         uids.append(event.MessageId)
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert result.is_ok()
         assert_contents(p, num_pending=2, uids=uids, exact_days=exact_days)
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
@@ -443,7 +443,7 @@ def test_persister_roll_day() -> None:
         exact_days.append(d3)
         inc_event()
         uids.append(event.MessageId)
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert result.is_ok()
         assert_contents(p, num_pending=3, uids=uids, exact_days=exact_days)
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
@@ -452,7 +452,7 @@ def test_persister_roll_day() -> None:
         exact_days.append(d3)
         inc_event()
         uids.append(event.MessageId)
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert result.is_ok()
         assert_contents(p, num_pending=4, uids=uids, exact_days=exact_days)
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
@@ -983,7 +983,7 @@ def test_reindex_pat(tmp_path: Path, monkeypatch: Any) -> None:
 
     # add events
     for i, event in enumerate(events):
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert result.is_ok()
         assert_contents(p, num_pending=i + 1)
 
