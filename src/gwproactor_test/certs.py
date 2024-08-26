@@ -106,7 +106,7 @@ def _copy_keys(test_cert_dir: Path, dst_paths: TLSPaths) -> None:
 
 def uses_tls(model: BaseModel | BaseSettings) -> bool:
     """Check whether any MQTTClient in the model have MQTTClient.tls.use_tls == True."""
-    return any(isinstance(v, MQTTClient) and v.tls.use_tls for k, v in model._iter())
+    return any(isinstance(v, MQTTClient) and v.tls.use_tls for k, v in model._iter())  # noqa
 
 
 def copy_keys(
@@ -118,7 +118,7 @@ def copy_keys(
     if test_cert_cache_dir is None:
         test_cert_cache_dir = test_certificate_cache_dir()
     test_cert_cache = Path(test_cert_cache_dir)
-    for k, v in model._iter():
+    for k, v in model._iter():  # noqa
         if isinstance(v, MQTTClient):
             _copy_keys(test_cert_cache / model_tag / k, v.tls.paths)
 

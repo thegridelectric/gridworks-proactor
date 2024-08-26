@@ -26,7 +26,7 @@ from gwproactor.persister import (
     TrimFailed,
     UIDExistedWarning,
     UIDMissingWarning,
-    _PersistedItem,
+    _PersistedItem,  # noqa
 )
 
 pendulum_version = get_package_version("pendulum")
@@ -35,9 +35,9 @@ if Version(get_package_version("pendulum")) < Version("3.0.0"):
     pendulum_travel_to = pendulum.set_test_now
     pendulum_travel_back = pendulum.set_test_now
 else:
-    pendulum_travel_to_context = pendulum_travel_to
-    pendulum_travel_to = pendulum_travel_to
-    pendulum_travel_back = pendulum.travel_back
+    pendulum_travel_to_context = pendulum_travel_to  # noqa
+    pendulum_travel_to = pendulum_travel_to  # noqa
+    pendulum_travel_back = pendulum.travel_back  # noqa
 
 
 class PatWatchdogWithFile(ExternalWatchdogCommandBuilder):
@@ -113,8 +113,8 @@ def test_problems() -> None:
     p2.add_warning(PersisterWarning(uid="12"))
     assert len(p2.errors) == 4
     assert len(p2.warnings) == 4
-    assert [int(entry.uid) for entry in p2.errors] == [3, 4, 1, 7]
-    assert [int(entry.uid) for entry in p2.warnings] == [5, 6, 2, 9]
+    assert [int(entry.uid) for entry in p2.errors] == [3, 4, 1, 7]  # noqa
+    assert [int(entry.uid) for entry in p2.warnings] == [5, 6, 2, 9]  # noqa
     assert str(p2)
 
 
@@ -879,7 +879,7 @@ def test_persister_problems() -> None:
 
         # _trim_old_storage, clear exception
         class BrokenRoller2(TimedRollingFilePersister):
-            def clear(self, uid: str) -> Result[bool, Problems]:
+            def clear(self, uid: str) -> Result[bool, Problems]:  # noqa: ARG002
                 raise ValueError("arg")
 
         p = BrokenRoller2(settings.paths.event_dir, max_bytes=len(buf) + 50)
@@ -923,7 +923,7 @@ def test_persister_problems() -> None:
 
         class BrokenRoller3(TimedRollingFilePersister):
             @classmethod
-            def _persisted_item_from_file_path(cls, filepath: Path) -> NoReturn:
+            def _persisted_item_from_file_path(cls, filepath: Path) -> NoReturn:  # noqa: ARG003
                 raise ValueError("arg")
 
         p = BrokenRoller3(settings.paths.event_dir, max_bytes=len(buf) + 50)
@@ -936,7 +936,7 @@ def test_persister_problems() -> None:
         # reindex, _is_iso_parseable exception
         class BrokenRoller4(TimedRollingFilePersister):
             @classmethod
-            def _is_iso_parseable(cls, s: str | Path) -> bool:
+            def _is_iso_parseable(cls, s: str | Path) -> bool:  # noqa: ARG003
                 raise ValueError("arg")
 
         p = BrokenRoller4(settings.paths.event_dir, max_bytes=len(buf) + 50)

@@ -45,13 +45,22 @@ def test_proactor_logger(caplog: Any) -> None:
     assert logger.comm_event_enabled
     logger.info("info")
     if len(caplog.records) != 1:
-        warnings.warn(f"len(caplog.records) ({len(caplog.records)}) != 1  (#1)")
+        warnings.warn(
+            f"len(caplog.records) ({len(caplog.records)}) != 1  (#1)",
+            stacklevel=2,
+        )
     caplog.clear()
     for function_name in ["path", "lifecycle", "comm_event"]:
         getattr(logger, function_name)(function_name)
         if len(caplog.records) != 1:
-            warnings.warn(f"len(caplog.records) ({len(caplog.records)}) != 1  (#2)")
+            warnings.warn(
+                f"len(caplog.records) ({len(caplog.records)}) != 1  (#2)",
+                stacklevel=2,
+            )
         caplog.clear()
     logger.message_summary("IN", "x", "y")
     if len(caplog.records) != 1:
-        warnings.warn(f"len(caplog.records) ({len(caplog.records)}) != 1  (#3)")
+        warnings.warn(
+            f"len(caplog.records) ({len(caplog.records)}) != 1  (#3)",
+            stacklevel=2,
+        )

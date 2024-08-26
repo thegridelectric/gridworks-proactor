@@ -1,4 +1,5 @@
 """Nox sessions."""
+# ruff: noqa: S101
 
 import os
 import shlex

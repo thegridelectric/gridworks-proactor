@@ -12,7 +12,7 @@ import pytest
 from gwproto import MQTTTopic
 from paho.mqtt.client import MQTT_ERR_CONN_LOST
 
-from gwproactor import ServicesInterface
+from gwproactor import Proactor
 from gwproactor.links import StateName
 from gwproactor.message import DBGEvent, DBGPayload
 from gwproactor.persister import TimedRollingFilePersister
@@ -38,12 +38,12 @@ class _EventGen:
     def __len__(self) -> int:
         return len(self.ok) + len(self.corrupt) + len(self.empty)
 
-    def __init__(self, proactor: ServicesInterface) -> None:
+    def __init__(self, proactor: Proactor) -> None:
         self.ok = []
         self.corrupt = []
         self.empty = []
         self.missing = []
-        persister = proactor._event_persister
+        persister = proactor.event_persister
         assert isinstance(persister, TimedRollingFilePersister)
         self.persister = persister
 
@@ -312,7 +312,6 @@ class ProactorCommTests:
             child_comm_event_counts = child_stats.comm_event_counts
             child_link = child.links.link(child.upstream_client)
             parent = h.parent
-            # TODO: hack
             parent_link = parent.links.link(parent.primary_peer_client)
 
             # unstarted parent
@@ -663,8 +662,11 @@ class ProactorCommTests:
             if len(child_subscriptions) < 2:
                 if h.warn_if_multi_subscription_tests_skipped:
                     warnings.warn(
-                        f"Skipping <{request.node.name}> because configured child proactor <{child.name}> "
-                        f"has < 2 subscriptions. Subscriptions: {child_subscriptions}"
+                        (
+                            f"Skipping <{request.node.name}> because configured child proactor <{child.name}> "
+                            f"has < 2 subscriptions. Subscriptions: {child_subscriptions}"
+                        ),
+                        stacklevel=2,
                     )
                 return
             stats = child.stats.link(child.upstream_client)
@@ -824,8 +826,11 @@ class ProactorCommTests:
             if len(child_subscriptions) < 2:
                 if h.warn_if_multi_subscription_tests_skipped:
                     warnings.warn(
-                        f"Skipping <{request.node.name}> because configured child proactor <{child.name}> "
-                        f"has < 2 subscriptions. Subscriptions: {child_subscriptions}"
+                        (
+                            f"Skipping <{request.node.name}> because configured child proactor <{child.name}> "
+                            f"has < 2 subscriptions. Subscriptions: {child_subscriptions}"
+                        ),
+                        stacklevel=2,
                     )
                 return
             stats = child.stats.link(child.upstream_client)
@@ -1449,7 +1454,7 @@ class ProactorCommTests:
                 # Wait for child to receive an ack
                 await await_for(
                     lambda: child.stats.num_received_by_topic[parent_ack_topic]
-                    == acks_received_by_child + acks_released,
+                    == acks_received_by_child + acks_released,  # noqa: B023
                     1,
                     f"ERROR waiting for child to receive ack (acks_released: {acks_released})",
                     err_str_f=h.summary_str,
