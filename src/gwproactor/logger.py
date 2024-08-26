@@ -1,8 +1,7 @@
 import contextlib
+import datetime
 import logging
 from typing import Any, Optional
-
-import pendulum
 
 
 class MessageSummary:
@@ -22,7 +21,7 @@ class MessageSummary:
         *,
         payload_object: Any = None,
         broker_flag: str = " ",
-        timestamp: Optional[pendulum.datetime] = None,
+        timestamp: Optional[datetime.datetime] = None,
         include_timestamp: bool = False,
         message_id: str = "",
     ) -> str:
@@ -35,7 +34,7 @@ class MessageSummary:
             topic: The destination or source topic.
             payload_object: The payload of the message.
             broker_flag: "*" for the "gw" broker.
-            timestamp: pendulum.now("UTC") by default.
+            timestamp: datetime.dateime.now(tz=datetime.timezone.utc) by default.
             include_timestamp: whether timestamp is prepended to output.
             message_id: The message id. Ignored if empty.
 
@@ -44,7 +43,7 @@ class MessageSummary:
         """
         with contextlib.suppress(Exception):
             if timestamp is None:
-                timestamp = pendulum.now("UTC")
+                timestamp = datetime.datetime.now(tz=datetime.timezone.utc)
             if include_timestamp:
                 format_ = "{timestamp}  " + cls.DEFAULT_FORMAT
             else:
@@ -126,7 +125,7 @@ class ProactorLogger(logging.LoggerAdapter):
         topic: str,
         payload_object: Any = None,
         broker_flag: str = " ",
-        timestamp: Optional[pendulum.datetime] = None,
+        timestamp: Optional[datetime.datetime] = None,
         message_id: str = "",
     ) -> None:
         if self.message_summary_logger.isEnabledFor(logging.INFO):
