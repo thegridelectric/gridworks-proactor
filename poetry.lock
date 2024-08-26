@@ -694,7 +694,7 @@ pyflakes = ">=3.2.0,<3.3.0"
 name = "freezegun"
 version = "1.5.1"
 description = "Let your Python tests travel through time"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "freezegun-1.5.1-py3-none-any.whl", hash = "sha256:bf111d7138a8abe55ab48a71755673dbaa4ab87f4cff5634a4442dfec34c15f1"},
@@ -1799,13 +1799,13 @@ files = [
 
 [[package]]
 name = "rich"
-version = "13.7.1"
+version = "13.8.0"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 optional = true
 python-versions = ">=3.7.0"
 files = [
-    {file = "rich-13.7.1-py3-none-any.whl", hash = "sha256:4edbae314f59eb482f54e9e30bf00d33350aaa94f4bfcd4e9e3110e64d0d7222"},
-    {file = "rich-13.7.1.tar.gz", hash = "sha256:9be308cb1fe2f1f57d67ce99e95af38a1e2bc71ad9813b0e247cf7ffbcc3a432"},
+    {file = "rich-13.8.0-py3-none-any.whl", hash = "sha256:2e85306a063b9492dffc86278197a60cbece75bcb766022f3436f567cae11bdc"},
+    {file = "rich-13.8.0.tar.gz", hash = "sha256:a5ac1f1cd448ade0d59cc3356f7db7a7ccda2c8cbae9c7a90c28ff463d3e91f4"},
 ]
 
 [package.dependencies]
@@ -2775,9 +2775,9 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [extras]
-tests = ["gridworks-cert", "pytest", "pytest-asyncio"]
+tests = ["freezegun", "gridworks-cert", "pytest", "pytest-asyncio"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "511c8713bb8835b9aaebced1fd94abb78e22dcd9f3a8c59433f17edc442407b9"
+content-hash = "f0196e53fc90838f80a11d6f7dd52949f29736abf6084a5653c257601f2f37ea"
