@@ -1,16 +1,15 @@
 # ruff: noqa: PLR2004
 
+import datetime
 import json
 import shutil
 import time
-from importlib.metadata import version as get_package_version
 from pathlib import Path
 from typing import Any, NoReturn, Optional, Union
 
 import gwproto.messages
-import pendulum
+from freezegun import freeze_time
 from gwproto.messages import ProblemEvent
-from packaging.version import Version
 from result import Result
 
 from gwproactor import ExternalWatchdogCommandBuilder, ProactorSettings, Problems
@@ -29,15 +28,26 @@ from gwproactor.persister import (
     _PersistedItem,  # noqa
 )
 
-pendulum_version = get_package_version("pendulum")
-if Version(get_package_version("pendulum")) < Version("3.0.0"):
-    pendulum_travel_to_context = pendulum.test
-    pendulum_travel_to = pendulum.set_test_now
-    pendulum_travel_back = pendulum.set_test_now
-else:
-    pendulum_travel_to_context = pendulum_travel_to  # noqa
-    pendulum_travel_to = pendulum_travel_to  # noqa
-    pendulum_travel_back = pendulum.travel_back  # noqa
+
+def _day_start(dt: datetime.datetime) -> datetime.datetime:
+    return datetime.datetime(
+        year=dt.year,
+        month=dt.month,
+        day=dt.day,
+        tzinfo=dt.tzinfo,
+    )
+
+
+def _today() -> datetime.datetime:
+    return _day_start(datetime.datetime.now(tz=datetime.timezone.utc))
+
+
+def _yesterday() -> datetime.datetime:
+    return _day_start(_today() - datetime.timedelta(seconds=1))
+
+
+def _tomorrow() -> datetime.datetime:
+    return _day_start(_today() + datetime.timedelta(days=1))
 
 
 class PatWatchdogWithFile(ExternalWatchdogCommandBuilder):
@@ -140,8 +150,8 @@ def assert_contents(
     uids: Optional[list] = None,
     exp_paths: Optional[list] = None,
     nearby_days: bool = True,
-    possible_days: Optional[list[pendulum.datetime]] = None,
-    exact_days: Optional[list[pendulum.datetime]] = None,
+    possible_days: Optional[list[datetime.datetime]] = None,
+    exact_days: Optional[list[datetime.datetime]] = None,
     num_pending: Optional[int] = None,
     curr_bytes: Optional[int] = None,
     curr_dir: Optional[Union[str, Path]] = None,
@@ -174,9 +184,7 @@ def assert_contents(
     if nearby_days:
         if possible_days is None:
             possible_days = []
-        possible_days.extend(
-            [pendulum.yesterday("utc"), pendulum.today("utc"), pendulum.tomorrow("utc")]
-        )
+        possible_days.extend([_yesterday(), _today(), _tomorrow()])
     if exact_days is not None:
         possible_days = exact_days
     if possible_days is not None and got_paths:
@@ -313,8 +321,8 @@ def test_persister_happy_path(tmp_path: Path) -> None:
     assert persister.reindex().is_ok()
     assert len(persister.pending_ids()) == persister.num_pending == 0
     assert persister.curr_dir.name in [
-        pendulum.today("utc").isoformat(),
-        pendulum.yesterday("utc").isoformat(),
+        _today().isoformat(),
+        _yesterday().isoformat(),
     ]
     assert persister.curr_bytes == 0
     assert_contents(
@@ -340,7 +348,7 @@ def test_persister_max_size() -> None:
 
     event_bytes = event.json().encode()
     num_events_supported = 4
-    with pendulum_travel_to_context(pendulum.today("utc")):
+    with freeze_time(_today()):
         # empty persister
         max_bytes = (num_events_supported + 1) * 1000
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=max_bytes)
@@ -408,13 +416,11 @@ def test_persister_roll_day() -> None:
         event.MessageId = f"{int(event.MessageId) + 1:2d}"
 
     uids = [event.MessageId]
-    d1 = pendulum.today("utc")
-    d2 = d1.add(days=1)
-    d3 = d2.add(days=1)
+    d1 = _today()
+    d2 = d1 + datetime.timedelta(days=1)
+    d3 = d2 + datetime.timedelta(days=1)
 
-    try:
-        # d1
-        pendulum_travel_to(d1)
+    with freeze_time(d1):
         exact_days = [d1]
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
@@ -424,8 +430,7 @@ def test_persister_roll_day() -> None:
         assert_contents(p, num_pending=1, uids=uids, exact_days=exact_days)
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
 
-        # d2
-        pendulum_travel_to(d2)
+    with freeze_time(d2):
         exact_days.append(d2)
         inc_event()
         uids.append(event.MessageId)
@@ -434,8 +439,7 @@ def test_persister_roll_day() -> None:
         assert_contents(p, num_pending=2, uids=uids, exact_days=exact_days)
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
 
-        # d3
-        pendulum_travel_to(d3)
+    with freeze_time(d3):
         exact_days.append(d3)
         inc_event()
         uids.append(event.MessageId)
@@ -507,9 +511,6 @@ def test_persister_roll_day() -> None:
         assert not day_dir.exists()
         assert_contents(p, num_pending=0)
 
-    finally:
-        pendulum_travel_back()
-
 
 def test_persister_size_and_roll() -> None:
     settings = ProactorSettings()
@@ -523,21 +524,20 @@ def test_persister_size_and_roll() -> None:
         return uid_
 
     uids = []
-    d1 = pendulum.today("utc")
-    d2 = d1.add(days=1)
-    d3 = d2.add(days=1)
-    d4 = d3.add(days=1)
-    d5 = d4.add(days=1)
+    d1 = _today()
+    d2 = d1 + datetime.timedelta(days=1)
+    d3 = d2 + datetime.timedelta(days=1)
+    d4 = d3 + datetime.timedelta(days=1)
+    d5 = d4 + datetime.timedelta(days=1)
 
     num_supported = 10
     packet_size = 1000
     max_size = num_supported * packet_size
     buf = ("." * packet_size).encode()
 
-    try:
-        # d1, add two
-        exact_days = []
-        pendulum_travel_to(d1)
+    exact_days = []
+    # d1, add two
+    with freeze_time(d1):
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=max_size)
         assert p.reindex().is_ok()
         assert_contents(p, num_pending=0, curr_dir=d1.isoformat(), max_bytes=max_size)
@@ -555,8 +555,8 @@ def test_persister_size_and_roll() -> None:
             )
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
-        # d2, add another two
-        pendulum_travel_to(d2)
+    # d2, add another two
+    with freeze_time(d2):
         for i in range(3, 5):
             uids.append(inc_uid())
             exact_days.append(d2)
@@ -571,8 +571,8 @@ def test_persister_size_and_roll() -> None:
             )
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
-        # d3, add three
-        pendulum_travel_to(d3)
+    # d3, add three
+    with freeze_time(d3):
         for i in range(5, 8):
             uids.append(inc_uid())
             exact_days.append(d3)
@@ -587,8 +587,8 @@ def test_persister_size_and_roll() -> None:
             )
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
-        # d4, add two
-        pendulum_travel_to(d4)
+    # d4, add two
+    with freeze_time(d4):
         for i in range(8, 10):
             uids.append(inc_uid())
             exact_days.append(d4)
@@ -603,8 +603,8 @@ def test_persister_size_and_roll() -> None:
             )
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
-        # d5, add 1
-        pendulum_travel_to(d5)
+    # d5, add 1
+    with freeze_time(d5):
         for i in range(10, 11):
             uids.append(inc_uid())
             exact_days.append(d5)
@@ -748,8 +748,6 @@ def test_persister_size_and_roll() -> None:
                 assert path.parent.exists()
             else:
                 assert not path.parent.exists()
-    finally:
-        pendulum_travel_back()
 
 
 def test_persister_indexing() -> None:
@@ -764,27 +762,26 @@ def test_persister_indexing() -> None:
         return uid_
 
     buf = ("." * 100).encode()
-    d1 = pendulum.today("utc")
-    d2 = d1.add(days=1)
-    d3 = d2.add(days=1)
-    d4 = d3.add(days=1)
+    d1 = _today()
+    d2 = d1 + datetime.timedelta(days=1)
+    d3 = d2 + datetime.timedelta(days=1)
+    d4 = d3 + datetime.timedelta(days=1)
 
-    try:
-        pendulum_travel_to(d1)
+    with freeze_time(d1):
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        pendulum_travel_to(d2)
+    with freeze_time(d2):
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        pendulum_travel_to(d3)
+    with freeze_time(d3):
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        pendulum_travel_to(d4)
+    with freeze_time(d4):
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
@@ -815,9 +812,6 @@ def test_persister_indexing() -> None:
         assert p.reindex().is_ok()
         assert p.pending_dict() == index
 
-    finally:
-        pendulum_travel_back()
-
 
 def test_persister_problems() -> None:
     settings = ProactorSettings()
@@ -833,10 +827,9 @@ def test_persister_problems() -> None:
     uids = []
     exact_days = []
     buf = ("." * 100).encode()
-    d1 = pendulum.today("utc")
+    d1 = _today()
 
-    try:
-        pendulum_travel_to(d1)
+    with freeze_time(d1):
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
         uids.append(inc_uid())
@@ -945,9 +938,6 @@ def test_persister_problems() -> None:
         assert len(problems.warnings) == 0
         assert isinstance(problems.errors[0], ValueError)
         assert isinstance(problems.errors[1], ReindexError)
-
-    finally:
-        pendulum_travel_back()
 
 
 def test_reindex_pat(tmp_path: Path, monkeypatch: Any) -> None:

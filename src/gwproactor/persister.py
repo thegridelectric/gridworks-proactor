@@ -1,5 +1,6 @@
 import abc
 import contextlib
+import datetime
 import re
 import shutil
 import subprocess
@@ -8,8 +9,6 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import NamedTuple, Optional
 
-import pendulum
-from pendulum import DateTime
 from result import Err, Ok, Result
 
 from gwproactor.problems import Problems
@@ -153,7 +152,7 @@ class SimpleDirectoryWriter(StubPersister):
         self._base_dir = Path(base_dir).resolve()
 
     @classmethod
-    def _make_name(cls, dt: DateTime, uid: str) -> str:
+    def _make_name(cls, dt: datetime, uid: str) -> str:
         return f"{dt.isoformat()}.uid[{uid}].json"
 
     def persist(self, uid: str, content: bytes) -> Result[bool, Problems]:
@@ -161,7 +160,9 @@ class SimpleDirectoryWriter(StubPersister):
         try:
             if not self._base_dir.exists():
                 self._base_dir.mkdir(parents=True, exist_ok=True)
-            path = self._base_dir / self._make_name(pendulum.now("utc"), uid)
+            path = self._base_dir / self._make_name(
+                datetime.datetime.now(tz=datetime.timezone.utc), uid
+            )
             try:
                 with path.open("wb") as f:
                     f.write(content)
@@ -259,7 +260,7 @@ class TimedRollingFilePersister(PersisterInterface):
                     )
             self._roll_curr_dir()
             self._pending[uid] = self._curr_dir / self._make_name(
-                pendulum.now("utc"), uid
+                datetime.datetime.now(tz=datetime.timezone.utc), uid
             )
             try:
                 with self._pending[uid].open("wb") as f:
@@ -407,7 +408,13 @@ class TimedRollingFilePersister(PersisterInterface):
         return Ok()
 
     def _today_dir(self) -> Path:
-        return self._base_dir / pendulum.today("utc").isoformat()
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        return (
+            self._base_dir
+            / datetime.datetime(
+                now.year, now.month, now.day, tzinfo=now.tzinfo
+            ).isoformat()
+        )
 
     def _roll_curr_dir(self) -> None:
         today_dir = self._today_dir()
@@ -417,7 +424,7 @@ class TimedRollingFilePersister(PersisterInterface):
             self._curr_dir.mkdir(parents=True, exist_ok=True)
 
     @classmethod
-    def _make_name(cls, dt: DateTime, uid: str) -> str:
+    def _make_name(cls, dt: datetime.datetime, uid: str) -> str:
         return f"{dt.isoformat()}.uid[{uid}].json"
 
     @classmethod
@@ -437,6 +444,6 @@ class TimedRollingFilePersister(PersisterInterface):
         try:
             if isinstance(s, Path):
                 s = s.name
-            return isinstance(pendulum.parse(s), DateTime)
+            return isinstance(datetime.datetime.fromisoformat(s), datetime.datetime)
         except:  # noqa: E722
             return False

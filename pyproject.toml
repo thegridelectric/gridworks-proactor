@@ -35,7 +35,6 @@ gridworks-cert = {version = ">=0.4.2", optional = true}
 aiohttp = "^3.8.5"
 yarl = "^1.9.2"
 multidict = "^6.0.4"
-pendulum = "2.1.2"
 
 [tool.poetry.group.dev.dependencies]
 Pygments = ">=2.10.0"
@@ -53,6 +52,7 @@ xdoctest = {extras = ["colors"], version = ">=0.15.10"}
 myst-parser = {version = ">=0.16.1"}
 sphinxcontrib-mermaid = "^0.8.1"
 ruff = "^0.6.2"
+freezegun = "^1.5.1"
 
 [tool.poetry.extras]
 tests = ["pytest", "pytest-asyncio", "gridworks-cert"]
