@@ -1,18 +1,18 @@
 """Generate or copy test certificates for MQTT using TLS."""
 
+# ruff: noqa: T201
+
 import os
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Optional
 
-from gwcert import DEFAULT_CA_DIR  # noqa
-from pydantic import BaseModel
-from pydantic import BaseSettings
+from gwcert import DEFAULT_CA_DIR
+from pydantic import BaseModel, BaseSettings
 
 from gwproactor.config.mqtt import MQTTClient
 from gwproactor.config.paths import TLSPaths
-
 
 TEST_CA_CERTIFICATE_PATH_VAR = "GWPROACTOR_TEST_CA_CERT_PATH"
 """Environment variable containing the path to the CA certificate used by the tests."""
@@ -79,10 +79,10 @@ def _copy_keys(test_cert_dir: Path, dst_paths: TLSPaths) -> None:
             f"One or more TLS test keys at {test_cert_dir} does not exist. Recreating."
         )
         print(
-            f"  Cert path        exists:{str(src_paths.cert_path.exists()):5s}  {src_paths.cert_path}"
+            f"  Cert path        exists:{src_paths.cert_path.exists()!s:5s}  {src_paths.cert_path}"
         )
         print(
-            f"  Private key path exists:{str(src_paths.private_key_path.exists()):5s}  {src_paths.private_key_path}"
+            f"  Private key path exists:{src_paths.private_key_path.exists()!s:5s}  {src_paths.private_key_path}"
         )
         gwcert_command = [
             "gwcert",
@@ -96,7 +96,7 @@ def _copy_keys(test_cert_dir: Path, dst_paths: TLSPaths) -> None:
             str(src_paths.cert_path),
         ]
         print(f"Generating keys with command:\n  {' '.join(gwcert_command)}")
-        result = subprocess.run(gwcert_command, capture_output=True, check=True)
+        result = subprocess.run(gwcert_command, capture_output=True, check=True)  # noqa: S603
         print(result.stdout.decode("utf-8"))
     dst_paths.mkdirs()
     shutil.copy2(src_paths.ca_cert_path, dst_paths.ca_cert_path)
@@ -106,11 +106,7 @@ def _copy_keys(test_cert_dir: Path, dst_paths: TLSPaths) -> None:
 
 def uses_tls(model: BaseModel | BaseSettings) -> bool:
     """Check whether any MQTTClient in the model have MQTTClient.tls.use_tls == True."""
-    for k, v in model._iter():  # noqa
-        if isinstance(v, MQTTClient):
-            if v.tls.use_tls:
-                return True
-    return False
+    return any(isinstance(v, MQTTClient) and v.tls.use_tls for k, v in model._iter())  # noqa
 
 
 def copy_keys(

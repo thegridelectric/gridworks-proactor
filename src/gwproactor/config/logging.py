@@ -4,11 +4,9 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Iterable
 
-from pydantic import BaseModel
-from pydantic import validator
+from pydantic import BaseModel, validator
 
 from .paths import DEFAULT_BASE_NAME
-
 
 DEFAULT_LOGGING_FORMAT = "%(asctime)s %(message)s"
 DEFAULT_FRACTIONAL_SECOND_FORMAT = "%s.%03d"
@@ -67,7 +65,7 @@ class LoggerLevels(BaseModel):
         self, base_log_name: str, fields: Iterable[str]
     ) -> dict[str, dict[str, int]]:
         return {
-            f"{base_log_name}.{field_name}": dict(level=getattr(self, field_name))
+            f"{base_log_name}.{field_name}": {"level": getattr(self, field_name)}
             for field_name in fields
         }
 
@@ -80,16 +78,16 @@ class LoggerLevels(BaseModel):
         return self._logger_levels(base_log_name, self.__fields_set__)
 
     @validator("*")
+    @classmethod
     def logging_level_str_to_int(cls, v: int | str) -> int:
-        # noinspection PyBroadException
         try:
             int_v = int(v)
-        except:
+        except:  # noqa: E722
             if hasattr(v, "upper"):
                 v = v.upper()
             int_v = logging.getLevelName(v)
             if not isinstance(int_v, int):
-                raise ValueError(
+                raise ValueError(  # noqa: B904, TRY004
                     f"Could not convert level ({v}/{type(v)}) to an int, either by cast or by logging.getLevelName()"
                 )
         return int_v
@@ -112,7 +110,7 @@ class LoggingSettings(BaseModel):
         d = dict(
             self.levels.logger_names_to_levels(self.base_log_name),
         )
-        d[self.base_log_name] = dict(level=self.base_log_level)
+        d[self.base_log_name] = {"level": self.base_log_level}
         return d
 
     def set_logger_levels(self) -> dict[str, dict[str, int]]:

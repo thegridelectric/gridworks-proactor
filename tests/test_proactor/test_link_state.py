@@ -1,24 +1,26 @@
 from dataclasses import dataclass
-from typing import Any
-from typing import Optional
-from typing import Sequence
+from typing import Any, Optional, Sequence
 
 import pytest
 from paho.mqtt.client import MQTTMessage
 from result import Result
 
-from gwproactor.links import InvalidCommStateInput
-from gwproactor.links import LinkStates
-from gwproactor.links import StateName
-from gwproactor.links import Transition
-from gwproactor.links import TransitionName
-from gwproactor.message import MQTTConnectFailMessage
-from gwproactor.message import MQTTConnectMessage
-from gwproactor.message import MQTTDisconnectMessage
-from gwproactor.message import MQTTReceiptMessage
+from gwproactor.links import (
+    InvalidCommStateInput,
+    LinkStates,
+    StateName,
+    Transition,
+    TransitionName,
+)
+from gwproactor.message import (
+    MQTTConnectFailMessage,
+    MQTTConnectMessage,
+    MQTTDisconnectMessage,
+    MQTTReceiptMessage,
+)
 
 
-def assert_transition(got: Transition, exp: Transition):
+def assert_transition(got: Transition, exp: Transition) -> None:
     assert got.__dict__ == exp.__dict__
 
 
@@ -39,7 +41,7 @@ class _Case:
             new_state=self.end,
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"{self.start.value}--{self.input.value}-->{self.end.value}---ok:{self.ok}"
         )
@@ -50,7 +52,7 @@ class _Case:
             match self.input:
                 case TransitionName.mqtt_connected:
                     content = MQTTConnectMessage(
-                        client_name=name, userdata=None, flags=dict(), rc=0
+                        client_name=name, userdata=None, flags={}, rc=0
                     )
                 case TransitionName.mqtt_connect_failed:
                     content = MQTTConnectFailMessage(client_name=name, userdata=None)
@@ -75,7 +77,7 @@ class _Case:
         links: LinkStates,
         name: str,
         got: Result[Transition, InvalidCommStateInput],
-    ):
+    ) -> None:
         assert links[name].name == name
         assert links.link(name).name == name
         if self.ok:
@@ -88,15 +90,13 @@ class _Case:
                 assert isinstance(got_err, self.err.__class__)
             assert links[name].state == self.start
 
-    def _test(self):
+    def _test(self) -> None:
         name = "a"
         links = LinkStates([name])
         link = links[name]
         assert link.state == StateName.not_started
         link.curr_state = link.states[self.start]
         assert link.state == self.start
-        # if self.ok:
-        #     print(f"{self}")
         match self.input:
             case TransitionName.start_called:
                 self.assert_case(links, name, links.start(name))
@@ -142,7 +142,7 @@ class _State:
     start: StateName
     transitions: dict[TransitionName, list[_Case]]
 
-    def __init__(self, start: StateName):
+    def __init__(self, start: StateName) -> None:
         self.start = start
         # By default, all transitions illegal
         self.transitions = {
@@ -151,7 +151,7 @@ class _State:
             if transition != TransitionName.none
         }
 
-    def set_case(self, case: _Case | list[_Case]):
+    def set_case(self, case: _Case | list[_Case]) -> None:
         if isinstance(case, _Case):
             start = case.start
             input_ = case.input
@@ -160,11 +160,11 @@ class _State:
             cases: list[_Case] = case
             starts = [case.start for case in cases]
             inputs = [case.input for case in cases]
-            if any([start != cases[0].start for start in starts]):
+            if any(start != cases[0].start for start in starts):
                 raise ValueError(
                     f"If multiple cases added they must share the same start state. Found states: {starts}"
                 )
-            if any([input_ != cases[0].input for input_ in inputs]):
+            if any(input_ != cases[0].input for input_ in inputs):
                 raise ValueError(
                     f"If multiple cases added they must share the same input. Found inputs: {inputs}"
                 )
@@ -178,7 +178,7 @@ class _State:
 class _Cases:
     states: dict[StateName, _State]
 
-    def __init__(self, cases: Optional[list[_Case]] = None):
+    def __init__(self, cases: Optional[list[_Case]] = None) -> None:
         # Disallow all transitions by default.
         self.states = {
             state: _State(state) for state in StateName if state != StateName.none
@@ -187,13 +187,13 @@ class _Cases:
         for case in cases:
             self.set_case(case)
 
-    def set_case(self, case: _Case | list[_Case]):
+    def set_case(self, case: _Case | list[_Case]) -> None:
         if isinstance(case, _Case):
             start = case.start
         else:
             cases: list[_Case] = case
             starts = [case.start for case in cases]
-            if any([start != cases[0].start for start in starts]):
+            if any(start != cases[0].start for start in starts):
                 raise ValueError(
                     f"If multiple cases added they must share the same start state. Found states: {starts}"
                 )
@@ -303,5 +303,5 @@ all_cases = _Cases(
 
 
 @pytest.mark.parametrize("case", all_cases.cases(), ids=_Case.__str__)
-def test_transitions(case):
-    case._test()
+def test_transitions(case) -> None:  # noqa: ANN001
+    case._test()  # noqa: SLF001

@@ -1,8 +1,6 @@
 from collections import defaultdict
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Optional
-from typing import Sequence
+from dataclasses import dataclass, field
+from typing import Optional, Sequence
 
 from gwproto import Message
 
@@ -14,10 +12,10 @@ class ReuploadCounts:
     started: int = 0
     completed: int = 0
 
-    def start(self):
+    def start(self) -> None:
         self.started += 1
 
-    def complete(self):
+    def complete(self) -> None:
         self.completed += 1
 
 
@@ -34,10 +32,10 @@ class LinkStats:
     reupload_counts: ReuploadCounts = field(default_factory=ReuploadCounts)
     timeouts: int = 0
 
-    def start_reupload(self):
+    def start_reupload(self) -> None:
         self.reupload_counts.start()
 
-    def complete_reupload(self):
+    def complete_reupload(self) -> None:
         self.reupload_counts.complete()
 
     @property
@@ -69,7 +67,7 @@ class ProactorStats:
     num_events_received: int = 0
     links: dict[str, LinkStats]
 
-    def __init__(self, link_names: Optional[Sequence[str]] = None):
+    def __init__(self, link_names: Optional[Sequence[str]] = None) -> None:
         self.num_received_by_type = defaultdict(int)
         self.num_received_by_topic = defaultdict(int)
         if link_names is None:

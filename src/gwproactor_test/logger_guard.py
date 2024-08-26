@@ -1,12 +1,11 @@
 import logging
 import sys
-from typing import Optional
-from typing import Sequence
+from types import TracebackType
+from typing import Optional, Self, Sequence, Type
 
 import pytest
 
-from gwproactor.config import DEFAULT_BASE_NAME
-from gwproactor.config import LoggerLevels
+from gwproactor.config import DEFAULT_BASE_NAME, LoggerLevels
 
 
 class LoggerGuard:
@@ -15,14 +14,14 @@ class LoggerGuard:
     handlers: set[logging.Handler]
     filters: set[logging.Filter]
 
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger) -> None:
         self.logger = logger
         self.level = logger.level
         self.propagate = logger.propagate
         self.handlers = set(logger.handlers)
         self.filters = set(logger.filters)
 
-    def restore(self):
+    def restore(self) -> None:
         screen_handlers = [
             h
             for h in self.logger.handlers
@@ -51,10 +50,15 @@ class LoggerGuard:
         assert set(self.logger.handlers) == self.handlers
         assert set(self.logger.filters) == self.filters
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> bool:
         self.restore()
         return True
 
@@ -62,7 +66,7 @@ class LoggerGuard:
 class LoggerGuards:
     guards: dict[str, LoggerGuard]
 
-    def __init__(self, extra_logger_names: Optional[Sequence[str]] = None):
+    def __init__(self, extra_logger_names: Optional[Sequence[str]] = None) -> None:
         logger_names = self.default_logger_names()
         if extra_logger_names is not None:
             logger_names = logger_names.union(set(extra_logger_names))
@@ -71,24 +75,27 @@ class LoggerGuards:
             for logger_name in logger_names
         }
 
-    def restore(self):
+    def restore(self) -> None:
         for guard in self.guards.values():
             guard.restore()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> bool:
         self.restore()
         return True
 
     @classmethod
     def default_logger_names(cls) -> set[str]:
-        return (
-            {"root"}
-            .union(LoggerLevels().qualified_logger_names(DEFAULT_BASE_NAME).values())
-            .union(logging.root.manager.loggerDict.keys())
-        )
+        return {"root"}.union(
+            LoggerLevels().qualified_logger_names(DEFAULT_BASE_NAME).values()
+        ).union(logging.root.manager.loggerDict.keys())
 
 
 @pytest.fixture

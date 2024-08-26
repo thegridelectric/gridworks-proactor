@@ -3,16 +3,21 @@ import logging
 import logging.handlers
 from typing import Optional
 
-from gwproactor import ProactorSettings
-from gwproactor import setup_logging
-from gwproactor.config import DEFAULT_LOG_FILE_NAME
-from gwproactor.config import LoggingSettings
-from gwproactor.config import Paths
-from gwproactor.config import RotatingFileHandlerSettings
+import pytest
+
+from gwproactor import ProactorSettings, setup_logging
+from gwproactor.config import (
+    DEFAULT_LOG_FILE_NAME,
+    LoggingSettings,
+    Paths,
+    RotatingFileHandlerSettings,
+)
 from tests.test_misc.test_logging_config import get_exp_formatted_time
 
 
-def test_get_default_logging_config(caplog, capsys):
+def test_get_default_logging_config(
+    caplog: pytest.LogCaptureFixture, capsys: pytest.LogCaptureFixture
+) -> None:
     paths = Paths()
     paths.mkdirs()
     settings = ProactorSettings(logging=LoggingSettings(base_log_level=logging.INFO))
@@ -64,7 +69,7 @@ def test_get_default_logging_config(caplog, capsys):
     formatter = settings.logging.formatter.create()
     text = ""
     for i, logger_name in enumerate(
-        [settings.logging.base_log_name] + list(logger_names.values())
+        [settings.logging.base_log_name, *list(logger_names.values())]
     ):
         logger = logging.getLogger(logger_name)
         msg = "%d: %s"
@@ -72,10 +77,7 @@ def test_get_default_logging_config(caplog, capsys):
         assert len(caplog.records) == 0
         logger.info(msg, i, logger.name)
         assert len(caplog.records) == 1
-        exp_msg = "{} {}\n".format(
-            get_exp_formatted_time(caplog.records[-1], formatter),
-            msg % (i, logger.name),
-        )
+        exp_msg = f"{get_exp_formatted_time(caplog.records[-1], formatter)} {msg % (i, logger.name)}\n"
         assert capsys.readouterr().err == exp_msg
         text += exp_msg
         caplog.clear()
@@ -87,7 +89,7 @@ def test_get_default_logging_config(caplog, capsys):
     assert log_contents == text
 
 
-def test_rollover():
+def test_rollover() -> None:
     paths = Paths()
     paths.mkdirs()
 

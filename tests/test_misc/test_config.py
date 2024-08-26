@@ -8,20 +8,19 @@ from typing import Any
 import pytest
 from pydantic import SecretStr
 
-from gwproactor.config import MQTTClient
-from gwproactor.config import Paths
+from gwproactor.config import MQTTClient, Paths
 from gwproactor.config.mqtt import TLSInfo
 from gwproactor.config.paths import TLSPaths
 from gwproactor_test.dummies import DummyChildSettings
 
 
-def test_tls_paths():
+def test_tls_paths() -> None:
     # unitialized TLSPaths
-    exp = dict(
-        ca_cert_path=None,
-        cert_path=None,
-        private_key_path=None,
-    )
+    exp = {
+        "ca_cert_path": None,
+        "cert_path": None,
+        "private_key_path": None,
+    }
     paths = TLSPaths()
     paths_d = paths.dict()
     for k, v in exp.items():
@@ -31,11 +30,11 @@ def test_tls_paths():
     # defaults, given a certs_dir and a name
     certs_dir = Path("foo/certs")
     name = "bar"
-    exp = dict(
-        ca_cert_path=certs_dir / name / "ca.crt",
-        cert_path=certs_dir / name / f"{name}.crt",
-        private_key_path=certs_dir / name / "private" / f"{name}.pem",
-    )
+    exp = {
+        "ca_cert_path": certs_dir / name / "ca.crt",
+        "cert_path": certs_dir / name / f"{name}.crt",
+        "private_key_path": certs_dir / name / "private" / f"{name}.pem",
+    }
     paths = TLSPaths.defaults(certs_dir, name)
     paths_d = paths.dict()
     for k, v in exp.items():
@@ -44,11 +43,11 @@ def test_tls_paths():
 
     # a value set explicitly
     ca_cert_path = Path("bla/bla/bla")
-    exp = dict(
-        ca_cert_path=ca_cert_path,
-        cert_path=None,
-        private_key_path=None,
-    )
+    exp = {
+        "ca_cert_path": ca_cert_path,
+        "cert_path": None,
+        "private_key_path": None,
+    }
     paths = TLSPaths(ca_cert_path=ca_cert_path)
     paths_d = paths.dict()
     for k, v in exp.items():
@@ -58,11 +57,11 @@ def test_tls_paths():
     # updates for unset values, given a certs_dir and a name
     certs_dir = Path("foo/certs")
     name = "bar"
-    exp = dict(
-        ca_cert_path=ca_cert_path,
-        cert_path=certs_dir / name / f"{name}.crt",
-        private_key_path=certs_dir / name / "private" / f"{name}.pem",
-    )
+    exp = {
+        "ca_cert_path": ca_cert_path,
+        "cert_path": certs_dir / name / f"{name}.crt",
+        "private_key_path": certs_dir / name / "private" / f"{name}.pem",
+    }
     paths = paths.effective_paths(certs_dir, name)
     paths_d = paths.dict()
     for k, v in exp.items():
@@ -70,7 +69,7 @@ def test_tls_paths():
         assert getattr(paths, k) == v
 
 
-def test_tls_paths_mkdirs(clean_test_env, tmp_path) -> None:
+def test_tls_paths_mkdirs(clean_test_env: Any, tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         TLSPaths().mkdirs()
     paths = Paths()
@@ -97,20 +96,20 @@ def test_tls_paths_mkdirs(clean_test_env, tmp_path) -> None:
     assert tls_paths.private_key_path.parent.exists()
 
 
-def test_tls_info():
+def test_tls_info() -> None:
     # unitialized TLSInfo
-    exp: dict = dict(
-        use_tls=True,
-        port=8883,
-        paths=dict(
-            ca_cert_path=None,
-            cert_path=None,
-            private_key_path=None,
-        ),
-        cert_reqs=ssl.CERT_REQUIRED,
-        ciphers=None,
-        keyfile_password=SecretStr(""),
-    )
+    exp: dict = {
+        "use_tls": True,
+        "port": 8883,
+        "paths": {
+            "ca_cert_path": None,
+            "cert_path": None,
+            "private_key_path": None,
+        },
+        "cert_reqs": ssl.CERT_REQUIRED,
+        "ciphers": None,
+        "keyfile_password": SecretStr(""),
+    }
     info = TLSInfo()
     info_d = info.dict()
     for k, v in exp.items():
@@ -121,41 +120,41 @@ def test_tls_info():
     certs_dir = Path("foo/certs")
     name = "bar"
     info.update_tls_paths(certs_dir, name)
-    exp["paths"] = dict(
-        ca_cert_path=certs_dir / name / "ca.crt",
-        cert_path=certs_dir / name / f"{name}.crt",
-        private_key_path=certs_dir / name / "private" / f"{name}.pem",
-    )
+    exp["paths"] = {
+        "ca_cert_path": certs_dir / name / "ca.crt",
+        "cert_path": certs_dir / name / f"{name}.crt",
+        "private_key_path": certs_dir / name / "private" / f"{name}.pem",
+    }
     info_d = info.dict()
     for k, v in exp.items():
         assert info_d[k] == v
         assert getattr(info, k) == v
 
 
-def test_mqtt_client_settings():
+def test_mqtt_client_settings() -> None:
     """Test MQTTClient"""
-    password = "d"
+    password = "d"  # noqa: S105
     port = 1883
-    exp: dict = dict(
-        host="a",
-        keepalive=1,
-        bind_address="b",
-        bind_port=2,
-        username="c",
-        password=SecretStr(password),
-        tls=dict(
-            use_tls=True,
-            port=8883,
-            paths=dict(
-                ca_cert_path=None,
-                cert_path=None,
-                private_key_path=None,
-            ),
-            cert_reqs=ssl.CERT_REQUIRED,
-            ciphers=None,
-            keyfile_password=SecretStr(""),
-        ),
-    )
+    exp: dict = {
+        "host": "a",
+        "keepalive": 1,
+        "bind_address": "b",
+        "bind_port": 2,
+        "username": "c",
+        "password": SecretStr(password),
+        "tls": {
+            "use_tls": True,
+            "port": 8883,
+            "paths": {
+                "ca_cert_path": None,
+                "cert_path": None,
+                "private_key_path": None,
+            },
+            "cert_reqs": ssl.CERT_REQUIRED,
+            "ciphers": None,
+            "keyfile_password": SecretStr(""),
+        },
+    }
     settings = MQTTClient(**exp)
     d = settings.dict()
     assert d == dict(exp, port=port)
@@ -169,11 +168,11 @@ def test_mqtt_client_settings():
     certs_dir = Path("foo/certs")
     name = "bar"
     settings.update_tls_paths(certs_dir, name)
-    exp["tls"]["paths"] = dict(
-        ca_cert_path=certs_dir / name / "ca.crt",
-        cert_path=certs_dir / name / f"{name}.crt",
-        private_key_path=certs_dir / name / "private" / f"{name}.pem",
-    )
+    exp["tls"]["paths"] = {
+        "ca_cert_path": certs_dir / name / "ca.crt",
+        "cert_path": certs_dir / name / f"{name}.crt",
+        "private_key_path": certs_dir / name / "private" / f"{name}.pem",
+    }
     d = settings.dict()
     assert d == dict(exp, port=port)
     for k, v in exp.items():
@@ -181,7 +180,7 @@ def test_mqtt_client_settings():
         assert getattr(settings, k) == v
 
 
-def exp_paths_dict(**kwargs) -> dict:
+def exp_paths_dict(**kwargs: Any) -> dict:
     default_base = Path("gridworks")
     default_name = Path("scada")
     default_relative_path = default_base / default_name
@@ -190,30 +189,30 @@ def exp_paths_dict(**kwargs) -> dict:
     default_state_home = home / ".local" / "state"
     default_config_home = home / ".config"
     default_config_dir = default_config_home / default_relative_path
-    exp = dict(
-        base=default_base,
-        name=default_name,
-        relative_path=default_relative_path,
-        data_home=default_data_home,
-        state_home=default_state_home,
-        config_home=default_config_home,
-        data_dir=default_data_home / default_relative_path,
-        config_dir=default_config_dir,
-        certs_dir=default_config_dir / "certs",
-        event_dir=default_data_home / default_relative_path / "event",
-        log_dir=default_state_home / default_relative_path / "log",
-        hardware_layout=default_config_dir / "hardware-layout.json",
-    )
+    exp = {
+        "base": default_base,
+        "name": default_name,
+        "relative_path": default_relative_path,
+        "data_home": default_data_home,
+        "state_home": default_state_home,
+        "config_home": default_config_home,
+        "data_dir": default_data_home / default_relative_path,
+        "config_dir": default_config_dir,
+        "certs_dir": default_config_dir / "certs",
+        "event_dir": default_data_home / default_relative_path / "event",
+        "log_dir": default_state_home / default_relative_path / "log",
+        "hardware_layout": default_config_dir / "hardware-layout.json",
+    }
     exp.update(**kwargs)
     return exp
 
 
-def assert_paths(paths: Paths, **kwargs):
+def assert_paths(paths: Paths, **kwargs: Any) -> None:
     exp = exp_paths_dict(**kwargs)
     for field, exp_value in exp.items():
         got_value = getattr(paths, field)
         if isinstance(got_value, Path) and not isinstance(exp_value, Path):
-            exp_value = Path(exp_value)
+            exp_value = Path(exp_value)  # noqa: PLW2901
             exp[field] = exp_value
         assert (
             got_value == exp_value
@@ -221,11 +220,11 @@ def assert_paths(paths: Paths, **kwargs):
     assert paths.dict() == exp
 
 
-def test_paths_defaults(clean_test_env, tmp_path):
+def test_paths_defaults(clean_test_env: Any, tmp_path: Path) -> None:
     assert_paths(Paths(), home=tmp_path)
 
 
-def test_paths(clean_test_env, tmp_path):
+def test_paths(clean_test_env: Any, tmp_path: Path) -> None:
     # base, name
     assert_paths(
         Paths(base="foo", name="bar"),
@@ -325,7 +324,7 @@ def test_paths(clean_test_env, tmp_path):
     )
 
 
-def test_paths_mkdirs(clean_test_env, tmp_path):  # noqa
+def test_paths_mkdirs(clean_test_env: Any, tmp_path: Path) -> None:
     paths = Paths()
     assert not paths.data_dir.exists()
     # Get rid of the config dir created inside of tmp_path by clean_test_env
@@ -344,7 +343,7 @@ def _assert_eq(
     field_name: str,
     exp: Any,
     got: Any,
-):
+) -> None:
     assert exp == got, (
         f"ERROR on field <{field_name}> for test {tag}\n"
         f"\texp: {exp}\n"
@@ -360,7 +359,7 @@ def _assert_child_paths_update(
     ca_cert_path: Path | str,
     cert_path: Path | str,
     private_key_path: Path | str,
-):
+) -> None:
     tag = f"[{test_name}], with param type: {param_type}"
     _assert_eq(tag, "certs_dir", Path(certs_dir), child.paths.certs_dir)
     _assert_eq(
@@ -378,7 +377,7 @@ def _assert_child_paths_update(
     )
 
 
-def test_proactor_settings_root_validators(clean_test_env) -> None:
+def test_proactor_settings_root_validators(clean_test_env: Any) -> None:
     clean_test_env.setenv("XDG_CONFIG_HOME", "/z")
 
     # no paths specification
@@ -457,7 +456,7 @@ def test_proactor_settings_root_validators(clean_test_env) -> None:
                     DummyChildSettings(
                         paths=dict(name="foo"),  # noqa
                         parent_mqtt=dict(  # noqa
-                            tls=dict(paths=dict(ca_cert_path=explicit_ca_cert_path))
+                            tls={"paths": {"ca_cert_path": explicit_ca_cert_path}}
                         ),
                     ),
                 ),

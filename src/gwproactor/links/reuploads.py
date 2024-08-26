@@ -28,8 +28,9 @@ class _ReuploadDiffLogger:  # pragma: no cover
     def init(
         self,
         reuploads: Optional["Reuploads"] = None,
+        *,
         verbose: bool = False,
-    ):
+    ) -> None:
         self.reuploads = reuploads
         self.verbose = verbose
         if reuploads is not None:
@@ -57,8 +58,8 @@ class _ReuploadDiffLogger:  # pragma: no cover
         return f"--process_ack_for_reupload  {self.diff_str(path_dbg)}"
 
     def log_ack(self, path_dbg: int) -> None:
-        if self.reuploads is not None and self.reuploads._logger.path_enabled:  # noqa
-            self.reuploads._logger.path(self.ack_str(path_dbg))  # noqa
+        if self.reuploads is not None and self.reuploads.logger.path_enabled:
+            self.reuploads.logger.path(self.ack_str(path_dbg))
 
 
 class Reuploads:
@@ -91,9 +92,9 @@ class Reuploads:
         self,
         logger: ProactorLogger,
         num_initial_events: int = NUM_INITIAL_EVENTS,
-    ):
-        self._reupload_pending = dict()
-        self._reuploaded_unacked = dict()
+    ) -> None:
+        self._reupload_pending = {}
+        self._reuploaded_unacked = {}
         self._num_initial_events = num_initial_events
         self._logger = logger
 
@@ -164,6 +165,10 @@ class Reuploads:
     def num_reuploaded_unacked(self) -> int:
         return len(self._reuploaded_unacked)
 
+    @property
+    def logger(self) -> ProactorLogger:
+        return self._logger
+
     def reuploading(self) -> bool:
         return bool(len(self._reuploaded_unacked) + len(self._reupload_pending))
 
@@ -171,7 +176,7 @@ class Reuploads:
         self._reupload_pending.clear()
         self._reuploaded_unacked.clear()
 
-    def get_str(self, verbose: bool = True, num_events: int = 5) -> str:
+    def get_str(self, *, verbose: bool = True, num_events: int = 5) -> str:
         s = f"Reuploads  reuploading:{int(self.reuploading())}  unacked/sent:{len(self._reuploaded_unacked)}  pending/unsent:{len(self._reupload_pending)}"
         if verbose:
             s += f"  num initial:{self._num_initial_events}\n"
@@ -185,17 +190,19 @@ class Reuploads:
                     break
         return s.rstrip()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.get_str(verbose=False)
 
-    def _log_start_reupload(self, num_pending_events, num_reupload_now):
+    def _log_start_reupload(
+        self, num_pending_events: int, num_reupload_now: int
+    ) -> None:
         if self._logger.general_enabled:
             if self.reuploading():
                 state_str = f"{self.num_reupload_pending} reupload events pending."
             else:
                 state_str = "reupload complete."
             self._logger.info(
-                f"start_reupload: sent {num_reupload_now} events. "
+                f"start_reupload: sent {num_reupload_now} events. "  # noqa: G004
                 f"{state_str} "
                 f"Total events in reupload: {num_pending_events}."
             )

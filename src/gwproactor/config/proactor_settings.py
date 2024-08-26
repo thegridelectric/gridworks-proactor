@@ -1,12 +1,8 @@
-from pydantic import BaseModel
-from pydantic import BaseSettings
-from pydantic import root_validator
-from pydantic import validator
+from pydantic import BaseModel, BaseSettings, root_validator, validator
 
 from gwproactor.config.logging import LoggingSettings
 from gwproactor.config.mqtt import MQTTClient
 from gwproactor.config.paths import Paths
-
 
 MQTT_LINK_POLL_SECONDS = 60.0
 ACK_TIMEOUT_SECONDS = 5.0
@@ -25,6 +21,7 @@ class ProactorSettings(BaseSettings):
         env_nested_delimiter = "__"
 
     @validator("paths", always=True)
+    @classmethod
     def get_paths(cls, v: Paths) -> Paths:
         if v is None:
             v = Paths()
@@ -38,20 +35,19 @@ class ProactorSettings(BaseSettings):
         """
         if "paths" not in values:
             values["paths"] = Paths(name=name)
-        else:
-            if isinstance(values["paths"], BaseModel):
-                if "name" not in values["paths"].__fields_set__:
-                    values["paths"] = values["paths"].copy(name=name, deep=True)
-            else:
-                if "name" not in values["paths"]:
-                    values["paths"]["name"] = name
+        elif isinstance(values["paths"], BaseModel):
+            if "name" not in values["paths"].__fields_set__:
+                values["paths"] = values["paths"].copy(name=name, deep=True)
+        elif "name" not in values["paths"]:
+            values["paths"]["name"] = name
         return values
 
     @root_validator(skip_on_failure=True)
+    @classmethod
     def post_root_validator(cls, values: dict) -> dict:
         """Update unset paths of any member MQTTClient's TLS paths based on ProactorSettings 'paths' member."""
         if not isinstance(values["paths"], Paths):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004
                 f"ERROR. 'paths' member must be instance of Paths. Got: {type(values['paths'])}"
             )
         for k, v in values.items():

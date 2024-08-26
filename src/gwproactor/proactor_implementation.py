@@ -4,71 +4,72 @@ import asyncio
 import sys
 import traceback
 import uuid
-from typing import Any
-from typing import Awaitable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Sequence
-from typing import Type
-from typing import TypeVar
+from typing import (
+    Any,
+    Awaitable,
+    Dict,
+    List,
+    NoReturn,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+)
 
 import gwproto
 from aiohttp.typedefs import Handler as HTTPHandler
 from gwproto.data_classes.components.web_server_component import WebServerComponent
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
-from gwproto.messages import Ack
-from gwproto.messages import EventBase
-from gwproto.messages import EventT
-from gwproto.messages import Ping
-from gwproto.messages import ProblemEvent
-from gwproto.messages import ShutdownEvent
-from result import Err
-from result import Ok
-from result import Result
+from gwproto.messages import Ack, EventBase, EventT, Ping, ProblemEvent, ShutdownEvent
+from result import Err, Ok, Result
 
 from gwproactor import ProactorSettings
-from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
-from gwproactor.external_watchdog import SystemDWatchdogCommandBuilder
+from gwproactor.external_watchdog import (
+    ExternalWatchdogCommandBuilder,
+    SystemDWatchdogCommandBuilder,
+)
 from gwproactor.io_loop import IOLoop
-from gwproactor.links import AckWaitInfo
-from gwproactor.links import AsyncioTimerManager
-from gwproactor.links import LinkManager
-from gwproactor.links import LinkManagerTransition
-from gwproactor.links import Transition
+from gwproactor.links import (
+    AckWaitInfo,
+    AsyncioTimerManager,
+    LinkManager,
+    LinkManagerTransition,
+    Transition,
+)
 from gwproactor.logger import ProactorLogger
-from gwproactor.message import DBGCommands
-from gwproactor.message import DBGEvent
-from gwproactor.message import DBGPayload
-from gwproactor.message import Message
-from gwproactor.message import MQTTConnectFailPayload
-from gwproactor.message import MQTTConnectPayload
-from gwproactor.message import MQTTDisconnectPayload
-from gwproactor.message import MQTTProblemsPayload
-from gwproactor.message import MQTTReceiptPayload
-from gwproactor.message import MQTTSubackPayload
-from gwproactor.message import PatWatchdog
-from gwproactor.message import Shutdown
-from gwproactor.persister import PersisterInterface
-from gwproactor.persister import StubPersister
-from gwproactor.proactor_interface import CommunicatorInterface
-from gwproactor.proactor_interface import IOLoopInterface
-from gwproactor.proactor_interface import MonitoredName
-from gwproactor.proactor_interface import Runnable
-from gwproactor.proactor_interface import ServicesInterface
+from gwproactor.message import (
+    DBGCommands,
+    DBGEvent,
+    DBGPayload,
+    Message,
+    MQTTConnectFailPayload,
+    MQTTConnectPayload,
+    MQTTDisconnectPayload,
+    MQTTProblemsPayload,
+    MQTTReceiptPayload,
+    MQTTSubackPayload,
+    PatWatchdog,
+    Shutdown,
+)
+from gwproactor.persister import PersisterInterface, StubPersister
+from gwproactor.proactor_interface import (
+    CommunicatorInterface,
+    IOLoopInterface,
+    MonitoredName,
+    Runnable,
+    ServicesInterface,
+)
 from gwproactor.problems import Problems
 from gwproactor.stats import ProactorStats
 from gwproactor.str_tasks import str_tasks
 from gwproactor.watchdog import WatchdogManager
 from gwproactor.web_manager import _WebManager
 
-
 T = TypeVar("T")
 
 
 class Proactor(ServicesInterface, Runnable):
-
     _name: str
     _settings: ProactorSettings
     _node: ShNode
@@ -92,22 +93,22 @@ class Proactor(ServicesInterface, Runnable):
         name: str,
         settings: ProactorSettings,
         hardware_layout: Optional[HardwareLayout] = None,
-    ):
+    ) -> None:
         self._name = name
         self._settings = settings
         if hardware_layout is None:
             hardware_layout = HardwareLayout(
-                dict(
-                    ShNodes=[
-                        dict(
-                            ShNodeId=str(uuid.uuid4()),
-                            Alias=self._name,
-                            ActorClassGtEnumSymbol="00000000",
-                            RoleGtEnumSymbol="00000000",
-                            TypeName="spaceheat.node.gt",
-                        )
+                {
+                    "ShNodes": [
+                        {
+                            "ShNodeId": str(uuid.uuid4()),
+                            "Alias": self._name,
+                            "ActorClassGtEnumSymbol": "00000000",
+                            "RoleGtEnumSymbol": "00000000",
+                            "TypeName": "spaceheat.node.gt",
+                        }
                     ]
-                )
+                }
             )
         self._layout = hardware_layout
         self._node = self._layout.node(name)
@@ -128,7 +129,7 @@ class Proactor(ServicesInterface, Runnable):
             timer_manager=AsyncioTimerManager(),
             ack_timeout_callback=self._process_ack_timeout,
         )
-        self._communicators = dict()
+        self._communicators = {}
         self._tasks = []
         self._stop_requested = False
         self._watchdog = WatchdogManager(9, self)
@@ -150,10 +151,10 @@ class Proactor(ServicesInterface, Runnable):
         return ProactorStats()
 
     @classmethod
-    def make_event_persister(cls, settings: ProactorSettings) -> PersisterInterface:
+    def make_event_persister(cls, settings: ProactorSettings) -> PersisterInterface:  # noqa: ARG003
         return StubPersister()
 
-    def send(self, message: Message):
+    def send(self, message: Message) -> None:
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_summary(
                 "OUT internal",
@@ -203,6 +204,14 @@ class Proactor(ServicesInterface, Runnable):
         return self._stats
 
     @property
+    def links(self) -> LinkManager:
+        return self._links
+
+    @property
+    def event_persister(self) -> PersisterInterface:
+        return self._event_persister
+
+    @property
     def io_loop_manager(self) -> IOLoopInterface:
         return self._io_loop_manager
 
@@ -220,7 +229,7 @@ class Proactor(ServicesInterface, Runnable):
         path: str,
         handler: HTTPHandler,
         **kwargs: Any,
-    ):
+    ) -> None:
         self._web_manager.add_web_route(
             server_name=server_name, method=method, path=path, handler=handler, **kwargs
         )
@@ -246,10 +255,10 @@ class Proactor(ServicesInterface, Runnable):
     def primary_peer_client(self) -> str:
         return self._links.primary_peer_client
 
-    def _send(self, message: Message):
+    def _send(self, message: Message) -> None:
         self.send(message)
 
-    def generate_event(self, event: EventT) -> Result[bool, BaseException]:
+    def generate_event(self, event: EventT) -> Result[bool, Exception]:
         return self._links.generate_event(event)
 
     def _process_ack_timeout(self, wait_info: AckWaitInfo) -> None:
@@ -270,10 +279,10 @@ class Proactor(ServicesInterface, Runnable):
             "--Proactor._process_ack_timeout path:0x%08X", path_dbg
         )
 
-    def _process_ack(self, link_name: str, message_id: str):
+    def _process_ack(self, link_name: str, message_id: str) -> None:
         self._links.process_ack(link_name, message_id)
 
-    def _process_dbg(self, dbg: DBGPayload):
+    def _process_dbg(self, dbg: DBGPayload) -> None:
         self._logger.path("++_process_dbg")
         path_dbg = 0
         count_dbg = 0
@@ -302,7 +311,7 @@ class Proactor(ServicesInterface, Runnable):
         )
         self._logger.path("--_process_dbg  path:0x%08X  count:%d", path_dbg, count_dbg)
 
-    def add_communicator(self, communicator: CommunicatorInterface):
+    def add_communicator(self, communicator: CommunicatorInterface) -> None:
         if communicator.name in self._communicators:
             raise ValueError(
                 f"ERROR. Communicator with name [{communicator.name}] already present"
@@ -319,8 +328,7 @@ class Proactor(ServicesInterface, Runnable):
     def event_loop(self) -> Optional[asyncio.AbstractEventLoop]:
         return self._loop
 
-    async def process_messages(self):
-        # noinspection PyBroadException
+    async def process_messages(self) -> None:
         try:
             self._start_processing_messages()
             while not self._stop_requested:
@@ -328,11 +336,10 @@ class Proactor(ServicesInterface, Runnable):
                 if not self._stop_requested:
                     await self.process_message(message)
                 self._receive_queue.task_done()
-        except BaseException as e:
+        except Exception as e:
             if not isinstance(e, asyncio.exceptions.CancelledError):
-                self._logger.exception(f"ERROR in process_message")
-                self._logger.error("Stopping proactor")
-                # noinspection PyBroadException
+                self._logger.exception("ERROR in process_message")
+                self._logger.error("Stopping proactor")  # noqa: TRY400
                 try:
                     self.generate_event(
                         ShutdownEvent(
@@ -342,65 +349,64 @@ class Proactor(ServicesInterface, Runnable):
                             )
                         )
                     )
-                except:
-                    self._logger.exception(f"ERROR generating exception event")
-        # noinspection PyBroadException
+                except:  # noqa: E722
+                    self._logger.exception("ERROR generating exception event")
+
         try:
             self.stop()
-        except:
-            self._logger.exception(f"ERROR stopping proactor")
+        except:  # noqa: E722
+            self._logger.exception("ERROR stopping proactor")
 
-    def start_tasks(self):
+    def start_tasks(self) -> None:
         self._tasks = [
             asyncio.create_task(self.process_messages(), name="process_messages"),
-        ] + self._links.start_ping_tasks()
+            *self._links.start_ping_tasks(),
+        ]
         self._start_derived_tasks()
 
-    def _start_derived_tasks(self):
+    def _start_derived_tasks(self) -> None:
         pass
 
-    def _derived_process_message(self, message: Message):
+    def _derived_process_message(self, message: Message) -> None:
         pass
 
     def _derived_process_mqtt_message(
         self, message: Message[MQTTReceiptPayload], decoded: Any
-    ):
+    ) -> None:
         pass
 
     @classmethod
     def _second_caller(cls) -> str:
         try:
             # noinspection PyProtectedMember,PyUnresolvedReferences
-            return sys._getframe(2).f_back.f_code.co_name
-        except BaseException as e:
+            return sys._getframe(2).f_back.f_code.co_name  # noqa: SLF001
+        except Exception as e:  # noqa: BLE001
             return f"[ERROR extracting caller of _report_errors: {e}"
 
-    def _report_error(
-        self, error: BaseException, msg: str = ""
-    ) -> Result[bool, BaseException]:
+    def _report_error(self, error: Exception, msg: str = "") -> Result[bool, Exception]:
         try:
             if not msg:
                 msg = self._second_caller()
             self._report_errors([error], msg)
-        except BaseException as e2:
+        except Exception as e2:  # noqa: BLE001
             return Err(e2)
         return Ok()
 
     def _report_errors(
-        self, errors: Sequence[BaseException], msg: str = ""
-    ) -> Result[bool, BaseException]:
+        self, errors: Sequence[Exception], msg: str = ""
+    ) -> Result[bool, Exception]:
         try:
             if not msg:
                 msg = self._second_caller()
             self.generate_event(Problems(errors=errors).problem_event(msg))
-        except BaseException as e2:
+        except Exception as e2:  # noqa: BLE001
             return Err(e2)
         return Ok()
 
-    def _start_processing_messages(self):
+    def _start_processing_messages(self) -> None:
         """Hook for processing before any messages are pulled from queue"""
 
-    async def process_message(self, message: Message):
+    async def process_message(self, message: Message) -> None:  # noqa: C901, PLR0912
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_enter(
                 "++Proactor.process_message %s/%s",
@@ -454,7 +460,9 @@ class Proactor(ServicesInterface, Runnable):
                 "--Proactor.process_message  path:0x%08X", path_dbg
             )
 
-    def _decode_mqtt_message(self, mqtt_payload) -> Result[Message[Any], BaseException]:
+    def _decode_mqtt_message(
+        self, mqtt_payload: MQTTReceiptPayload
+    ) -> Result[Message[Any], Exception]:
         try:
             result = Ok(
                 self._links.decode(
@@ -465,14 +473,15 @@ class Proactor(ServicesInterface, Runnable):
             )
         except Exception as e:
             self._logger.exception("ERROR decoding [%s]", mqtt_payload)
+            clip_len = 70
             self.generate_event(
                 ProblemEvent(
                     ProblemType=gwproto.messages.Problems.warning,
                     Summary=f"Decoding error topic [{mqtt_payload.message.topic}]  error [{type(e)}]",
                     Details=(
                         f"Topic: {mqtt_payload.message.topic}\n"
-                        f"Message: {mqtt_payload.message.payload[:70]}"
-                        f"{'...' if len(mqtt_payload.message.payload)> 70 else ''}\n"
+                        f"Message: {mqtt_payload.message.payload[:clip_len]}"
+                        f"{'...' if len(mqtt_payload.message.payload) > clip_len else ''}\n"
                         f"{traceback.format_exception(e)}\n"
                         f"Exception: {e}"
                     ),
@@ -483,7 +492,7 @@ class Proactor(ServicesInterface, Runnable):
 
     def _process_mqtt_message(
         self, mqtt_receipt_message: Message[MQTTReceiptPayload]
-    ) -> Result[Message[Any], BaseException]:
+    ) -> Result[Message[Any], Exception]:
         self._logger.path(
             "++Proactor._process_mqtt_message %s/%s",
             mqtt_receipt_message.Header.Src,
@@ -543,26 +552,28 @@ class Proactor(ServicesInterface, Runnable):
         )
         return decode_result
 
-    def _process_mqtt_connected(self, message: Message[MQTTConnectPayload]):
+    def _process_mqtt_connected(self, message: Message[MQTTConnectPayload]) -> None:
         result = self._links.process_mqtt_connected(message)
         if result.is_err():
             self._report_error(result.err(), "_process_mqtt_connected")
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def _derived_recv_deactivated(
-        self, transition: LinkManagerTransition
-    ) -> Result[bool, BaseException]:
+        self,
+        transition: LinkManagerTransition,  # noqa: ARG002
+    ) -> Result[bool, Exception]:
         return Ok()
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def _derived_recv_activated(
-        self, transition: Transition
-    ) -> Result[bool, BaseException]:
+        self,
+        transition: Transition,  # noqa: ARG002
+    ) -> Result[bool, Exception]:
         return Ok()
 
     def _process_mqtt_disconnected(
         self, message: Message[MQTTDisconnectPayload]
-    ) -> Result[bool, BaseException]:
+    ) -> Result[bool, Exception]:
         link_mgr_result = self._links.process_mqtt_disconnected(message)
         if link_mgr_result.is_ok() and link_mgr_result.value.recv_deactivated():
             result = self._derived_recv_deactivated(link_mgr_result.value)
@@ -572,12 +583,12 @@ class Proactor(ServicesInterface, Runnable):
 
     def _process_mqtt_connect_fail(
         self, message: Message[MQTTConnectFailPayload]
-    ) -> Result[bool, BaseException]:
+    ) -> Result[bool, Exception]:
         return self._links.process_mqtt_connect_fail(message)
 
     def _process_mqtt_suback(
         self, message: Message[MQTTSubackPayload]
-    ) -> Result[bool, BaseException]:
+    ) -> Result[bool, Exception]:
         self._logger.path(
             "++Proactor._process_mqtt_suback client:%s", message.Payload.client_name
         )
@@ -590,7 +601,7 @@ class Proactor(ServicesInterface, Runnable):
                 result = self._derived_recv_activated(link_mgr_result.value)
             else:
                 path_dbg |= 0x00000004
-                result = Ok(True)
+                result = Ok(value=True)
         else:
             path_dbg |= 0x00000008
             result = Err(link_mgr_result.err())
@@ -603,7 +614,7 @@ class Proactor(ServicesInterface, Runnable):
 
     def _process_mqtt_problems(
         self, message: Message[MQTTProblemsPayload]
-    ) -> Result[bool, BaseException]:
+    ) -> Result[bool, Exception]:
         self.generate_event(
             ProblemEvent(
                 ProblemType=gwproto.messages.Problems.error,
@@ -616,14 +627,14 @@ class Proactor(ServicesInterface, Runnable):
         )
         return Ok()
 
-    def _process_shutdown_message(self, message: Message[Shutdown]):
+    def _process_shutdown_message(self, message: Message[Shutdown]) -> None:
         self._stop_requested = True
         self.generate_event(ShutdownEvent(Reason=message.Payload.Reason))
         self._logger.lifecycle(
             f"Shutting down due to ShutdownMessage, [{message.Payload.Reason}]"
         )
 
-    async def run_forever(self):
+    async def run_forever(self) -> None:
         self._loop = asyncio.get_running_loop()
         self._receive_queue = asyncio.Queue()
         self._links.start(self._loop, self._receive_queue)
@@ -638,25 +649,23 @@ class Proactor(ServicesInterface, Runnable):
         self.start_tasks()
         await self.join()
 
-    def start(self):
+    def start(self) -> NoReturn:
         raise RuntimeError("ERROR. Proactor must be started by awaiting run_forever()")
 
-    def stop(self):
+    def stop(self) -> None:
         self._stop_requested = True
         for task in self._tasks:
-            # TODO: CS - Send self a shutdown message instead?
             if not task.done():
                 task.cancel()
         self._links.stop()
         for communicator in self._communicators.values():
             if isinstance(communicator, Runnable):
-                # noinspection PyBroadException
-                try:
+                try:  # noqa: SIM105
                     communicator.stop()
-                except:
+                except:  # noqa: E722, S110
                     pass
 
-    async def join(self):
+    async def join(self) -> None:
         self._logger.lifecycle("++Proactor.join()")
         self._logger.lifecycle(str_tasks(self._loop, "Proactor.join() - all tasks"))
         running: List[Awaitable] = self._tasks[:]
@@ -668,7 +677,7 @@ class Proactor(ServicesInterface, Runnable):
                         communicator.join(), name=f"{communicator_name}.join"
                     )
                 )
-        # noinspection PyBroadException
+
         try:
             while running:
                 self._logger.lifecycle(
@@ -684,9 +693,11 @@ class Proactor(ServicesInterface, Runnable):
                 for task in done:
                     if not task.cancelled() and (exception := task.exception()):
                         self._logger.error(
-                            f"EXCEPTION in task {task.get_name()}  {exception}"
+                            "EXCEPTION in task %(name)s  %(exception)s",
+                            name=task.get_name(),
+                            exception=exception,
                         )
                         self._logger.error(traceback.format_tb(exception.__traceback__))
-        except BaseException as e:
-            self._logger.exception("ERROR in Proactor.join: %s <%s>", type(e), e)
+        except Exception:
+            self._logger.exception("ERROR in Proactor.join")
         self._logger.lifecycle("--Proactor.join()")

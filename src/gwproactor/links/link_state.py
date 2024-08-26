@@ -1,18 +1,17 @@
 import abc
 import enum
 from dataclasses import dataclass
-from typing import Optional
-from typing import Sequence
+from typing import Optional, Sequence
 
 from gwproto import Message
-from result import Err
-from result import Ok
-from result import Result
+from result import Err, Ok, Result
 
-from gwproactor.message import MQTTConnectFailPayload
-from gwproactor.message import MQTTConnectPayload
-from gwproactor.message import MQTTDisconnectPayload
-from gwproactor.message import MQTTReceiptPayload
+from gwproactor.message import (
+    MQTTConnectFailPayload,
+    MQTTConnectPayload,
+    MQTTDisconnectPayload,
+    MQTTReceiptPayload,
+)
 
 
 class StateName(enum.Enum):
@@ -31,7 +30,7 @@ def state_is_active(state: StateName) -> bool:
 
 
 def state_is_active_for_send(state: StateName) -> bool:
-    return state in [StateName.active, StateName.awaiting_peer]
+    return state in {StateName.active, StateName.awaiting_peer}
 
 
 def state_is_active_for_recv(state: StateName) -> bool:
@@ -63,13 +62,13 @@ class Transition:
     def __bool__(self) -> bool:
         return self.old_state != self.new_state
 
-    def active(self):
+    def active(self) -> bool:
         return state_is_active(self.new_state)
 
-    def activated(self):
+    def activated(self) -> bool:
         return not state_is_active(self.old_state) and state_is_active(self.new_state)
 
-    def deactivated(self):
+    def deactivated(self) -> bool:
         return state_is_active(self.old_state) and not state_is_active(self.new_state)
 
     def send_is_active(self) -> bool:
@@ -100,13 +99,13 @@ class InvalidCommStateInput(Exception):
         transition: TransitionName = TransitionName.none,
         *,
         msg: str = "",
-    ):
+    ) -> None:
         self.name = name
         self.current_state = current_state
         self.transition = transition
         super().__init__(msg)
 
-    def __str__(self):
+    def __str__(self) -> str:
         s = self.__class__.__name__
         super_str = super().__str__()
         if super_str:
@@ -116,7 +115,7 @@ class InvalidCommStateInput(Exception):
 
 
 class CommLinkMissing(InvalidCommStateInput):
-    def __init__(self, name: str, *, msg=""):
+    def __init__(self, name: str, *, msg: str = "") -> None:
         super().__init__(name, msg=msg)
 
 
@@ -170,7 +169,8 @@ class State(abc.ABC):
         )
 
     def process_mqtt_suback(
-        self, num_pending_subscriptions: int
+        self,
+        num_pending_subscriptions: int,  # noqa: ARG002
     ) -> Result[Transition, InvalidCommStateInput]:
         return Err(
             InvalidCommStateInput(
@@ -192,13 +192,13 @@ class State(abc.ABC):
             )
         )
 
-    def active(self):
+    def active(self) -> bool:
         return state_is_active(self.name)
 
-    def active_for_send(self):
+    def active_for_send(self) -> bool:
         return state_is_active_for_send(self.name)
 
-    def active_for_recv(self):
+    def active_for_recv(self) -> bool:
         return state_is_active_for_recv(self.name)
 
 
@@ -283,10 +283,7 @@ class AwaitingSetup(State):
     def process_mqtt_suback(
         self, num_pending_subscriptions: int
     ) -> Result[Transition, InvalidCommStateInput]:
-        if num_pending_subscriptions == 0:
-            new_state = StateName.active
-        else:
-            new_state = self.name
+        new_state = StateName.active if num_pending_subscriptions == 0 else self.name
         return Ok(Transition("", TransitionName.mqtt_suback, self.name, new_state))
 
     def process_mqtt_message(self) -> Result[Transition, InvalidCommStateInput]:
@@ -356,7 +353,9 @@ class LinkState:
     states: dict[StateName, State]
     curr_state: State
 
-    def __init__(self, name, curr_state: StateName = StateName.not_started):
+    def __init__(
+        self, name: str, curr_state: StateName = StateName.not_started
+    ) -> None:
         self.name = name
         self.states = {
             state.name: state
@@ -379,16 +378,16 @@ class LinkState:
     def in_state(self, state: StateName) -> bool:
         return self.state == state
 
-    def active(self):
+    def active(self) -> bool:
         return self.curr_state.active()
 
-    def active_for_send(self):
+    def active_for_send(self) -> bool:
         return self.curr_state.active_for_send()
 
-    def active_for_recv(self):
+    def active_for_recv(self) -> bool:
         return self.curr_state.active_for_recv()
 
-    def _handle(self, result) -> Result[Transition, InvalidCommStateInput]:
+    def _handle(self, result: Result) -> Result[Transition, InvalidCommStateInput]:
         match result:
             case Ok(transition):
                 transition.link_name = self.name
@@ -429,8 +428,8 @@ class LinkState:
 class LinkStates:
     _links: dict[str, LinkState]
 
-    def __init__(self, names: Optional[Sequence[str]] = None):
-        self._links = dict()
+    def __init__(self, names: Optional[Sequence[str]] = None) -> None:
+        self._links = {}
         if names is not None:
             for name in names:
                 self.add(name)
@@ -452,8 +451,8 @@ class LinkStates:
     def __getitem__(self, name: str) -> LinkState:
         try:
             return self._links[name]
-        except KeyError:
-            raise CommLinkMissing(name)
+        except KeyError as e:
+            raise CommLinkMissing(name) from e
 
     def link_names(self) -> list[str]:
         return list(self._links.keys())
@@ -466,7 +465,7 @@ class LinkStates:
         self._links[name] = LinkState(name, state)
         return self._links[name]
 
-    def start_all(self) -> Result[bool, Sequence[BaseException]]:
+    def start_all(self) -> Result[bool, Sequence[Exception]]:
         errors = []
         for link in self._links.values():
             match link.start():
@@ -474,8 +473,7 @@ class LinkStates:
                     errors.append(exception)
         if errors:
             return Err(errors)
-        else:
-            return Ok()
+        return Ok()
 
     def start(self, name: str) -> Result[Transition, InvalidCommStateInput]:
         return self[name].start()

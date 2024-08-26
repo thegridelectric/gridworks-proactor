@@ -1,15 +1,14 @@
 import argparse
 import logging
 import warnings
+from typing import Any
 
-from gwproactor import ProactorLogger
-from gwproactor import ProactorSettings
-from gwproactor import setup_logging
+from gwproactor import ProactorLogger, ProactorSettings, setup_logging
 from gwproactor.config import Paths
 from gwproactor_test import LoggerGuards
 
 
-def test_proactor_logger(caplog):
+def test_proactor_logger(caplog: Any) -> None:
     paths = Paths()
     paths.mkdirs()
     settings = ProactorSettings()
@@ -45,17 +44,23 @@ def test_proactor_logger(caplog):
     assert logger.lifecycle_enabled
     assert logger.comm_event_enabled
     logger.info("info")
-    # assert len(caplog.records) == 1
-    if not len(caplog.records) == 1:
-        warnings.warn(f"len(caplog.records) ({len(caplog.records)}) != 1  (#1)")
+    if len(caplog.records) != 1:
+        warnings.warn(
+            f"len(caplog.records) ({len(caplog.records)}) != 1  (#1)",
+            stacklevel=2,
+        )
     caplog.clear()
     for function_name in ["path", "lifecycle", "comm_event"]:
         getattr(logger, function_name)(function_name)
-        # assert len(caplog.records) == 1
-        if not len(caplog.records) == 1:
-            warnings.warn(f"len(caplog.records) ({len(caplog.records)}) != 1  (#2)")
+        if len(caplog.records) != 1:
+            warnings.warn(
+                f"len(caplog.records) ({len(caplog.records)}) != 1  (#2)",
+                stacklevel=2,
+            )
         caplog.clear()
     logger.message_summary("IN", "x", "y")
-    # assert len(caplog.records) == 1
-    if not len(caplog.records) == 1:
-        warnings.warn(f"len(caplog.records) ({len(caplog.records)}) != 1  (#3)")
+    if len(caplog.records) != 1:
+        warnings.warn(
+            f"len(caplog.records) ({len(caplog.records)}) != 1  (#3)",
+            stacklevel=2,
+        )

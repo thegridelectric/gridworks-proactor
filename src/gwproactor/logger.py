@@ -1,6 +1,6 @@
+import contextlib
 import logging
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 import pendulum
 
@@ -14,11 +14,12 @@ class MessageSummary:
     )
 
     @classmethod
-    def format(
+    def format(  # noqa: PLR0913
         cls,
         direction: str,
         actor_alias: str,
         topic: str,
+        *,
         payload_object: Any = None,
         broker_flag: str = " ",
         timestamp: Optional[pendulum.datetime] = None,
@@ -41,7 +42,7 @@ class MessageSummary:
         Returns:
             Formatted string.
         """
-        try:
+        with contextlib.suppress(Exception):
             if timestamp is None:
                 timestamp = pendulum.now("UTC")
             if include_timestamp:
@@ -49,9 +50,9 @@ class MessageSummary:
             else:
                 format_ = cls.DEFAULT_FORMAT
             direction = direction.strip()
-            if direction.startswith("OUT") or direction.startswith("SND"):
+            if direction.startswith(("OUT", "SND")):
                 arrow = "->"
-            elif direction.startswith("IN") or direction.startswith("RCV"):
+            elif direction.startswith(("IN", "RCV")):  # noqa: PIE810
                 arrow = "<-"
             else:
                 arrow = "? "
@@ -61,9 +62,8 @@ class MessageSummary:
                 payload_str = payload_object.__class__.__name__
             else:
                 payload_str = type(payload_object)
-            if message_id:
-                if len(message_id) > 11:
-                    message_id = f"{message_id[:8]}..."
+            if message_id and len(message_id) > logging.DEBUG + 1:
+                message_id = f"{message_id[:8]}..."
             return format_.format(
                 timestamp=timestamp.isoformat(),
                 direction=direction,
@@ -74,9 +74,7 @@ class MessageSummary:
                 payload_type=payload_str,
                 message_id=message_id,
             )
-        except Exception as e:
-            print(f"ouch got {e}")
-            return ""
+        return ""
 
 
 class ProactorLogger(logging.LoggerAdapter):
@@ -95,7 +93,7 @@ class ProactorLogger(logging.LoggerAdapter):
         lifecycle: str,
         comm_event: str,
         extra: Optional[dict] = None,
-    ):
+    ) -> None:
         super().__init__(logging.getLogger(base), extra=extra)
         self.message_summary_logger = logging.getLogger(message_summary)
         self.lifecycle_logger = logging.getLogger(lifecycle)
@@ -121,7 +119,7 @@ class ProactorLogger(logging.LoggerAdapter):
     def comm_event_enabled(self) -> bool:
         return self.comm_event_logger.isEnabledFor(logging.INFO)
 
-    def message_summary(
+    def message_summary(  # noqa: PLR0913
         self,
         direction: str,
         actor_alias: str,
@@ -144,22 +142,22 @@ class ProactorLogger(logging.LoggerAdapter):
                 )
             )
 
-    def path(self, msg: str, *args, **kwargs) -> None:
+    def path(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self.message_summary_logger.debug(msg, *args, **kwargs)
 
-    def lifecycle(self, msg: str, *args, **kwargs) -> None:
+    def lifecycle(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self.lifecycle_logger.info(msg, *args, **kwargs)
 
-    def comm_event(self, msg: str, *args, **kwargs) -> None:
+    def comm_event(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self.comm_event_logger.info(msg, *args, **kwargs)
 
-    def message_enter(self, msg: str, *args, **kwargs) -> None:
+    def message_enter(self, msg: str, *args: Any, **kwargs: Any) -> None:
         if self.path_enabled:
             self.path("")
             self.path(self.MESSAGE_ENTRY_DELIMITER)
             self.path(msg, *args, **kwargs)
 
-    def message_exit(self, msg: str, *args, **kwargs) -> None:
+    def message_exit(self, msg: str, *args: Any, **kwargs: Any) -> None:
         if self.path_enabled:
             self.path(msg, *args, **kwargs)
             self.path(self.MESSAGE_EXIT_DELIMITER)

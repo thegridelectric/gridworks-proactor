@@ -3,14 +3,10 @@ import inspect
 import logging
 import textwrap
 import time
-from inspect import getframeinfo
-from inspect import stack
+from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Awaitable
-from typing import Callable
-from typing import Optional
-from typing import Union
-
+from types import TracebackType
+from typing import Awaitable, Callable, Optional, Self, Type, Union
 
 Predicate = Callable[[], bool]
 AwaitablePredicate = Callable[[], Awaitable[bool]]
@@ -24,17 +20,24 @@ class StopWatch:
     end: float = 0
     elapsed: float = 0
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.start = time.time()
+        return self
 
-    def __exit__(self, type_, value, traceback):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> bool:
         self.end = time.time()
         self.elapsed = self.end - self.start
+        return False
 
 
-async def await_for(
+async def await_for(  # noqa: C901
     f: Union[Predicate, AwaitablePredicate],
-    timeout: float,
+    timeout: float,  # noqa: ASYNC109
     tag: str = "",
     raise_timeout: bool = True,
     retry_duration: float = 0.1,
@@ -89,29 +92,27 @@ async def await_for(
                         result = f()
     if result:
         return True
-    else:
-        caller = getframeinfo(stack()[1][0])
-        format_dict = dict(
-            tag=tag,
-            file=Path(caller.filename).name,
-            line=caller.lineno,
-            seconds=time.time() - start,
-            f=f,
-            p=f(),
-            err_str=err_str_f_(),
+    caller = getframeinfo(stack()[1][0])
+    format_dict = {
+        "tag": tag,
+        "file": Path(caller.filename).name,
+        "line": caller.lineno,
+        "seconds": time.time() - start,
+        "f": f,
+        "p": f(),
+        "err_str": err_str_f_(),
+    }
+    err_str = err_format.format(**format_dict)
+    if error_dict is not None:
+        error_dict.update(
+            format_dict,
+            err_str=err_str,
         )
-        err_str = err_format.format(**format_dict)
-        if error_dict is not None:
-            error_dict.update(
-                format_dict,
-                err_str=err_str,
-            )
-        if logger is not None:
-            logger.error(err_str)
-        if raise_timeout:
-            raise ValueError(err_str)
-        else:
-            return False
+    if logger is not None:
+        logger.error(err_str)
+    if raise_timeout:
+        raise ValueError(err_str)
+    return False
 
 
 def wait_for(
@@ -128,9 +129,8 @@ def wait_for(
     """
     now = time.time()
     until = now + timeout
-    if now >= until:
-        if f():
-            return True
+    if now >= until and f():
+        return True
     while now < until:
         if f():
             return True
@@ -142,5 +142,4 @@ def wait_for(
         raise ValueError(
             f"ERROR. Function {f} timed out after {timeout} seconds. {tag}"
         )
-    else:
-        return False
+    return False

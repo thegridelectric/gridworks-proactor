@@ -1,19 +1,25 @@
+# ruff: noqa: ERA001
 import asyncio
-import subprocess
+import contextlib
+import subprocess  # noqa: S404
 import time
 from typing import Optional
 
 from gwproto import Message
 
-from gwproactor.message import InternalShutdownMessage
-from gwproactor.message import KnownNames
-from gwproactor.message import PatExternalWatchdog
-from gwproactor.message import PatExternalWatchdogMessage
-from gwproactor.message import PatInternalWatchdog
-from gwproactor.proactor_interface import Communicator
-from gwproactor.proactor_interface import MonitoredName
-from gwproactor.proactor_interface import Runnable
-from gwproactor.proactor_interface import ServicesInterface
+from gwproactor.message import (
+    InternalShutdownMessage,
+    KnownNames,
+    PatExternalWatchdog,
+    PatExternalWatchdogMessage,
+    PatInternalWatchdog,
+)
+from gwproactor.proactor_interface import (
+    Communicator,
+    MonitoredName,
+    Runnable,
+    ServicesInterface,
+)
 
 
 class _MonitoredName(MonitoredName):
@@ -26,14 +32,14 @@ class WatchdogManager(Communicator, Runnable):
     _monitored_names: dict[str, _MonitoredName]
     _pat_external_watchdog_process_args: list[str]
 
-    def __init__(self, seconds_per_pat, services: ServicesInterface):
+    def __init__(self, seconds_per_pat: float, services: ServicesInterface) -> None:
         super().__init__(KnownNames.watchdog_manager.value, services)
         self.lg = services.logger
         self._seconds_per_pat = seconds_per_pat
-        self._monitored_names = dict()
+        self._monitored_names = {}
         self._pat_external_watchdog_process_args = []
 
-    def start(self):
+    def start(self) -> None:
         if self._watchdog_task is None:
             self._pat_external_watchdog_process_args = (
                 self._services.get_external_watchdog_builder_class().pat_args(
@@ -50,16 +56,14 @@ class WatchdogManager(Communicator, Runnable):
                 self._check_pats(), name="pat_watchdog"
             )
 
-    def stop(self):
+    def stop(self) -> None:
         if self._watchdog_task is not None and not self._watchdog_task.done():
             self._watchdog_task.cancel()
 
-    async def join(self):
+    async def join(self) -> None:
         if self._watchdog_task is not None:
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._watchdog_task
-            except asyncio.CancelledError:
-                pass
 
     def process_message(self, message: Message) -> None:
         # self.lg.path("++WatchdogManager.process_message")
@@ -78,7 +82,7 @@ class WatchdogManager(Communicator, Runnable):
                 )
         # self.lg.path(f"--WatchdogManager.process_message  0x{path_dbg:08X}")
 
-    def _pat_internal_watchdog(self, name: str):
+    def _pat_internal_watchdog(self, name: str) -> None:
         if name not in self._monitored_names:
             raise ValueError(
                 f"ERROR. Received interal watchdog pat from unmonitored name: {name}. Monistored names: {list(self._monitored_names.keys())}"
@@ -138,6 +142,6 @@ class WatchdogManager(Communicator, Runnable):
             )
         )
 
-    def _pat_external_watchdog(self):
+    def _pat_external_watchdog(self) -> None:
         if self._pat_external_watchdog_process_args:
-            subprocess.run(self._pat_external_watchdog_process_args, check=True)
+            subprocess.run(self._pat_external_watchdog_process_args, check=True)  # noqa: S603

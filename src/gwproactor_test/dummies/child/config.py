@@ -2,8 +2,7 @@ from pydantic import root_validator
 
 from gwproactor import ProactorSettings
 from gwproactor.config import MQTTClient
-from gwproactor_test.dummies.names import DUMMY_CHILD_ENV_PREFIX
-from gwproactor_test.dummies.names import DUMMY_CHILD_NAME
+from gwproactor_test.dummies.names import DUMMY_CHILD_ENV_PREFIX, DUMMY_CHILD_NAME
 
 
 class DummyChildSettings(ProactorSettings):
@@ -15,5 +14,6 @@ class DummyChildSettings(ProactorSettings):
         env_prefix = DUMMY_CHILD_ENV_PREFIX
 
     @root_validator(pre=True)
+    @classmethod
     def pre_root_validator(cls, values: dict) -> dict:
         return ProactorSettings.update_paths_name(values, DUMMY_CHILD_NAME)

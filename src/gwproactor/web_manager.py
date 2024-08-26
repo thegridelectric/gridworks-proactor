@@ -9,9 +9,7 @@ from gwproto import Message
 from gwproto.types import WebServerGt
 from result import Result
 
-from gwproactor.proactor_interface import Communicator
-from gwproactor.proactor_interface import Runnable
-from gwproactor.proactor_interface import ServicesInterface
+from gwproactor.proactor_interface import Communicator, Runnable, ServicesInterface
 
 
 def enable_aiohttp_logging() -> None:
@@ -46,9 +44,9 @@ class _RunWebServer:
         self,
         config: WebServerGt,
         routes: list[RouteDef],
-    ):
+    ) -> None:
         self.config = config
-        self.routes = routes[:]
+        self.routes = routes.copy()
 
     async def __call__(self) -> None:
         app = web.Application()
@@ -63,29 +61,28 @@ class _RunWebServer:
                 **self.config.Kwargs,
             )
             await site.start()
-            while True:
+            while True:  # noqa: ASYNC110
                 await asyncio.sleep(10)
         finally:
-            try:
+            try:  # noqa: SIM105
                 await runner.cleanup()
-            except:  # noqa
+            except:  # noqa: E722, S110
                 pass
 
 
 class _WebManager(Communicator, Runnable):
-
     _configs: dict[str, WebServerGt]
     _routes: dict[str, list[RouteDef]]
 
     def __init__(self, services: ServicesInterface) -> None:
         super().__init__("_WebManager", services)
-        self._configs = dict()
+        self._configs = {}
         self._routes = defaultdict(list)
 
-    def process_message(self, message: Message) -> Result[bool, BaseException]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:  # noqa: ARG002
         raise ValueError("_WebManager does not currently process any messages")
 
-    def disable(self):
+    def disable(self) -> None:
         self._configs.clear()
         self._routes.clear()
 
@@ -122,7 +119,7 @@ class _WebManager(Communicator, Runnable):
         path: str,
         handler: HTTPHandler,
         **kwargs: Any,
-    ):
+    ) -> None:
         self._routes[server_name].append(
             RouteDef(
                 method=method,

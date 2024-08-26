@@ -5,19 +5,12 @@ create forward references for implementation hiearchies
 import asyncio
 import importlib
 import sys
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
-from typing import Coroutine
-from typing import Optional
-from typing import Sequence
-from typing import Type
-from typing import TypeVar
+from typing import Any, Coroutine, NoReturn, Optional, Sequence, Type, TypeVar
 
 from aiohttp.typedefs import Handler as HTTPHandler
-from gwproto import HardwareLayout
-from gwproto import ShNode
+from gwproto import HardwareLayout, ShNode
 from gwproto.messages import EventT
 from result import Result
 
@@ -26,7 +19,6 @@ from gwproactor.external_watchdog import ExternalWatchdogCommandBuilder
 from gwproactor.logger import ProactorLogger
 from gwproactor.message import Message
 from gwproactor.stats import ProactorStats
-
 
 T = TypeVar("T")
 
@@ -46,11 +38,11 @@ class CommunicatorInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _send(self, message: Message):
+    def _send(self, message: Message) -> NoReturn:
         raise NotImplementedError
 
     @abstractmethod
-    def process_message(self, message: Message) -> Result[bool, BaseException]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:
         raise NotImplementedError
 
     @property
@@ -70,7 +62,7 @@ class Communicator(CommunicatorInterface, ABC):
     _name: str
     _services: "ServicesInterface"
 
-    def __init__(self, name: str, services: "ServicesInterface"):
+    def __init__(self, name: str, services: "ServicesInterface") -> None:
         self._name = name
         self._services = services
 
@@ -232,8 +224,8 @@ class ServicesInterface(CommunicatorInterface):
         method: str,
         path: str,
         handler: HTTPHandler,
-        **kwargs: Any
-    ):
+        **kwargs: Any,
+    ) -> NoReturn:
         """Adds configuration for web server route which will be available after start() is called.
 
         May be called even if associated web server is not configured, in which case this route

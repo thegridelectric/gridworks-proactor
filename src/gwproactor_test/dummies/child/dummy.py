@@ -1,10 +1,13 @@
+import typing
 from typing import Optional
 
-from gwproto import Decoders
-from gwproto import Message
-from gwproto import MQTTCodec
-from gwproto import MQTTTopic
-from gwproto import create_message_payload_discriminator
+from gwproto import (
+    Decoders,
+    Message,
+    MQTTCodec,
+    MQTTTopic,
+    create_message_payload_discriminator,
+)
 
 from gwproactor import ProactorSettings
 from gwproactor.external_watchdog import SystemDWatchdogCommandBuilder
@@ -12,9 +15,7 @@ from gwproactor.links import QOS
 from gwproactor.persister import TimedRollingFilePersister
 from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies.child.config import DummyChildSettings
-from gwproactor_test.dummies.names import DUMMY_CHILD_NAME
-from gwproactor_test.dummies.names import DUMMY_PARENT_NAME
-
+from gwproactor_test.dummies.names import DUMMY_CHILD_NAME, DUMMY_PARENT_NAME
 
 ChildMessageDecoder = create_message_payload_discriminator(
     "ChildMessageDecoder",
@@ -26,14 +27,14 @@ ChildMessageDecoder = create_message_payload_discriminator(
 
 
 class ChildMQTTCodec(MQTTCodec):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             Decoders.from_objects(message_payload_discriminator=ChildMessageDecoder)
         )
 
-    def validate_source_alias(self, source_alias: str):
+    def validate_source_alias(self, source_alias: str) -> None:
         if source_alias != DUMMY_PARENT_NAME:
-            raise Exception(
+            raise ValueError(
                 f"alias {source_alias} not my AtomicTNode ({DUMMY_PARENT_NAME})!"
             )
 
@@ -45,9 +46,9 @@ class DummyChild(Proactor):
         self,
         name: str = "",
         settings: Optional[DummyChildSettings] = None,
-    ):
+    ) -> None:
         super().__init__(
-            name=name if name else DUMMY_CHILD_NAME,
+            name=name or DUMMY_CHILD_NAME,
             settings=DummyChildSettings() if settings is None else settings,
         )
         self._links.add_mqtt_link(
@@ -81,5 +82,5 @@ class DummyChild(Proactor):
         return self.name
 
     @property
-    def settings(self):
-        return self._settings
+    def settings(self) -> DummyChildSettings:
+        return typing.cast(DummyChildSettings, self._settings)

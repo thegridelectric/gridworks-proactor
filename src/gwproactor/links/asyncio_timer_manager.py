@@ -1,7 +1,6 @@
 import asyncio
 import typing
-from typing import Any
-from typing import Callable
+from typing import Any, Callable
 
 from gwproactor.links.timer_interface import TimerManagerInterface
 

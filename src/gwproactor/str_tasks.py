@@ -1,8 +1,6 @@
 import asyncio
 import traceback
-from typing import Awaitable
-from typing import Iterable
-from typing import Optional
+from typing import Awaitable, Iterable, Optional
 
 
 def str_tasks(
@@ -16,7 +14,7 @@ def str_tasks(
             tasks = asyncio.all_tasks(loop_)
         s += f"Tasks: {len(tasks)}  [{tag}]\n"
 
-        def _get_task_exception(task_):
+        def _get_task_exception(task_: asyncio.Task) -> BaseException:
             try:
                 exception_ = task_.exception()
             except asyncio.CancelledError as _e:
@@ -33,12 +31,11 @@ def str_tasks(
                 f"exception:{_get_task_exception(task)}  "
                 f"{task.get_coro()}\n"
             )
-    except BaseException as e:
-        # noinspection PyBroadException
+    except Exception as e:  # noqa: BLE001
         try:
-            s += f"ERROR in str_tasks:\n"
+            s += "ERROR in str_tasks:\n"
             s += "".join(traceback.format_exception(e))
             s += "\n"
-        except:
+        except:  # noqa: E722, S110
             pass
     return s
