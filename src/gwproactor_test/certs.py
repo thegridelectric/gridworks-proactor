@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Optional
 
 from gwcert import DEFAULT_CA_DIR
-from pydantic import BaseModel, BaseSettings
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 from gwproactor.config.mqtt import MQTTClient
 from gwproactor.config.paths import TLSPaths
@@ -106,7 +107,11 @@ def _copy_keys(test_cert_dir: Path, dst_paths: TLSPaths) -> None:
 
 def uses_tls(model: BaseModel | BaseSettings) -> bool:
     """Check whether any MQTTClient in the model have MQTTClient.tls.use_tls == True."""
-    return any(isinstance(v, MQTTClient) and v.tls.use_tls for k, v in model._iter())  # noqa
+    return any(
+        isinstance(getattr(model, field_name), MQTTClient)
+        and getattr(model, field_name).tls.use_tls
+        for field_name in model.model_fields
+    )
 
 
 def copy_keys(
@@ -118,9 +123,10 @@ def copy_keys(
     if test_cert_cache_dir is None:
         test_cert_cache_dir = test_certificate_cache_dir()
     test_cert_cache = Path(test_cert_cache_dir)
-    for k, v in model._iter():  # noqa
+    for field_name in model.model_fields:
+        v = getattr(model, field_name)
         if isinstance(v, MQTTClient):
-            _copy_keys(test_cert_cache / model_tag / k, v.tls.paths)
+            _copy_keys(test_cert_cache / model_tag / field_name, v.tls.paths)
 
 
 def set_test_certificate_cache_dir(certificate_cache_dir: Path | str) -> None:

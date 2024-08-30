@@ -254,7 +254,7 @@ class LinkManager:
             self.publish_upstream(event, AckRequired=True)
         return self._event_persister.persist(
             event.MessageId,
-            event.json(sort_keys=True, indent=2).encode(self.PERSISTER_ENCODING),
+            event.model_dump_json(indent=2).encode(self.PERSISTER_ENCODING),
         )
 
     def _start_reupload(self) -> None:

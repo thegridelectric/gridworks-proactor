@@ -27,5 +27,4 @@ repos:
     rev: v0.6.2
     hooks:
       - id: ruff
-        args: ["--fix", "--output-format", "grouped"]
       - id: ruff-format

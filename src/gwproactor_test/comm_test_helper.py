@@ -182,7 +182,8 @@ class CommTestHelper:
         cls, settings: ProactorSettings
     ) -> list[MQTTClient]:
         clients = []
-        for _, v in settings._iter():  # noqa
+        for field_name in settings.model_fields:
+            v = getattr(settings, field_name)
             if isinstance(v, MQTTClient):
                 clients.append(v)
         return clients

@@ -50,7 +50,7 @@ class _EventGen:
     def _generate_event(self, member_name: str) -> _EventEntry:
         event = DBGEvent(Command=DBGPayload(), Msg=f"event {len(self)} {member_name}")
         ret = self.persister.persist(
-            event.MessageId, event.json(sort_keys=True, indent=2).encode()
+            event.MessageId, event.model_dump_json(indent=2).encode()
         )
         if ret.is_err():
             raise ret.err()
@@ -114,7 +114,7 @@ class ProactorCommTests:
             # unstarted child
             assert stats.num_received == 0
             assert link.state == StateName.not_started
-            child.logger.info(child.settings.json(sort_keys=True, indent=2))
+            child.logger.info(child.settings.model_dump_json(indent=2))
 
             # start child
             h.start_child()
@@ -920,7 +920,9 @@ class ProactorCommTests:
             # (awaiting_setup -> message_from_peer -> awaiting_setup)
             # Receive another message from peer, remaining in awaiting_setup
             dbg_topic = MQTTTopic.encode(
-                "gw", parent.publication_name, DBGPayload.__fields__["TypeName"].default
+                "gw",
+                parent.publication_name,
+                DBGPayload.model_fields["TypeName"].default,
             )
             assert stats.num_received_by_topic[dbg_topic] == 0
             parent.send_dbg_to_peer()

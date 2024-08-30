@@ -22,7 +22,7 @@ def test_tls_paths() -> None:
         "private_key_path": None,
     }
     paths = TLSPaths()
-    paths_d = paths.dict()
+    paths_d = paths.model_dump()
     for k, v in exp.items():
         assert paths_d[k] == v
         assert getattr(paths, k) == v
@@ -36,7 +36,7 @@ def test_tls_paths() -> None:
         "private_key_path": certs_dir / name / "private" / f"{name}.pem",
     }
     paths = TLSPaths.defaults(certs_dir, name)
-    paths_d = paths.dict()
+    paths_d = paths.model_dump()
     for k, v in exp.items():
         assert paths_d[k] == v
         assert getattr(paths, k) == v
@@ -49,7 +49,7 @@ def test_tls_paths() -> None:
         "private_key_path": None,
     }
     paths = TLSPaths(ca_cert_path=ca_cert_path)
-    paths_d = paths.dict()
+    paths_d = paths.model_dump()
     for k, v in exp.items():
         assert paths_d[k] == v
         assert getattr(paths, k) == v
@@ -63,7 +63,7 @@ def test_tls_paths() -> None:
         "private_key_path": certs_dir / name / "private" / f"{name}.pem",
     }
     paths = paths.effective_paths(certs_dir, name)
-    paths_d = paths.dict()
+    paths_d = paths.model_dump()
     for k, v in exp.items():
         assert paths_d[k] == v
         assert getattr(paths, k) == v
@@ -111,10 +111,7 @@ def test_tls_info() -> None:
         "keyfile_password": SecretStr(""),
     }
     info = TLSInfo()
-    info_d = info.dict()
-    for k, v in exp.items():
-        assert info_d[k] == v
-        assert getattr(info, k) == v
+    assert info.model_dump() == exp
 
     # path updates, given a certs_dir and a name
     certs_dir = Path("foo/certs")
@@ -125,10 +122,7 @@ def test_tls_info() -> None:
         "cert_path": certs_dir / name / f"{name}.crt",
         "private_key_path": certs_dir / name / "private" / f"{name}.pem",
     }
-    info_d = info.dict()
-    for k, v in exp.items():
-        assert info_d[k] == v
-        assert getattr(info, k) == v
+    assert info.model_dump() == exp
 
 
 def test_mqtt_client_settings() -> None:
@@ -156,11 +150,7 @@ def test_mqtt_client_settings() -> None:
         },
     }
     settings = MQTTClient(**exp)
-    d = settings.dict()
-    assert d == dict(exp, port=port)
-    for k, v in exp.items():
-        assert d[k] == v
-        assert getattr(settings, k) == v
+    assert settings.model_dump() == dict(exp, port=port)
     assert settings.port == port
     assert settings.password.get_secret_value() == password
 
@@ -173,11 +163,7 @@ def test_mqtt_client_settings() -> None:
         "cert_path": certs_dir / name / f"{name}.crt",
         "private_key_path": certs_dir / name / "private" / f"{name}.pem",
     }
-    d = settings.dict()
-    assert d == dict(exp, port=port)
-    for k, v in exp.items():
-        assert d[k] == v
-        assert getattr(settings, k) == v
+    assert settings.model_dump() == dict(exp, port=port)
 
 
 def exp_paths_dict(**kwargs: Any) -> dict:
@@ -217,7 +203,7 @@ def assert_paths(paths: Paths, **kwargs: Any) -> None:
         assert (
             got_value == exp_value
         ), f"Paths.{field}\n\texp: {exp_value}\n\tgot: {got_value}"
-    assert paths.dict() == exp
+    assert paths.model_dump() == exp
 
 
 def test_paths_defaults(clean_test_env: Any, tmp_path: Path) -> None:

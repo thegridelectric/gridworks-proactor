@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Iterable
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from .paths import DEFAULT_BASE_NAME
 
@@ -58,7 +58,7 @@ class LoggerLevels(BaseModel):
     def qualified_logger_names(self, base_log_name: str) -> dict[str, str]:
         return {
             field_name: f"{base_log_name}.{field_name}"
-            for field_name in self.__fields__
+            for field_name in self.model_fields
         }
 
     def _logger_levels(
@@ -70,14 +70,14 @@ class LoggerLevels(BaseModel):
         }
 
     def logger_names_to_levels(self, base_log_name: str) -> dict[str, dict[str, int]]:
-        return self._logger_levels(base_log_name, self.__fields__)
+        return self._logger_levels(base_log_name, self.model_fields)
 
     def set_logger_names_to_levels(
         self, base_log_name: str
     ) -> dict[str, dict[str, int]]:
-        return self._logger_levels(base_log_name, self.__fields_set__)
+        return self._logger_levels(base_log_name, self.model_fields_set)
 
-    @validator("*")
+    @field_validator("*")
     @classmethod
     def logging_level_str_to_int(cls, v: int | str) -> int:
         try:
