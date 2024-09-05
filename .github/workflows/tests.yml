@@ -186,6 +186,8 @@ jobs:
         with:
           name: coverage-data
           path: ".coverage.*"
+          if-no-files-found: error
+          include-hidden-files: true
 
       - name: Upload documentation
         if: matrix.session == 'docs-build'
