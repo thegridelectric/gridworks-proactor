@@ -98,17 +98,20 @@ class Proactor(ServicesInterface, Runnable):
         self._settings = settings
         if hardware_layout is None:
             hardware_layout = HardwareLayout(
-                {
+                layout={
                     "ShNodes": [
                         {
                             "ShNodeId": str(uuid.uuid4()),
                             "Alias": self._name,
-                            "ActorClassGtEnumSymbol": "00000000",
-                            "RoleGtEnumSymbol": "00000000",
+                            "ActorClass": "NoActor",
+                            "Role": "Unknown",
                             "TypeName": "spaceheat.node.gt",
                         }
                     ]
-                }
+                },
+                cacs={},
+                components={},
+                nodes={},
             )
         self._layout = hardware_layout
         self._node = self._layout.node(name)
