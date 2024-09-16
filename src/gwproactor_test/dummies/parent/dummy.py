@@ -2,7 +2,7 @@
 
 from typing import Optional, cast
 
-from gwproto import Decoders, MQTTCodec, MQTTTopic, create_message_payload_discriminator
+from gwproto import MQTTCodec, MQTTTopic, create_message_model
 
 from gwproactor.links import QOS
 from gwproactor.message import Message
@@ -11,16 +11,14 @@ from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies.names import DUMMY_CHILD_NAME, DUMMY_PARENT_NAME
 from gwproactor_test.dummies.parent.config import DummyParentSettings
 
-ParentMessageDecoder = create_message_payload_discriminator(
-    model_name="ParentMessageDecoder",
-    module_names=["gwproto.messages", "gwproactor.message"],
-)
-
 
 class ParentMQTTCodec(MQTTCodec):
     def __init__(self) -> None:
         super().__init__(
-            Decoders.from_objects(message_payload_discriminator=ParentMessageDecoder)
+            create_message_model(
+                model_name="ParentMessageDecoder",
+                module_names=["gwproto.messages", "gwproactor.message"],
+            )
         )
 
     def validate_source_alias(self, source_alias: str) -> None:

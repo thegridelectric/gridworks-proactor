@@ -225,7 +225,7 @@ class ServicesInterface(CommunicatorInterface):
         path: str,
         handler: HTTPHandler,
         **kwargs: Any,
-    ) -> NoReturn:
+    ) -> None:
         """Adds configuration for web server route which will be available after start() is called.
 
         May be called even if associated web server is not configured, in which case this route
