@@ -786,8 +786,8 @@ yarl = "^1.9.2"
 [package.source]
 type = "git"
 url = "https://github.com/thegridelectric/gridworks-protocol.git"
-reference = "as/messages"
-resolved_reference = "19103d0e8aee403eb63d8ea23cdd6bac19b92387"
+reference = "dev"
+resolved_reference = "7aba4a5cce4542fed462d3e0a1f8aca680680163"
 
 [[package]]
 name = "h11"
@@ -2598,4 +2598,4 @@ tests = ["freezegun", "gridworks-cert", "pytest", "pytest-asyncio"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "7a307f924cab5d63057725b2b9a8a730be1ac3956ab644048524d865a8d81b8e"
+content-hash = "205f02f2604519bc2513d5cbf48e3dc0670a90c31c097a8057e064b63c189270"
