@@ -9,15 +9,15 @@ from gwproto.messages import Problems as ProblemType
 class Problems(ValueError):
     MAX_PROBLEMS = 10
 
-    errors: list[Exception]
-    warnings: list[Exception]
+    errors: list[BaseException]
+    warnings: list[BaseException]
     max_problems: Optional[int] = MAX_PROBLEMS
 
     def __init__(
         self,
         msg: str = "",
-        warnings: Optional[Sequence[Exception]] = None,
-        errors: Optional[Sequence[Exception]] = None,
+        warnings: Optional[Sequence[BaseException]] = None,
+        errors: Optional[Sequence[BaseException]] = None,
         max_problems: Optional[int] = MAX_PROBLEMS,
     ) -> None:
         self.errors = [] if errors is None else list(errors)

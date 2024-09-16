@@ -28,7 +28,7 @@ paho-mqtt = "^1.6.1"
 result = "^0.9.0"
 #gridworks-protocol = "^0.8.0"
 #gridworks-protocol = {path="../gridworks-protocol", develop=true}
-gridworks-protocol = {git = "https://github.com/thegridelectric/gridworks-protocol.git", branch="as/cacs"}
+gridworks-protocol = {git = "https://github.com/thegridelectric/gridworks-protocol.git", branch="dev"}
 aiohttp = "^3.8.5"
 yarl = "^1.9.2"
 multidict = "^6.0.4"
