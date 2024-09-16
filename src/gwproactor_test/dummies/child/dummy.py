@@ -2,11 +2,10 @@ import typing
 from typing import Optional
 
 from gwproto import (
-    Decoders,
     Message,
     MQTTCodec,
     MQTTTopic,
-    create_message_payload_discriminator,
+    create_message_model,
 )
 
 from gwproactor import ProactorSettings
@@ -17,19 +16,17 @@ from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies.child.config import DummyChildSettings
 from gwproactor_test.dummies.names import DUMMY_CHILD_NAME, DUMMY_PARENT_NAME
 
-ChildMessageDecoder = create_message_payload_discriminator(
-    "ChildMessageDecoder",
-    [
-        "gwproto.messages",
-        "gwproactor.message",
-    ],
-)
-
 
 class ChildMQTTCodec(MQTTCodec):
     def __init__(self) -> None:
         super().__init__(
-            Decoders.from_objects(message_payload_discriminator=ChildMessageDecoder)
+            create_message_model(
+                "ChildMessageDecoder",
+                [
+                    "gwproto.messages",
+                    "gwproactor.message",
+                ],
+            )
         )
 
     def validate_source_alias(self, source_alias: str) -> None:
