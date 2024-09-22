@@ -6,7 +6,7 @@ from aiohttp import web
 from aiohttp.typedefs import Handler as HTTPHandler
 from aiohttp.web_routedef import RouteDef
 from gwproto import Message
-from gwproto.types import WebServerGt
+from gwproto.type_helpers import WebServerGt
 from result import Result
 
 from gwproactor.proactor_interface import Communicator, Runnable, ServicesInterface
