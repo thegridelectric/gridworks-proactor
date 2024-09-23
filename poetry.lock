@@ -803,8 +803,8 @@ yarl = "^1.9.2"
 [package.source]
 type = "git"
 url = "https://github.com/thegridelectric/gridworks-protocol.git"
-reference = "jm/cacs-by-make-model"
-resolved_reference = "0ed1a694bf2392dcf6998471c03ee3b3b34e49f5"
+reference = "jm/channel"
+resolved_reference = "4a1c8847a5aa6590fd07986f5b2a98074f5818b6"
 
 [[package]]
 name = "h11"
@@ -2623,4 +2623,4 @@ tests = ["freezegun", "gridworks-cert", "pytest", "pytest-asyncio"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "13b130aaf3d69414478a7046e63588b96c3825eba98cca359bb2830fd79756bc"
+content-hash = "cf203e2a64d15725cb17a21fa41324857edee30abbfe17d43b5a00c415a28cfd"
