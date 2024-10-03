@@ -6,7 +6,6 @@ import traceback
 import uuid
 from typing import (
     Any,
-    Awaitable,
     Dict,
     List,
     NoReturn,
@@ -83,6 +82,7 @@ class Proactor(ServicesInterface, Runnable):
     _links: LinkManager
     _communicators: Dict[str, CommunicatorInterface]
     _stop_requested: bool
+    _stopped: bool
     _tasks: List[asyncio.Task]
     _io_loop_manager: IOLoop
     _web_manager: _WebManager
@@ -136,6 +136,7 @@ class Proactor(ServicesInterface, Runnable):
         self._communicators = {}
         self._tasks = []
         self._stop_requested = False
+        self._stopped = False
         self._watchdog = WatchdogManager(9, self)
         self.add_communicator(self._watchdog)
         self._io_loop_manager = IOLoop(self)
@@ -670,9 +671,14 @@ class Proactor(ServicesInterface, Runnable):
                     pass
 
     async def join(self) -> None:
-        self._logger.lifecycle("++Proactor.join()")
+        self._logger.lifecycle("++Proactor.join()  proactor: <%s>", self.name)
+        if self._stopped:
+            self._logger.lifecycle(
+                "--Proactor.join()  proactor: <%s>  (already stopped)", self.name
+            )
+            return
         self._logger.lifecycle(str_tasks(self._loop, "Proactor.join() - all tasks"))
-        running: List[Awaitable] = self._tasks[:]
+        running: List[asyncio.Task] = self._tasks[:]
         for communicator in self._communicators.values():
             communicator_name = communicator.name
             if isinstance(communicator, Runnable):
@@ -697,11 +703,14 @@ class Proactor(ServicesInterface, Runnable):
                 for task in done:
                     if not task.cancelled() and (exception := task.exception()):
                         self._logger.error(
-                            "EXCEPTION in task %(name)s  %(exception)s",
-                            name=task.get_name(),
-                            exception=exception,
+                            "EXCEPTION in task <%(name)s?>  <%(exception)s>",
+                            {
+                                "name": task.get_name(),
+                                "exception": exception,
+                            },
                         )
                         self._logger.error(traceback.format_tb(exception.__traceback__))
+            self._stopped = True
         except Exception:
             self._logger.exception("ERROR in Proactor.join")
-        self._logger.lifecycle("--Proactor.join()")
+        self._logger.lifecycle("--Proactor.join()  proactor: <%s>", self.name)
