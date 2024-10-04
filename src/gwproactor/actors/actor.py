@@ -27,7 +27,7 @@ class Actor(ActorInterface, Communicator, ABC):
         super().__init__(name, services)
 
     @property
-    def alias(self) -> str:
+    def name(self) -> str:
         return self._name
 
     @property

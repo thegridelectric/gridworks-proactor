@@ -108,7 +108,7 @@ class ActorInterface(CommunicatorInterface, Runnable, ABC):
 
     @property
     @abstractmethod
-    def alias(self) -> str:
+    def name(self) -> str:
         raise NotImplementedError
 
     @property

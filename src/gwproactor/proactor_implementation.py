@@ -102,9 +102,8 @@ class Proactor(ServicesInterface, Runnable):
                     "ShNodes": [
                         {
                             "ShNodeId": str(uuid.uuid4()),
-                            "Alias": self._name,
+                            "Name": self._name,
                             "ActorClass": "NoActor",
-                            "Role": "Unknown",
                             "TypeName": "spaceheat.node.gt",
                         }
                     ]
