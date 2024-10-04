@@ -1,4 +1,5 @@
 import asyncio
+import copy
 from collections import defaultdict
 from typing import Any
 
@@ -128,3 +129,12 @@ class _WebManager(Communicator, Runnable):
                 kwargs=kwargs,
             )
         )
+
+    def get_route_strings(self) -> dict[str, list[str]]:
+        return {
+            config_name: [str(route) for route in self._routes[config_name]]
+            for config_name in self._routes
+        }
+
+    def get_configs(self) -> dict[str, WebServerGt]:
+        return copy.deepcopy(self._configs)
