@@ -10,6 +10,30 @@ from typing import Optional
 from gwproactor.config.proactor_settings import ProactorSettings
 
 
+def enable_aiohttp_logging() -> None:
+    import logging
+
+    for logger_name in [
+        "aiohttp.access",
+        "aiohttp.client",
+        "aiohttp.internal",
+        "aiohttp.server",
+        "aiohttp.web",
+        "aiohttp.websocket",
+    ]:
+        logger_ = logging.getLogger(logger_name)
+        handler_ = logging.StreamHandler()
+        handler_.setFormatter(
+            logging.Formatter(
+                fmt="%(asctime)s.%(msecs)03d   %(message)s",
+                datefmt="%Y-%m-%d  %H:%M:%S",
+            )
+        )
+        logger_.addHandler(handler_)
+        logger_.setLevel(logging.INFO)
+        logger_.setLevel(logging.DEBUG)
+
+
 def format_exceptions(exceptions: list[Exception]) -> str:
     s = ""
     try:
@@ -125,6 +149,11 @@ def setup_logging(  # noqa: C901, PLR0912, PLR0915
                 base_logger.addHandler(file_handler)
             except Exception as e:  # noqa: BLE001
                 errors.append(e)
+
+        # Enable IOLoop logging if requested
+        if getattr(args, "aiohttp_logging", None):
+            enable_aiohttp_logging()
+
         config_finished = True
     except Exception as e:  # noqa: BLE001
         config_finished = False
