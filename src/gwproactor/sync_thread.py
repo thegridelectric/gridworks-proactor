@@ -233,7 +233,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
                         self.running = False
                         reason = (
                             f"SyncAsyncInteractionThread ({self.name}) caught exception:\n"
-                            f"{traceback.format_exception(e)}\n"
+                            f"{''.join(traceback.format_exception(e))}\n"
                         )
                         if handle_exception_str:
                             reason += (
