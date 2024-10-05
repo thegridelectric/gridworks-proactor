@@ -791,7 +791,7 @@ description = "Gridworks Protocol"
 optional = false
 python-versions = "^3.11"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 gridworks = "^1.2.0"
@@ -801,8 +801,10 @@ pytz = "^2024.1"
 yarl = "^1.9.2"
 
 [package.source]
-type = "directory"
-url = "../gridworks-protocol"
+type = "git"
+url = "https://github.com/thegridelectric/gridworks-protocol.git"
+reference = "jm/node-name"
+resolved_reference = "2ddef4fcc02335c9b1e7d1786c9d78f5b96e536b"
 
 [[package]]
 name = "h11"
@@ -2621,4 +2623,4 @@ tests = ["freezegun", "gridworks-cert", "pytest", "pytest-asyncio"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "72984ce71b60bdbb45547ba4b61c8767759c104dd2e7a92264df8e0b2e4d190c"
+content-hash = "a06a679f3ba01362a46394826c1b99c910bae94be05932e57bc4fa6670a278e8"
