@@ -1,27 +1,22 @@
 import argparse
 import asyncio
+import contextlib
 import logging
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
-from typing import Optional
-from typing import Type
-from typing import TypeVar
+from types import TracebackType
+from typing import Callable, Optional, Type, TypeVar
 
-from gwproactor import Proactor
-from gwproactor import ProactorSettings
-from gwproactor import setup_logging
-from gwproactor.config import DEFAULT_BASE_NAME
-from gwproactor.config import LoggingSettings
-from gwproactor.config import MQTTClient
-from gwproactor.config import Paths
+from gwproactor import Proactor, ProactorSettings, setup_logging
+from gwproactor.config import DEFAULT_BASE_NAME, LoggingSettings, MQTTClient, Paths
 from gwproactor_test import copy_keys
 from gwproactor_test.certs import uses_tls
 from gwproactor_test.logger_guard import LoggerGuards
-from gwproactor_test.proactor_recorder import ProactorT
-from gwproactor_test.proactor_recorder import RecorderInterface
-from gwproactor_test.proactor_recorder import make_recorder_class
+from gwproactor_test.proactor_recorder import (
+    ProactorT,
+    RecorderInterface,
+    make_recorder_class,
+)
 
 
 @dataclass
@@ -60,7 +55,7 @@ class CommTestHelper:
     warn_if_multi_subscription_tests_skipped: bool = True
 
     @classmethod
-    def setup_class(cls):
+    def setup_class(cls) -> None:
         if cls.parent_recorder_t is None:
             cls.parent_recorder_t = make_recorder_class(cls.parent_t)
         if cls.child_recorder_t is None:
@@ -85,7 +80,7 @@ class CommTestHelper:
         parent_path_name: str = "parent",
         child_kwargs: Optional[dict] = None,
         parent_kwargs: Optional[dict] = None,
-    ):
+    ) -> None:
         self.setup_class()
         self.child_helper = ProactorTestHelper(
             child_name,
@@ -95,7 +90,7 @@ class CommTestHelper:
                 if child_settings is None
                 else child_settings
             ),
-            dict() if child_kwargs is None else child_kwargs,
+            {} if child_kwargs is None else child_kwargs,
         )
         self.parent_helper = ProactorTestHelper(
             parent_name,
@@ -110,7 +105,7 @@ class CommTestHelper:
                 if parent_settings is None
                 else parent_settings
             ),
-            dict() if parent_kwargs is None else parent_kwargs,
+            {} if parent_kwargs is None else parent_kwargs,
         )
         self.verbose = verbose
         self.child_verbose = child_verbose
@@ -160,7 +155,7 @@ class CommTestHelper:
         return self
 
     def start_proactor(self, proactor: Proactor) -> "CommTestHelper":
-        asyncio.create_task(proactor.run_forever(), name=f"{proactor.name}_run_forever")
+        asyncio.create_task(proactor.run_forever(), name=f"{proactor.name}_run_forever")  # noqa: RUF006
         return self
 
     def start(self) -> "CommTestHelper":
@@ -187,7 +182,8 @@ class CommTestHelper:
         cls, settings: ProactorSettings
     ) -> list[MQTTClient]:
         clients = []
-        for _, v in settings._iter():  # noqa
+        for field_name in settings.model_fields:
+            v = getattr(settings, field_name)
             if isinstance(v, MQTTClient):
                 clients.append(v)
         return clients
@@ -213,7 +209,7 @@ class CommTestHelper:
         self._set_settings_use_tls(use_tls, self._get_child_clients_supporting_tls())
         self._set_settings_use_tls(use_tls, self._get_parent_clients_supporting_tls())
 
-    def setup_logging(self):
+    def setup_logging(self) -> None:
         self.child_helper.settings.paths.mkdirs(parents=True)
         self.parent_helper.settings.paths.mkdirs(parents=True)
         errors = []
@@ -229,7 +225,7 @@ class CommTestHelper:
         setup_logging(
             argparse.Namespace(verbose=self.verbose or self.child_verbose),
             self.child_helper.settings,
-            errors,
+            errors=errors,
             add_screen_handler=True,
             root_gets_handlers=False,
         )
@@ -237,35 +233,34 @@ class CommTestHelper:
         setup_logging(
             argparse.Namespace(verbose=self.verbose or self.parent_verbose),
             self.parent_helper.settings,
-            errors,
+            errors=errors,
             add_screen_handler=self.parent_on_screen,
             root_gets_handlers=False,
         )
         assert not errors
 
-    async def stop_and_join(self):
+    async def stop_and_join(self) -> None:
         proactors = [
             helper.proactor
             for helper in [self.child_helper, self.parent_helper]
             if helper.proactor is not None
         ]
         for proactor in proactors:
-            # noinspection PyBroadException
-            try:
+            with contextlib.suppress(Exception):
                 proactor.stop()
-            except:
-                pass
         for proactor in proactors:
-            # noinspection PyBroadException
-            try:
+            with contextlib.suppress(Exception):
                 await proactor.join()
-            except:
-                pass
 
     async def __aenter__(self) -> "CommTestHelper":
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> bool:
         await self.stop_and_join()
         if exc is not None:
             logging.getLogger("gridworks").error(
@@ -275,6 +270,7 @@ class CommTestHelper:
                 self.parent_helper.settings.paths.log_dir,
             )
         self.logger_guards.restore()
+        return False
 
     def summary_str(self) -> str:
         return (

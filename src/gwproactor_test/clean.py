@@ -5,19 +5,14 @@ import os
 import shutil
 from pathlib import Path
 from types import NoneType
-from typing import Generator
-from typing import Optional
+from typing import Any, Generator, Optional
 
 import dotenv
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from gwproactor import ProactorSettings
-from gwproactor.config import DEFAULT_LAYOUT_FILE
-from gwproactor.config import Paths
-from gwproactor_test.dummies import DUMMY_CHILD_ENV_PREFIX
-from gwproactor_test.dummies import DUMMY_PARENT_ENV_PREFIX
-
+from gwproactor.config import DEFAULT_LAYOUT_FILE, Paths
+from gwproactor_test.dummies import DUMMY_CHILD_ENV_PREFIX, DUMMY_PARENT_ENV_PREFIX
 
 TEST_DOTENV_PATH = "tests/.env-gwproactor-test"
 TEST_DOTENV_PATH_VAR = "GWPROACTOR_TEST_DOTENV_PATH"
@@ -25,6 +20,10 @@ TEST_HARDWARE_LAYOUT_PATH = Path(__file__).parent / "config" / DEFAULT_LAYOUT_FI
 DUMMY_TEST_HARDWARE_LAYOUT_PATH = (
     Path(__file__).parent / "config" / "dummy-hardware-layout.json"
 )
+DEFAULT_PREFIXES = [
+    DUMMY_CHILD_ENV_PREFIX,
+    DUMMY_PARENT_ENV_PREFIX,
+]
 
 
 class DefaultTestEnv:
@@ -50,10 +49,7 @@ class DefaultTestEnv:
     Working test directory creation can be suppressed by passing xdg_home as None.
     """
 
-    DEFAULT_PREFIXES = [
-        DUMMY_CHILD_ENV_PREFIX,
-        DUMMY_PARENT_ENV_PREFIX,
-    ]
+    DEFAULT_PREFIXES = DEFAULT_PREFIXES
 
     xdg_home: Path | NoneType = None
     src_test_layout: Path = TEST_HARDWARE_LAYOUT_PATH
@@ -63,12 +59,13 @@ class DefaultTestEnv:
 
     def __init__(
         self,
+        *,
         xdg_home: Path | str | None = None,
         src_test_layout: Path = TEST_HARDWARE_LAYOUT_PATH,
         copy_test_layout: bool = True,
         use_test_dotenv: bool = True,
         prefixes: Optional[list[str]] = None,
-    ):
+    ) -> None:
         if isinstance(xdg_home, str) and bool(xdg_home):
             xdg_home = Path(xdg_home)
         self.xdg_home = xdg_home
@@ -81,7 +78,7 @@ class DefaultTestEnv:
             self.prefixes = prefixes[:]
 
     @classmethod
-    def get_default_prefixes(cls):
+    def get_default_prefixes(cls) -> list[str]:
         return cls.DEFAULT_PREFIXES[:]
 
     @contextlib.contextmanager
@@ -94,7 +91,7 @@ class DefaultTestEnv:
             self.setup_text_xdg_home(m)
             yield m
 
-    def setup_text_xdg_home(self, m: MonkeyPatch):
+    def setup_text_xdg_home(self, m: MonkeyPatch) -> None:
         if self.xdg_home is not None:
             m.setenv("XDG_DATA_HOME", str(self.xdg_home / ".local" / "share"))
             m.setenv("XDG_STATE_HOME", str(self.xdg_home / ".local" / "state"))
@@ -104,13 +101,13 @@ class DefaultTestEnv:
                 paths.hardware_layout.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(self.src_test_layout, paths.hardware_layout)
 
-    def clean_env(self, m: MonkeyPatch):
+    def clean_env(self, m: MonkeyPatch) -> None:
         for env_var in os.environ:
             for prefix in self.prefixes:
                 if env_var.startswith(prefix):
                     m.delenv(env_var)
 
-    def load_test_dotenv(self):
+    def load_test_dotenv(self) -> None:
         if self.use_test_dotenv:
             test_dotenv_file = os.getenv(TEST_DOTENV_PATH_VAR)
             if test_dotenv_file is None:
@@ -122,7 +119,9 @@ class DefaultTestEnv:
 
 
 @pytest.fixture(autouse=True)
-def default_test_env(request, tmp_path) -> Generator[MonkeyPatch, None, None]:
+def default_test_env(
+    request: Any, tmp_path: Path
+) -> Generator[MonkeyPatch, None, None]:
     """Automatically used fixture producing monkeypatched environment with:
         - all vars starting with any entry in DefaultTestEnv.DEFAULT_PREFIXES removed
         - vars loaded from test env file, if specified
@@ -153,7 +152,7 @@ def default_test_env(request, tmp_path) -> Generator[MonkeyPatch, None, None]:
 
 
 @pytest.fixture
-def clean_test_env(request, tmp_path) -> Generator[MonkeyPatch, None, None]:
+def clean_test_env(request: Any, tmp_path: Path) -> Generator[MonkeyPatch, None, None]:
     """Get a monkeypatched environment with all vars starting with any entry in DEFAULT_PREFIXES *removed* (and none
     loaded from any dotenv file)."""
     test_env = getattr(request, "param", DefaultTestEnv(use_test_dotenv=False))

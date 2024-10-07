@@ -1,12 +1,13 @@
 """Test ExternalWatchdogCommandBuilder"""
 
 import os
+from typing import Any
 
 from gwproactor import ExternalWatchdogCommandBuilder
 from gwproactor.external_watchdog import SystemDWatchdogCommandBuilder
 
 
-def test_external_watchdog_command_building(monkeypatch):
+def test_external_watchdog_command_building(monkeypatch: Any) -> None:
     """Test ExternalWatchdogCommandBuilder and SystemDWatchdogCommandBuilder"""
     assert ExternalWatchdogCommandBuilder.default_pat_args() == []
     service_name = "foo"

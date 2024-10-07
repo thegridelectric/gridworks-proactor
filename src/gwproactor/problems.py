@@ -1,7 +1,6 @@
 import textwrap
 import traceback
-from typing import Optional
-from typing import Sequence
+from typing import Optional, Sequence
 
 from gwproto.messages import ProblemEvent
 from gwproto.messages import Problems as ProblemType
@@ -20,7 +19,7 @@ class Problems(ValueError):
         warnings: Optional[Sequence[BaseException]] = None,
         errors: Optional[Sequence[BaseException]] = None,
         max_problems: Optional[int] = MAX_PROBLEMS,
-    ):
+    ) -> None:
         self.errors = [] if errors is None else list(errors)
         self.warnings = [] if warnings is None else list(warnings)
         self.max_problems = max_problems
@@ -29,12 +28,12 @@ class Problems(ValueError):
     def __bool__(self) -> bool:
         return bool(self.errors) or bool(self.warnings)
 
-    def add_error(self, error: BaseException) -> "Problems":
+    def add_error(self, error: Exception) -> "Problems":
         if len(self.errors) < self.max_problems:
             self.errors.append(error)
         return self
 
-    def add_warning(self, warning: BaseException) -> "Problems":
+    def add_warning(self, warning: Exception) -> "Problems":
         if len(self.warnings) < self.max_problems:
             self.warnings.append(warning)
         return self
@@ -59,7 +58,7 @@ class Problems(ValueError):
     def error_traceback_str(self) -> str:
         s = ""
         for i, error in enumerate(self.errors):
-            s += f"Traceback for error {i+1} / {len(self.errors)}:\n"
+            s += f"Traceback for error {i + 1} / {len(self.errors)}:\n"
             for line in traceback.format_exception(error):
                 s += textwrap.indent(line, "  ")
         return s
@@ -68,10 +67,9 @@ class Problems(ValueError):
         return str(self)
 
     def problem_event(self, summary: str, src: str = "") -> ProblemEvent:
-        if self.errors:
-            problem_type = ProblemType.error
-        else:
-            problem_type = ProblemType.warning
         return ProblemEvent(
-            Src=src, ProblemType=problem_type, Summary=summary, Details=str(self)
+            Src=src,
+            ProblemType=ProblemType.error if self.errors else ProblemType.warning,
+            Summary=summary,
+            Details=str(self),
         )

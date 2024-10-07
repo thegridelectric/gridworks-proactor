@@ -1,4 +1,5 @@
 import asyncio
+import copy
 from collections import defaultdict
 from typing import Any
 
@@ -6,36 +7,10 @@ from aiohttp import web
 from aiohttp.typedefs import Handler as HTTPHandler
 from aiohttp.web_routedef import RouteDef
 from gwproto import Message
-from gwproto.types import WebServerGt
+from gwproto.type_helpers import WebServerGt
 from result import Result
 
-from gwproactor.proactor_interface import Communicator
-from gwproactor.proactor_interface import Runnable
-from gwproactor.proactor_interface import ServicesInterface
-
-
-def enable_aiohttp_logging() -> None:
-    import logging
-
-    for logger_name in [
-        "aiohttp.access",
-        "aiohttp.client",
-        "aiohttp.internal",
-        "aiohttp.server",
-        "aiohttp.web",
-        "aiohttp.websocket",
-    ]:
-        logger_ = logging.getLogger(logger_name)
-        handler_ = logging.StreamHandler()
-        handler_.setFormatter(
-            logging.Formatter(
-                fmt="%(asctime)s.%(msecs)03d   %(message)s",
-                datefmt="%Y-%m-%d  %H:%M:%S",
-            )
-        )
-        logger_.addHandler(handler_)
-        logger_.setLevel(logging.INFO)
-        logger_.setLevel(logging.DEBUG)
+from gwproactor.proactor_interface import Communicator, Runnable, ServicesInterface
 
 
 class _RunWebServer:
@@ -46,9 +21,9 @@ class _RunWebServer:
         self,
         config: WebServerGt,
         routes: list[RouteDef],
-    ):
+    ) -> None:
         self.config = config
-        self.routes = routes[:]
+        self.routes = routes.copy()
 
     async def __call__(self) -> None:
         app = web.Application()
@@ -63,29 +38,28 @@ class _RunWebServer:
                 **self.config.Kwargs,
             )
             await site.start()
-            while True:
+            while True:  # noqa: ASYNC110
                 await asyncio.sleep(10)
         finally:
-            try:
+            try:  # noqa: SIM105
                 await runner.cleanup()
-            except:  # noqa
+            except:  # noqa: E722, S110
                 pass
 
 
 class _WebManager(Communicator, Runnable):
-
     _configs: dict[str, WebServerGt]
     _routes: dict[str, list[RouteDef]]
 
     def __init__(self, services: ServicesInterface) -> None:
         super().__init__("_WebManager", services)
-        self._configs = dict()
+        self._configs = {}
         self._routes = defaultdict(list)
 
-    def process_message(self, message: Message) -> Result[bool, BaseException]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:  # noqa: ARG002
         raise ValueError("_WebManager does not currently process any messages")
 
-    def disable(self):
+    def disable(self) -> None:
         self._configs.clear()
         self._routes.clear()
 
@@ -122,7 +96,7 @@ class _WebManager(Communicator, Runnable):
         path: str,
         handler: HTTPHandler,
         **kwargs: Any,
-    ):
+    ) -> None:
         self._routes[server_name].append(
             RouteDef(
                 method=method,
@@ -131,3 +105,12 @@ class _WebManager(Communicator, Runnable):
                 kwargs=kwargs,
             )
         )
+
+    def get_route_strings(self) -> dict[str, list[str]]:
+        return {
+            config_name: [str(route) for route in self._routes[config_name]]
+            for config_name in self._routes
+        }
+
+    def get_configs(self) -> dict[str, WebServerGt]:
+        return copy.deepcopy(self._configs)

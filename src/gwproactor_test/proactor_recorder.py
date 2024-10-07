@@ -1,40 +1,27 @@
+# ruff: noqa: ERA001
 import dataclasses
 from abc import abstractmethod
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Any
-from typing import Callable
-from typing import Optional
-from typing import Tuple
-from typing import Type
-from typing import TypeVar
-from typing import cast
+from dataclasses import dataclass, field
+from typing import Any, Callable, Optional, Tuple, Type, TypeVar, cast
 
 from gwproto import Message
-from gwproto.messages import CommEvent
-from gwproto.messages import EventT
-from gwproto.messages import PingMessage
-from paho.mqtt.client import MQTT_ERR_SUCCESS
-from paho.mqtt.client import MQTTMessageInfo
+from gwproto.messages import CommEvent, EventT, PingMessage
+from paho.mqtt.client import MQTT_ERR_SUCCESS, MQTTMessageInfo
 
-from gwproactor import Proactor
-from gwproactor import ProactorSettings
-from gwproactor import Runnable
-from gwproactor import ServicesInterface
+from gwproactor import Proactor, ProactorSettings, Runnable, ServicesInterface
 from gwproactor.config import LoggerLevels
-from gwproactor.links import LinkManager
-from gwproactor.links import MQTTClients
-from gwproactor.links import MQTTClientWrapper
-from gwproactor.message import DBGCommands
-from gwproactor.message import DBGPayload
-from gwproactor.message import MQTTReceiptPayload
-from gwproactor.message import MQTTSubackPayload
-from gwproactor.stats import LinkStats
-from gwproactor.stats import ProactorStats
+from gwproactor.links import LinkManager, MQTTClients, MQTTClientWrapper
+from gwproactor.message import (
+    DBGCommands,
+    DBGPayload,
+    MQTTReceiptPayload,
+    MQTTSubackPayload,
+)
+from gwproactor.stats import LinkStats, ProactorStats
 
 
 def split_subscriptions(client_wrapper: MQTTClientWrapper) -> Tuple[int, Optional[int]]:
-    for i, (topic, qos) in enumerate(client_wrapper.subscription_items()):
+    for topic, qos in client_wrapper.subscription_items():
         MQTTClientWrapper.subscribe(client_wrapper, topic, qos)
     return MQTT_ERR_SUCCESS, None
 
@@ -67,25 +54,25 @@ class RecorderInterface(ServicesInterface, Runnable):
     def make_stats(cls) -> RecorderStats: ...
 
     @abstractmethod
-    def split_client_subacks(self, client_name: str): ...
+    def split_client_subacks(self, client_name: str) -> None: ...
 
     @abstractmethod
-    def restore_client_subacks(self, client_name: str): ...
+    def restore_client_subacks(self, client_name: str) -> None: ...
 
     @abstractmethod
-    def pause_subacks(self): ...
+    def pause_subacks(self) -> None: ...
 
     @abstractmethod
-    def release_subacks(self, num_released: int = -1): ...
+    def release_subacks(self, num_released: int = -1) -> None: ...
 
     @abstractmethod
-    def ping_peer(self): ...
+    def ping_peer(self) -> None: ...
 
     @abstractmethod
-    def summary_str(self): ...
+    def summary_str(self) -> None: ...
 
     @abstractmethod
-    def summarize(self): ...
+    def summarize(self) -> None: ...
 
     @property
     @abstractmethod
@@ -120,20 +107,19 @@ class RecorderLinks(LinkManager):
     needs_ack: list[_PausedAck]
 
     # noinspection PyMissingConstructor
-    def __init__(self, other: LinkManager):
+    def __init__(self, other: LinkManager) -> None:
         self.__dict__ = other.__dict__
         self.acks_paused = False
         self.needs_ack = []
 
     def publish_message(
-        self, client, message: Message, qos: int = 0, context: Any = None
+        self, client: str, message: Message, qos: int = 0, context: Any = None
     ) -> MQTTMessageInfo:
         if self.acks_paused:
             self.needs_ack.append(_PausedAck(client, message, qos, context))
             return MQTTMessageInfo(-1)
-        else:
-            # noinspection PyProtectedMember
-            return super().publish_message(client, message, qos=qos, context=context)
+        # noinspection PyProtectedMember
+        return super().publish_message(client, message, qos=qos, context=context)
 
     def release_acks(self, clear: bool = False, num_to_release: int = -1) -> int:
         # self._logger.info(
@@ -170,7 +156,7 @@ class RecorderLinks(LinkManager):
         super().generate_event(event)
 
 
-def make_recorder_class(
+def make_recorder_class(  # noqa: C901
     proactor_type: Type[ProactorT],
 ) -> Callable[..., RecorderInterface]:
     class Recorder(proactor_type):
@@ -178,7 +164,9 @@ def make_recorder_class(
         pending_subacks: list[Message]
         mqtt_messages_dropped: bool
 
-        def __init__(self, name: str, settings: ProactorSettings, **kwargs_):
+        def __init__(
+            self, name: str, settings: ProactorSettings, **kwargs_: Any
+        ) -> None:
             super().__init__(name=name, settings=settings, **kwargs_)
             self.subacks_paused = False
             self.pending_subacks = []
@@ -193,22 +181,22 @@ def make_recorder_class(
         def needs_ack(self) -> list[_PausedAck]:
             return self._links.needs_ack
 
-        def split_client_subacks(self: ProactorT, client_name: str):
+        def split_client_subacks(self: ProactorT, client_name: str) -> None:
             client_wrapper = self.mqtt_client_wrapper(client_name)
 
-            def member_split_subscriptions():
+            def member_split_subscriptions() -> Tuple[int, Optional[int]]:
                 return split_subscriptions(client_wrapper)
 
             client_wrapper.subscribe_all = member_split_subscriptions
 
-        def restore_client_subacks(self: ProactorT, client_name: str):
+        def restore_client_subacks(self: ProactorT, client_name: str) -> None:
             client_wrapper = self.mqtt_client_wrapper(client_name)
             client_wrapper.subscribe_all = MQTTClientWrapper.subscribe_all
 
-        def pause_subacks(self):
+        def pause_subacks(self) -> None:
             self.subacks_paused = True
 
-        def release_subacks(self: ProactorT, num_released: int = -1):
+        def release_subacks(self: ProactorT, num_released: int = -1) -> None:
             self.subacks_paused = False
             if num_released < 0:
                 num_released = len(self.pending_subacks)
@@ -217,25 +205,25 @@ def make_recorder_class(
             for message in release:
                 self._receive_queue.put_nowait(message)
 
-        async def process_message(self, message: Message):
+        async def process_message(self, message: Message) -> None:
             if self.subacks_paused and isinstance(message.Payload, MQTTSubackPayload):
                 self.pending_subacks.append(message)
             else:
                 await super().process_message(message)
 
-        def pause_acks(self):
+        def pause_acks(self) -> None:
             self._links.acks_paused = True
 
         def release_acks(self, clear: bool = False, num_to_release: int = -1) -> int:
             return self._links.release_acks(clear, num_to_release=num_to_release)
 
         def set_ack_timeout_seconds(self, delay: float) -> None:
-            self._links._acks._default_delay_seconds = delay  # noqa
+            self.links.ack_manager._default_delay_seconds = delay  # noqa: SLF001
 
-        def drop_mqtt(self, drop: bool):
+        def drop_mqtt(self, drop: bool) -> None:
             self.mqtt_messages_dropped = drop
 
-        def _process_mqtt_message(self, message: Message[MQTTReceiptPayload]):
+        def _process_mqtt_message(self, message: Message[MQTTReceiptPayload]) -> None:
             if not self.mqtt_messages_dropped:
                 # noinspection PyProtectedMember
                 super()._process_mqtt_message(message)
@@ -279,7 +267,7 @@ def make_recorder_class(
             lifecycle: int = -1,
             comm_event: int = -1,
             command: Optional[DBGCommands | str] = None,
-        ):
+        ) -> None:
             if isinstance(command, str):
                 command = DBGCommands(command)
             self.send_threadsafe(
@@ -297,7 +285,7 @@ def make_recorder_class(
                 )
             )
 
-        def _derived_process_message(self, message: Message):
+        def _derived_process_message(self, message: Message) -> None:
             match message.Payload:
                 case DBGPayload():
                     message.Header.Src = self.publication_name
@@ -309,7 +297,7 @@ def make_recorder_class(
 
         def mqtt_quiescent(self) -> bool:
             if hasattr(super(), "mqtt_quiescent"):
-                return getattr(super(), "mqtt_quiescent")()
+                return super().mqtt_quiescent()
             return self._links.link(self.upstream_client).active_for_send()
 
         def _call_super_if_present(self, function_name: str) -> None:

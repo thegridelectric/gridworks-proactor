@@ -23,7 +23,7 @@ class ExternalWatchdogCommandBuilder:
         ]
 
     @classmethod
-    def default_pat_args(cls, pid: Optional[int] = None) -> list[str]:
+    def default_pat_args(cls, pid: Optional[int] = None) -> list[str]:  # noqa: ARG003
         return []
 
     @classmethod

@@ -1,11 +1,9 @@
 import dataclasses
 import time
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from typing import Optional
 
 from gwproactor.config.proactor_settings import MQTT_LINK_POLL_SECONDS
-
 
 import_time = time.time()
 
@@ -25,12 +23,12 @@ class LinkMessageTimes:
         return time.time() > self.next_ping_second(link_poll_seconds)
 
     def get_str(
-        self, link_poll_seconds: float = MQTT_LINK_POLL_SECONDS, relative: bool = True
+        self,
+        *,
+        link_poll_seconds: float = MQTT_LINK_POLL_SECONDS,
+        relative: bool = True,
     ) -> str:
-        if relative:
-            adjust = import_time
-        else:
-            adjust = 0
+        adjust = import_time if relative else 0
         return (
             f"n:{time.time() - adjust:5.2f}  lps:{link_poll_seconds:5.2f}  "
             f"ls:{self.last_send - adjust:5.2f}  lr:{self.last_recv - adjust:5.2f}  "
@@ -46,8 +44,8 @@ class LinkMessageTimes:
 class MessageTimes:
     _links: dict[str, LinkMessageTimes]
 
-    def __init__(self):
-        self._links = dict()
+    def __init__(self) -> None:
+        self._links = {}
 
     def add_link(self, name: str) -> None:
         self._links[name] = LinkMessageTimes()

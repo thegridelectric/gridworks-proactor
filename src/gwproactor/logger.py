@@ -1,27 +1,27 @@
+import contextlib
+import datetime
 import logging
-from typing import Any
-from typing import Optional
-
-import pendulum
+from typing import Any, Optional
 
 
 class MessageSummary:
     """Helper class for formating message summaries message receipt/publication single line summaries."""
 
     DEFAULT_FORMAT = (
-        "  {direction:15s}  {actor_alias:40s}  {broker_flag}  {arrow:2s}  {topic:90s}"
+        "  {direction:15s}  {actor_name:40s}  {broker_flag}  {arrow:2s}  {topic:90s}"
         "  {payload_type:40s}  {message_id}"
     )
 
     @classmethod
-    def format(
+    def format(  # noqa: PLR0913
         cls,
         direction: str,
-        actor_alias: str,
+        actor_name: str,
         topic: str,
+        *,
         payload_object: Any = None,
         broker_flag: str = " ",
-        timestamp: Optional[pendulum.datetime] = None,
+        timestamp: Optional[datetime.datetime] = None,
         include_timestamp: bool = False,
         message_id: str = "",
     ) -> str:
@@ -30,28 +30,28 @@ class MessageSummary:
 
         Args:
             direction: "IN" or "OUT"
-            actor_alias: The node alias of the sending or receiving actor.
+            actor_name: The node name of the sending or receiving actor.
             topic: The destination or source topic.
             payload_object: The payload of the message.
             broker_flag: "*" for the "gw" broker.
-            timestamp: pendulum.now("UTC") by default.
+            timestamp: datetime.dateime.now(tz=datetime.timezone.utc) by default.
             include_timestamp: whether timestamp is prepended to output.
             message_id: The message id. Ignored if empty.
 
         Returns:
             Formatted string.
         """
-        try:
+        with contextlib.suppress(Exception):
             if timestamp is None:
-                timestamp = pendulum.now("UTC")
+                timestamp = datetime.datetime.now(tz=datetime.timezone.utc)
             if include_timestamp:
                 format_ = "{timestamp}  " + cls.DEFAULT_FORMAT
             else:
                 format_ = cls.DEFAULT_FORMAT
             direction = direction.strip()
-            if direction.startswith("OUT") or direction.startswith("SND"):
+            if direction.startswith(("OUT", "SND")):
                 arrow = "->"
-            elif direction.startswith("IN") or direction.startswith("RCV"):
+            elif direction.startswith(("IN", "RCV")):  # noqa: PIE810
                 arrow = "<-"
             else:
                 arrow = "? "
@@ -61,22 +61,19 @@ class MessageSummary:
                 payload_str = payload_object.__class__.__name__
             else:
                 payload_str = type(payload_object)
-            if message_id:
-                if len(message_id) > 11:
-                    message_id = f"{message_id[:8]}..."
+            if message_id and len(message_id) > logging.DEBUG + 1:
+                message_id = f"{message_id[:8]}..."
             return format_.format(
                 timestamp=timestamp.isoformat(),
                 direction=direction,
-                actor_alias=actor_alias,
+                actor_name=actor_name,
                 broker_flag=broker_flag,
                 arrow=arrow,
                 topic=f"[{topic}]",
                 payload_type=payload_str,
                 message_id=message_id,
             )
-        except Exception as e:
-            print(f"ouch got {e}")
-            return ""
+        return ""
 
 
 class ProactorLogger(logging.LoggerAdapter):
@@ -95,7 +92,7 @@ class ProactorLogger(logging.LoggerAdapter):
         lifecycle: str,
         comm_event: str,
         extra: Optional[dict] = None,
-    ):
+    ) -> None:
         super().__init__(logging.getLogger(base), extra=extra)
         self.message_summary_logger = logging.getLogger(message_summary)
         self.lifecycle_logger = logging.getLogger(lifecycle)
@@ -121,21 +118,21 @@ class ProactorLogger(logging.LoggerAdapter):
     def comm_event_enabled(self) -> bool:
         return self.comm_event_logger.isEnabledFor(logging.INFO)
 
-    def message_summary(
+    def message_summary(  # noqa: PLR0913
         self,
         direction: str,
-        actor_alias: str,
+        actor_name: str,
         topic: str,
         payload_object: Any = None,
         broker_flag: str = " ",
-        timestamp: Optional[pendulum.datetime] = None,
+        timestamp: Optional[datetime.datetime] = None,
         message_id: str = "",
     ) -> None:
         if self.message_summary_logger.isEnabledFor(logging.INFO):
             self.message_summary_logger.info(
                 MessageSummary.format(
                     direction=direction,
-                    actor_alias=actor_alias,
+                    actor_name=actor_name,
                     topic=topic,
                     payload_object=payload_object,
                     broker_flag=broker_flag,
@@ -144,22 +141,22 @@ class ProactorLogger(logging.LoggerAdapter):
                 )
             )
 
-    def path(self, msg: str, *args, **kwargs) -> None:
+    def path(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self.message_summary_logger.debug(msg, *args, **kwargs)
 
-    def lifecycle(self, msg: str, *args, **kwargs) -> None:
+    def lifecycle(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self.lifecycle_logger.info(msg, *args, **kwargs)
 
-    def comm_event(self, msg: str, *args, **kwargs) -> None:
+    def comm_event(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self.comm_event_logger.info(msg, *args, **kwargs)
 
-    def message_enter(self, msg: str, *args, **kwargs) -> None:
+    def message_enter(self, msg: str, *args: Any, **kwargs: Any) -> None:
         if self.path_enabled:
             self.path("")
             self.path(self.MESSAGE_ENTRY_DELIMITER)
             self.path(msg, *args, **kwargs)
 
-    def message_exit(self, msg: str, *args, **kwargs) -> None:
+    def message_exit(self, msg: str, *args: Any, **kwargs: Any) -> None:
         if self.path_enabled:
             self.path(msg, *args, **kwargs)
             self.path(self.MESSAGE_EXIT_DELIMITER)

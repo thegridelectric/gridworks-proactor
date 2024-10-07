@@ -1,22 +1,27 @@
+# ruff: noqa: PLR2004, ERA001
+
 import logging
 import time
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
 
-from gwproactor.config import DEFAULT_BASE_NAME
-from gwproactor.config import DEFAULT_BYTES_PER_LOG_FILE
-from gwproactor.config import DEFAULT_LOG_FILE_NAME
-from gwproactor.config import DEFAULT_NUM_LOG_FILES
-from gwproactor.config import FormatterSettings
-from gwproactor.config import LoggerLevels
-from gwproactor.config import LoggingSettings
-from gwproactor.config import RotatingFileHandlerSettings
+from gwproactor.config import (
+    DEFAULT_BASE_NAME,
+    DEFAULT_BYTES_PER_LOG_FILE,
+    DEFAULT_LOG_FILE_NAME,
+    DEFAULT_NUM_LOG_FILES,
+    FormatterSettings,
+    LoggerLevels,
+    LoggingSettings,
+    RotatingFileHandlerSettings,
+)
 
 
-def test_logger_levels():
+def test_logger_levels() -> None:
     # Check if fields have been added or renamed
-    assert set(LoggerLevels().__fields__.keys()) == {
+    assert set(LoggerLevels().model_fields.keys()) == {
         "message_summary",
         "lifecycle",
         "comm_event",
@@ -52,15 +57,14 @@ def test_logger_levels():
     # qualified_names()
     base_name = "foo"
     assert levels.qualified_logger_names(base_name) == {
-        field_name: f"{base_name}.{field_name}"
-        for field_name in levels.__fields__.keys()
+        field_name: f"{base_name}.{field_name}" for field_name in levels.model_fields
     }
 
     # logger_names_to_levels()
     assert levels.logger_names_to_levels(base_name) == {
-        "foo.message_summary": dict(level=50),
-        "foo.lifecycle": dict(level=10),
-        "foo.comm_event": dict(level=10),
+        "foo.message_summary": {"level": 50},
+        "foo.lifecycle": {"level": 10},
+        "foo.comm_event": {"level": 10},
     }
 
     # set_logger_names_to_levels() - all fields set
@@ -70,15 +74,15 @@ def test_logger_levels():
     # only some fields set
     levels = LoggerLevels(comm_event=2)
     assert levels.set_logger_names_to_levels(base_name) == {
-        "foo.comm_event": dict(level=2),
+        "foo.comm_event": {"level": 2},
     }
     # no fields set
     assert LoggerLevels().set_logger_names_to_levels(base_name) == {}
 
 
-def test_logging_settings():
+def test_logging_settings() -> None:
     # Check if loggers have been added or renamed
-    assert set(LoggingSettings().levels.__fields__.keys()) == {
+    assert set(LoggingSettings().levels.model_fields.keys()) == {
         "message_summary",
         "lifecycle",
         "comm_event",
@@ -112,17 +116,17 @@ def test_logging_settings():
     logging_settings = LoggingSettings()
     exp_logger_names = {
         field_name: f"gridworks.{field_name}"
-        for field_name in logging_settings.levels.__fields__.keys()
+        for field_name in logging_settings.levels.model_fields
     }
     exp_logger_names["base"] = logging_settings.base_log_name
     assert logging_settings.qualified_logger_names() == exp_logger_names
 
     # logger_levels()
     assert logging_settings.logger_levels() == {
-        "gridworks": dict(level=30),
-        "gridworks.message_summary": dict(level=30),
-        "gridworks.lifecycle": dict(level=20),
-        "gridworks.comm_event": dict(level=20),
+        "gridworks": {"level": 30},
+        "gridworks.message_summary": {"level": 30},
+        "gridworks.lifecycle": {"level": 20},
+        "gridworks.comm_event": {"level": 20},
     }
 
     # set_logger_levels() - no fields set
@@ -131,7 +135,7 @@ def test_logging_settings():
     # some fields set
     logging_settings = LoggingSettings(levels=LoggerLevels(lifecycle=2))
     assert logging_settings.set_logger_levels() == {
-        "gridworks.lifecycle": dict(level=2),
+        "gridworks.lifecycle": {"level": 2},
     }
 
     # custom base name and level dicts
@@ -145,14 +149,12 @@ def test_logging_settings():
         "comm_event": "foo.comm_event",
     }
     assert logging_settings.logger_levels() == {
-        "foo": dict(level=0),
-        "foo.message_summary": dict(level=1),
-        "foo.lifecycle": dict(level=20),
-        "foo.comm_event": dict(level=20),
+        "foo": {"level": 0},
+        "foo.message_summary": {"level": 1},
+        "foo.lifecycle": {"level": 20},
+        "foo.comm_event": {"level": 20},
     }
-    assert logging_settings.set_logger_levels() == {
-        "foo.message_summary": dict(level=1)
-    }
+    assert logging_settings.set_logger_levels() == {"foo.message_summary": {"level": 1}}
 
     # verbose()
     logging_settings = LoggingSettings()
@@ -175,10 +177,10 @@ def get_exp_formatted_time(
     )
 
 
-def test_formatter_settings():
+def test_formatter_settings() -> None:
     settings = FormatterSettings()
     formatter = settings.create()
-    record = logging.makeLogRecord(dict(msg="bla %s %d", args=("biz", 1)))
+    record = logging.makeLogRecord({"msg": "bla %s %d", "args": ("biz", 1)})
     got_formatted_time = formatter.formatTime(record, formatter.datefmt)
     created_gmt = time.gmtime(record.created)
     strftimed = time.strftime(logging.Formatter.default_time_format, created_gmt)
@@ -190,7 +192,7 @@ def test_formatter_settings():
     assert formatted.endswith(record.msg % record.args)
 
 
-def test_rotating_file_handler_settings(tmp_path):
+def test_rotating_file_handler_settings(tmp_path: Path) -> None:
     settings = RotatingFileHandlerSettings()
     handler = settings.create(tmp_path, FormatterSettings().create())
     assert handler.level == logging.NOTSET

@@ -1,43 +1,53 @@
+# ruff: noqa: PLR2004
+
+import datetime
 import json
 import shutil
 import time
-from importlib.metadata import version as get_package_version
 from pathlib import Path
-from typing import Optional
-from typing import Union
+from typing import Any, NoReturn, Optional, Union
 
 import gwproto.messages
-import pendulum
+from freezegun import freeze_time
 from gwproto.messages import ProblemEvent
-from packaging.version import Version
 from result import Result
 
-from gwproactor import ExternalWatchdogCommandBuilder
-from gwproactor import ProactorSettings
-from gwproactor import Problems
-from gwproactor.persister import FileExistedWarning
-from gwproactor.persister import FileMissing
-from gwproactor.persister import FileMissingWarning
-from gwproactor.persister import PersisterError
-from gwproactor.persister import PersisterException
-from gwproactor.persister import PersisterWarning
-from gwproactor.persister import ReindexError
-from gwproactor.persister import TimedRollingFilePersister
-from gwproactor.persister import TrimFailed
-from gwproactor.persister import UIDExistedWarning
-from gwproactor.persister import UIDMissingWarning
-from gwproactor.persister import _PersistedItem  # noqa
+from gwproactor import ExternalWatchdogCommandBuilder, ProactorSettings, Problems
+from gwproactor.persister import (
+    FileExistedWarning,
+    FileMissing,
+    FileMissingWarning,
+    PersisterError,
+    PersisterException,
+    PersisterWarning,
+    ReindexError,
+    TimedRollingFilePersister,
+    TrimFailed,
+    UIDExistedWarning,
+    UIDMissingWarning,
+    _PersistedItem,  # noqa
+)
 
 
-pendulum_version = get_package_version("pendulum")
-if Version(get_package_version("pendulum")) < Version("3.0.0"):
-    pendulum_travel_to_context = pendulum.test  # noqa
-    pendulum_travel_to = pendulum.set_test_now  # noqa
-    pendulum_travel_back = pendulum.set_test_now  # noqa
-else:
-    pendulum_travel_to_context = pendulum_travel_to  # noqa
-    pendulum_travel_to = pendulum_travel_to  # noqa
-    pendulum_travel_back = pendulum.travel_back  # noqa
+def _day_start(dt: datetime.datetime) -> datetime.datetime:
+    return datetime.datetime(
+        year=dt.year,
+        month=dt.month,
+        day=dt.day,
+        tzinfo=dt.tzinfo,
+    )
+
+
+def _today() -> datetime.datetime:
+    return _day_start(datetime.datetime.now(tz=datetime.timezone.utc))
+
+
+def _yesterday() -> datetime.datetime:
+    return _day_start(_today() - datetime.timedelta(seconds=1))
+
+
+def _tomorrow() -> datetime.datetime:
+    return _day_start(_today() + datetime.timedelta(days=1))
 
 
 class PatWatchdogWithFile(ExternalWatchdogCommandBuilder):
@@ -45,7 +55,7 @@ class PatWatchdogWithFile(ExternalWatchdogCommandBuilder):
     """Explicitly set this path on the class before running tests"""
 
     @classmethod
-    def default_pat_args(cls, pid: Optional[int] = None) -> list[str]:
+    def default_pat_args(cls, pid: Optional[int] = None) -> list[str]:  # noqa: ARG003
         pat_code = "from pathlib import Path; import time; p = Path(f'"
         pat_code += str(cls.pat_dir / "pat")
         pat_code += "{time.time()}.txt'); p.open('w')"
@@ -60,7 +70,7 @@ class SlowIndexer(TimedRollingFilePersister):
         base_dir: Path | str,
         max_bytes: int = TimedRollingFilePersister.DEFAULT_MAX_BYTES,
         pat_watchdog_args: Optional[list[str]] = None,
-    ):
+    ) -> None:
         super().__init__(
             base_dir=base_dir,
             max_bytes=max_bytes,
@@ -75,7 +85,7 @@ class SlowIndexer(TimedRollingFilePersister):
         return super()._persisted_item_from_file_path(filepath)
 
 
-def test_problems():
+def test_problems() -> None:
     p = Problems()
     assert not p
     assert not str(p)
@@ -113,12 +123,12 @@ def test_problems():
     p2.add_warning(PersisterWarning(uid="12"))
     assert len(p2.errors) == 4
     assert len(p2.warnings) == 4
-    assert [int(entry.uid) for entry in p2.errors] == [3, 4, 1, 7]  # noqa: type
-    assert [int(entry.uid) for entry in p2.warnings] == [5, 6, 2, 9]  # noqa: type
+    assert [int(entry.uid) for entry in p2.errors] == [3, 4, 1, 7]  # noqa
+    assert [int(entry.uid) for entry in p2.warnings] == [5, 6, 2, 9]  # noqa
     assert str(p2)
 
 
-def test_persister_exception():
+def test_persister_exception() -> None:
     e = PersisterException("foo")
     assert str(e)
     assert e.uid == ""
@@ -129,10 +139,10 @@ def test_persister_exception():
     assert e.uid == "bar"
     assert e.path is None
 
-    e = PersisterException(uid="bar", path=Path("."))
+    e = PersisterException(uid="bar", path=Path())
     assert str(e)
     assert e.uid == "bar"
-    assert e.path == Path(".")
+    assert e.path == Path()
 
 
 def assert_contents(
@@ -140,15 +150,15 @@ def assert_contents(
     uids: Optional[list] = None,
     exp_paths: Optional[list] = None,
     nearby_days: bool = True,
-    possible_days: Optional[list[pendulum.datetime]] = None,
-    exact_days: Optional[list[pendulum.datetime]] = None,
+    possible_days: Optional[list[datetime.datetime]] = None,
+    exact_days: Optional[list[datetime.datetime]] = None,
     num_pending: Optional[int] = None,
     curr_bytes: Optional[int] = None,
     curr_dir: Optional[Union[str, Path]] = None,
     check_index: bool = True,
     max_bytes: Optional[int] = None,
-):
-    assert p.num_pending == len(p.pending())
+) -> None:
+    assert p.num_pending == len(p.pending_ids())
     if num_pending is not None:
         assert p.num_pending == num_pending
     if curr_bytes is not None:
@@ -164,19 +174,17 @@ def assert_contents(
         assert p.max_bytes == max_bytes
     if uids is not None:
         str_uids = [str(uid) for uid in uids]
-        assert p.pending() == str_uids
+        assert p.pending_ids() == str_uids
         assert p.num_pending == len(str_uids)
         for str_uid in str_uids:
             assert str_uid in p
-    got_paths = [p.get_path(uid) for uid in p.pending()]
+    got_paths = [p.get_path(uid) for uid in p.pending_ids()]
     if exp_paths is not None:
         assert exp_paths == got_paths
     if nearby_days:
         if possible_days is None:
             possible_days = []
-        possible_days.extend(
-            [pendulum.yesterday("utc"), pendulum.today("utc"), pendulum.tomorrow("utc")]
-        )
+        possible_days.extend([_yesterday(), _today(), _tomorrow()])
     if exact_days is not None:
         possible_days = exact_days
     if possible_days is not None and got_paths:
@@ -205,17 +213,17 @@ def assert_contents(
         assert p2.reindex().is_ok()
         if p.num_pending == 0:
             assert p.curr_bytes == 0
-        assert p.pending() == p2.pending()
+        assert p.pending_ids() == p2.pending_ids()
         # noinspection PyProtectedMember
-        assert p.pending() == list(p._pending.keys())
+        assert p.pending_ids() == list(p.pending_ids())
         # noinspection PyProtectedMember
-        assert got_paths == list(p._pending.values())
-        for uid, path in zip(p.pending(), got_paths):
+        assert got_paths == list(p.pending_paths())
+        for uid, path in zip(p.pending_ids(), got_paths):
             assert path.exists()
             assert uid in str(path.name)
 
 
-def test_persister_happy_path(tmp_path):
+def test_persister_happy_path(tmp_path: Path) -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     event = ProblemEvent(
@@ -224,7 +232,7 @@ def test_persister_happy_path(tmp_path):
         Summary="Problems, I've got a few",
         Details="Too numerous to name",
     )
-    event_bytes = event.json().encode()
+    event_bytes = event.model_dump_json().encode()
 
     # empty persister
     persister = TimedRollingFilePersister(settings.paths.event_dir)
@@ -254,8 +262,8 @@ def test_persister_happy_path(tmp_path):
 
     # deserialize
     loaded = json.loads(retrieved.value.decode("utf-8"))
-    assert loaded == json.loads(event.json())
-    loaded_event = ProblemEvent.parse_raw(retrieved.value)
+    assert loaded == json.loads(event.model_dump_json())
+    loaded_event = ProblemEvent.model_validate_json(retrieved.value)
     assert loaded_event == event
 
     # add another
@@ -264,8 +272,8 @@ def test_persister_happy_path(tmp_path):
         Summary="maybe not great",
         ProblemType=gwproto.messages.Problems.warning,
     )
-    event2_bytes = event2.json().encode()
-    result = persister.persist(event2.MessageId, event2.json().encode())
+    event2_bytes = event2.model_dump_json().encode()
+    result = persister.persist(event2.MessageId, event2.model_dump_json().encode())
     assert result.is_ok()
     assert_contents(
         persister,
@@ -286,7 +294,7 @@ def test_persister_happy_path(tmp_path):
     # clear second one
     cleared = persister.clear(event2.MessageId)
     assert cleared.is_ok()
-    assert event2.MessageId not in persister.pending()
+    assert event2.MessageId not in persister.pending_ids()
     assert persister.get_path(event2.MessageId) is None
     assert_contents(
         persister,
@@ -301,7 +309,7 @@ def test_persister_happy_path(tmp_path):
     cleared = persister.clear(event.MessageId)
     assert cleared.is_ok()
     assert not old_path.exists()
-    assert event.MessageId not in persister.pending()
+    assert event.MessageId not in persister.pending_ids()
     assert persister.get_path(event.MessageId) is None
     assert_contents(
         persister,
@@ -311,10 +319,10 @@ def test_persister_happy_path(tmp_path):
 
     # reindex
     assert persister.reindex().is_ok()
-    assert len(persister.pending()) == persister.num_pending == 0
+    assert len(persister.pending_ids()) == persister.num_pending == 0
     assert persister.curr_dir.name in [
-        pendulum.today("utc").isoformat(),
-        pendulum.yesterday("utc").isoformat(),
+        _today().isoformat(),
+        _yesterday().isoformat(),
     ]
     assert persister.curr_bytes == 0
     assert_contents(
@@ -324,7 +332,7 @@ def test_persister_happy_path(tmp_path):
     )
 
 
-def test_persister_max_size():
+def test_persister_max_size() -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     event = ProblemEvent(
@@ -335,12 +343,12 @@ def test_persister_max_size():
         Details="x" * 1024,
     )
 
-    def inc_event():
+    def inc_event() -> None:
         event.MessageId = f"{int(event.MessageId) + 1:2d}"
 
-    event_bytes = event.json().encode()
+    event_bytes = event.model_dump_json().encode()
     num_events_supported = 4
-    with pendulum_travel_to_context(pendulum.today("utc")):
+    with freeze_time(_today()):
         # empty persister
         max_bytes = (num_events_supported + 1) * 1000
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=max_bytes)
@@ -352,18 +360,18 @@ def test_persister_max_size():
         for i in range(1, num_events_supported + 1):
             inc_event()
             uids.append(event.MessageId)
-            result = p.persist(event.MessageId, event.json().encode())
+            result = p.persist(event.MessageId, event.model_dump_json().encode())
             assert result.is_ok(), str(result)
             assert_contents(
                 p, num_pending=i, curr_bytes=i * len(event_bytes), uids=uids
             )
 
         # a few more - now size should not change
-        for i in range(1, num_events_supported * 2):
+        for _ in range(1, num_events_supported * 2):
             inc_event()
             uids.append(event.MessageId)
             uids = uids[1:]
-            result = p.persist(event.MessageId, event.json().encode())
+            result = p.persist(event.MessageId, event.model_dump_json().encode())
             assert result.is_ok(), str(result)
             assert_contents(
                 p,
@@ -376,7 +384,7 @@ def test_persister_max_size():
         inc_event()
         old_size = len(event_bytes)
         event.Details *= 2
-        big_event_bytes = event.json().encode()
+        big_event_bytes = event.model_dump_json().encode()
         exp_size = p.curr_bytes - (2 * old_size) + len(big_event_bytes)
         exp_pending = num_events_supported - 1
         uids.append(event.MessageId)
@@ -388,12 +396,12 @@ def test_persister_max_size():
         # Cannot add one too large, state of persister doesn't change
         inc_event()
         event.Details = "." * (max_bytes + 1)
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert not result.is_ok()
         assert_contents(p, num_pending=exp_pending, curr_bytes=exp_size, uids=uids)
 
 
-def test_persister_roll_day():
+def test_persister_roll_day() -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     event = ProblemEvent(
@@ -404,42 +412,38 @@ def test_persister_roll_day():
         Details="x" * 1024,
     )
 
-    def inc_event():
+    def inc_event() -> None:
         event.MessageId = f"{int(event.MessageId) + 1:2d}"
 
     uids = [event.MessageId]
-    d1 = pendulum.today("utc")
-    d2 = d1.add(days=1)
-    d3 = d2.add(days=1)
+    d1 = _today()
+    d2 = d1 + datetime.timedelta(days=1)
+    d3 = d2 + datetime.timedelta(days=1)
 
-    try:
-        # d1
-        pendulum_travel_to(d1)
+    with freeze_time(d1):
         exact_days = [d1]
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
         assert_contents(p, num_pending=0, curr_dir=d1.isoformat())
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert result.is_ok()
         assert_contents(p, num_pending=1, uids=uids, exact_days=exact_days)
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
 
-        # d2
-        pendulum_travel_to(d2)
+    with freeze_time(d2):
         exact_days.append(d2)
         inc_event()
         uids.append(event.MessageId)
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert result.is_ok()
         assert_contents(p, num_pending=2, uids=uids, exact_days=exact_days)
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
 
-        # d3
-        pendulum_travel_to(d3)
+    with freeze_time(d3):
         exact_days.append(d3)
         inc_event()
         uids.append(event.MessageId)
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert result.is_ok()
         assert_contents(p, num_pending=3, uids=uids, exact_days=exact_days)
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
@@ -448,13 +452,13 @@ def test_persister_roll_day():
         exact_days.append(d3)
         inc_event()
         uids.append(event.MessageId)
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert result.is_ok()
         assert_contents(p, num_pending=4, uids=uids, exact_days=exact_days)
         assert p.get_path(event.MessageId).parent.name == exact_days[-1].isoformat()
 
         # verify first day directory is present
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -471,7 +475,7 @@ def test_persister_roll_day():
 
         # Repeat with d2.
         # Clear the first entry from d2, verify d2 is gone
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -485,7 +489,7 @@ def test_persister_roll_day():
         assert_contents(p, num_pending=2, uids=uids, exact_days=exact_days)
 
         # clear first entry from third day, verify third day dir still exists
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -497,7 +501,7 @@ def test_persister_roll_day():
         uids = uids[1:]
         assert_contents(p, num_pending=1, uids=uids, exact_days=exact_days[1:])
 
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         assert path.exists()
         assert path.parent == day_dir
@@ -507,11 +511,8 @@ def test_persister_roll_day():
         assert not day_dir.exists()
         assert_contents(p, num_pending=0)
 
-    finally:
-        pendulum_travel_back()
 
-
-def test_persister_size_and_roll():
+def test_persister_size_and_roll() -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     uidi = 1
@@ -523,21 +524,20 @@ def test_persister_size_and_roll():
         return uid_
 
     uids = []
-    d1 = pendulum.today("utc")
-    d2 = d1.add(days=1)
-    d3 = d2.add(days=1)
-    d4 = d3.add(days=1)
-    d5 = d4.add(days=1)
+    d1 = _today()
+    d2 = d1 + datetime.timedelta(days=1)
+    d3 = d2 + datetime.timedelta(days=1)
+    d4 = d3 + datetime.timedelta(days=1)
+    d5 = d4 + datetime.timedelta(days=1)
 
     num_supported = 10
     packet_size = 1000
     max_size = num_supported * packet_size
     buf = ("." * packet_size).encode()
 
-    try:
-        # d1, add two
-        exact_days = []
-        pendulum_travel_to(d1)
+    exact_days = []
+    # d1, add two
+    with freeze_time(d1):
         p = TimedRollingFilePersister(settings.paths.event_dir, max_bytes=max_size)
         assert p.reindex().is_ok()
         assert_contents(p, num_pending=0, curr_dir=d1.isoformat(), max_bytes=max_size)
@@ -555,8 +555,8 @@ def test_persister_size_and_roll():
             )
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
-        # d2, add another two
-        pendulum_travel_to(d2)
+    # d2, add another two
+    with freeze_time(d2):
         for i in range(3, 5):
             uids.append(inc_uid())
             exact_days.append(d2)
@@ -571,8 +571,8 @@ def test_persister_size_and_roll():
             )
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
-        # d3, add three
-        pendulum_travel_to(d3)
+    # d3, add three
+    with freeze_time(d3):
         for i in range(5, 8):
             uids.append(inc_uid())
             exact_days.append(d3)
@@ -587,8 +587,8 @@ def test_persister_size_and_roll():
             )
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
-        # d4, add two
-        pendulum_travel_to(d4)
+    # d4, add two
+    with freeze_time(d4):
         for i in range(8, 10):
             uids.append(inc_uid())
             exact_days.append(d4)
@@ -603,8 +603,8 @@ def test_persister_size_and_roll():
             )
             assert p.get_path(uids[-1]).parent.name == exact_days[-1].isoformat()
 
-        # d5, add 1
-        pendulum_travel_to(d5)
+    # d5, add 1
+    with freeze_time(d5):
         for i in range(10, 11):
             uids.append(inc_uid())
             exact_days.append(d5)
@@ -622,7 +622,7 @@ def test_persister_size_and_roll():
         assert p.curr_bytes == p.max_bytes
 
         # add one more, which keeps size the same but removes first entry. First day dir should remain.
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -642,7 +642,7 @@ def test_persister_size_and_roll():
         assert day_dir.exists()
 
         # add one more, which now should first day dir to be gone.
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -661,9 +661,9 @@ def test_persister_size_and_roll():
         assert not day_dir.exists()
 
         # add a large one, 2x size, which now should remove two entries and second day
-        uid0 = p.pending()[0]
+        uid0 = p.pending_ids()[0]
         path0 = p.get_path(uid0)
-        uid1 = p.pending()[1]
+        uid1 = p.pending_ids()[1]
         path1 = p.get_path(uid1)
         day_dir = path0.parent
         assert path1.parent == day_dir
@@ -685,11 +685,11 @@ def test_persister_size_and_roll():
         assert not day_dir.exists()
 
         # add a large one, 4x size, which now should third day and one entry of fourth day
-        removed_uids = p.pending()[:4]
+        removed_uids = p.pending_ids()[:4]
         paths = [p.get_path(uid) for uid in removed_uids]
         day_dirs = [path.parent for path in paths]
-        assert all([path.exists() for path in paths])
-        assert all([day_dir.exists() for day_dir in day_dirs])
+        assert all(path.exists() for path in paths)
+        assert all(day_dir.exists() for day_dir in day_dirs)
         uids.append(inc_uid())
         uids = uids[4:]
         exact_days.append(d5)
@@ -699,14 +699,14 @@ def test_persister_size_and_roll():
         assert_contents(
             p, num_pending=6, curr_bytes=max_size, uids=uids, exact_days=exact_days
         )
-        assert all([not path.exists() for path in paths])
+        assert all(not path.exists() for path in paths)
         assert not day_dirs[0].exists()
         assert not day_dirs[1].exists()
         assert not day_dirs[2].exists()
         assert day_dirs[3].exists()
 
         # clear last entry in fourth day
-        uid = p.pending()[0]
+        uid = p.pending_ids()[0]
         path = p.get_path(uid)
         day_dir = path.parent
         assert path.exists()
@@ -726,7 +726,7 @@ def test_persister_size_and_roll():
         # clear the rest
         num_pending = p.num_pending
         while p.num_pending:
-            uid = p.pending()[0]
+            uid = p.pending_ids()[0]
             path = p.get_path(uid)
             path_size = path.stat().st_size
             assert path.parent == p.curr_dir
@@ -748,11 +748,9 @@ def test_persister_size_and_roll():
                 assert path.parent.exists()
             else:
                 assert not path.parent.exists()
-    finally:
-        pendulum_travel_back()
 
 
-def test_persister_indexing():
+def test_persister_indexing() -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     uidi = 1
@@ -764,48 +762,47 @@ def test_persister_indexing():
         return uid_
 
     buf = ("." * 100).encode()
-    d1 = pendulum.today("utc")
-    d2 = d1.add(days=1)
-    d3 = d2.add(days=1)
-    d4 = d3.add(days=1)
+    d1 = _today()
+    d2 = d1 + datetime.timedelta(days=1)
+    d3 = d2 + datetime.timedelta(days=1)
+    d4 = d3 + datetime.timedelta(days=1)
 
-    try:
-        pendulum_travel_to(d1)
+    with freeze_time(d1):
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        pendulum_travel_to(d2)
+    with freeze_time(d2):
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        pendulum_travel_to(d3)
+    with freeze_time(d3):
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        pendulum_travel_to(d4)
+    with freeze_time(d4):
         p.persist(inc_uid(), buf)
         p.persist(inc_uid(), buf)
 
-        index = dict(p._pending)
+        index = p.pending_dict()
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
-        assert p._pending == index
+        assert p.pending_dict() == index
 
         # removed dir
-        shutil.rmtree(p.get_path(p.pending()[0]).parent, ignore_errors=True)
-        index.pop(p.pending()[0])
-        index.pop(p.pending()[1])
+        shutil.rmtree(p.get_path(p.pending_ids()[0]).parent, ignore_errors=True)
+        index.pop(p.pending_ids()[0])
+        index.pop(p.pending_ids()[1])
         # removed file
-        p.get_path(p.pending()[2]).unlink()
-        index.pop(p.pending()[2])
+        p.get_path(p.pending_ids()[2]).unlink()
+        index.pop(p.pending_ids()[2])
         # removed all files in dir, left dir
-        p.get_path(p.pending()[4]).unlink()
-        index.pop(p.pending()[4])
-        p.get_path(p.pending()[5]).unlink()
-        index.pop(p.pending()[5])
-        p6 = p.get_path(p.pending()[6])
+        p.get_path(p.pending_ids()[4]).unlink()
+        index.pop(p.pending_ids()[4])
+        p.get_path(p.pending_ids()[5]).unlink()
+        index.pop(p.pending_ids()[5])
+        p6 = p.get_path(p.pending_ids()[6])
         p6_dir = p6.parent
         # invalid file - rgx failure
         shutil.copy(p6, p6_dir / (p6.name + "x"))
@@ -813,13 +810,10 @@ def test_persister_indexing():
         shutil.copy(p6, p6_dir / ("x" + p6.name))
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
-        assert p._pending == index
-
-    finally:
-        pendulum_travel_back()
+        assert p.pending_dict() == index
 
 
-def test_persister_problems():
+def test_persister_problems() -> None:
     settings = ProactorSettings()
     settings.paths.mkdirs()
     uidi = 1
@@ -833,10 +827,9 @@ def test_persister_problems():
     uids = []
     exact_days = []
     buf = ("." * 100).encode()
-    d1 = pendulum.today("utc")
+    d1 = _today()
 
-    try:
-        pendulum_travel_to(d1)
+    with freeze_time(d1):
         p = TimedRollingFilePersister(settings.paths.event_dir)
         assert p.reindex().is_ok()
         uids.append(inc_uid())
@@ -866,7 +859,7 @@ def test_persister_problems():
 
         # persist, unexpected error
         class BrokenRoller(TimedRollingFilePersister):
-            def _roll_curr_dir(self):
+            def _roll_curr_dir(self) -> NoReturn:
                 raise ValueError("whoops")
 
         broken = BrokenRoller(settings.paths.event_dir)
@@ -879,7 +872,7 @@ def test_persister_problems():
 
         # _trim_old_storage, clear exception
         class BrokenRoller2(TimedRollingFilePersister):
-            def clear(self, uid: str) -> Result[bool, Problems]:
+            def clear(self, uid: str) -> Result[bool, Problems]:  # noqa: ARG002
                 raise ValueError("arg")
 
         p = BrokenRoller2(settings.paths.event_dir, max_bytes=len(buf) + 50)
@@ -923,7 +916,7 @@ def test_persister_problems():
 
         class BrokenRoller3(TimedRollingFilePersister):
             @classmethod
-            def _persisted_item_from_file_path(cls, filepath: Path):
+            def _persisted_item_from_file_path(cls, filepath: Path) -> NoReturn:  # noqa: ARG003
                 raise ValueError("arg")
 
         p = BrokenRoller3(settings.paths.event_dir, max_bytes=len(buf) + 50)
@@ -936,7 +929,7 @@ def test_persister_problems():
         # reindex, _is_iso_parseable exception
         class BrokenRoller4(TimedRollingFilePersister):
             @classmethod
-            def _is_iso_parseable(cls, s: str | Path) -> bool:
+            def _is_iso_parseable(cls, s: str | Path) -> bool:  # noqa: ARG003
                 raise ValueError("arg")
 
         p = BrokenRoller4(settings.paths.event_dir, max_bytes=len(buf) + 50)
@@ -946,11 +939,8 @@ def test_persister_problems():
         assert isinstance(problems.errors[0], ValueError)
         assert isinstance(problems.errors[1], ReindexError)
 
-    finally:
-        pendulum_travel_back()
 
-
-def test_reindex_pat(tmp_path, monkeypatch):
+def test_reindex_pat(tmp_path: Path, monkeypatch: Any) -> None:
     PatWatchdogWithFile.pat_dir = tmp_path / "pats"
     PatWatchdogWithFile.pat_dir.mkdir(parents=True)
     service_name = "foo"
@@ -993,7 +983,7 @@ def test_reindex_pat(tmp_path, monkeypatch):
 
     # add events
     for i, event in enumerate(events):
-        result = p.persist(event.MessageId, event.json().encode())
+        result = p.persist(event.MessageId, event.model_dump_json().encode())
         assert result.is_ok()
         assert_contents(p, num_pending=i + 1)
 

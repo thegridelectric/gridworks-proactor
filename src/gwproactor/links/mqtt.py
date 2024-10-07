@@ -8,35 +8,29 @@ Main current limitation: each interaction between asyncio code and the mqtt clie
 """
 
 import asyncio
+import contextlib
 import enum
 import logging
 import ssl
 import threading
 import uuid
-from typing import Dict
-from typing import List
-from typing import NamedTuple
-from typing import Optional
-from typing import Set
-from typing import Tuple
-from typing import Union
-from typing import cast
+from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union, cast
 
-from paho.mqtt.client import MQTT_ERR_SUCCESS
+from paho.mqtt.client import MQTT_ERR_SUCCESS, MQTTMessage, MQTTMessageInfo
 from paho.mqtt.client import Client as PahoMQTTClient
-from paho.mqtt.client import MQTTMessageInfo
 
 from gwproactor import config
-from gwproactor.message import MQTTConnectFailMessage
-from gwproactor.message import MQTTConnectMessage
-from gwproactor.message import MQTTDisconnectMessage
-from gwproactor.message import MQTTProblemsMessage
-from gwproactor.message import MQTTReceiptMessage
-from gwproactor.message import MQTTSubackMessage
-from gwproactor.message import MQTTSubackPayload
+from gwproactor.message import (
+    MQTTConnectFailMessage,
+    MQTTConnectMessage,
+    MQTTDisconnectMessage,
+    MQTTProblemsMessage,
+    MQTTReceiptMessage,
+    MQTTSubackMessage,
+    MQTTSubackPayload,
+)
 from gwproactor.problems import Problems
-from gwproactor.sync_thread import AsyncQueueWriter
-from gwproactor.sync_thread import responsive_sleep
+from gwproactor.sync_thread import AsyncQueueWriter, responsive_sleep
 
 
 class QOS(enum.IntEnum):
@@ -65,7 +59,7 @@ class MQTTClientWrapper:
         name: str,
         client_config: config.MQTTClient,
         receive_queue: AsyncQueueWriter,
-    ):
+    ) -> None:
         self.name = name
         self._client_config = client_config
         self._receive_queue = receive_queue
@@ -91,16 +85,16 @@ class MQTTClientWrapper:
         self._client.on_connect_fail = self.on_connect_fail
         self._client.on_disconnect = self.on_disconnect
         self._client.on_subscribe = self.on_subscribe
-        self._subscriptions = dict()
+        self._subscriptions = {}
         self._pending_subscriptions = set()
-        self._pending_subacks = dict()
+        self._pending_subacks = {}
         self._thread = threading.Thread(
             target=self._client_thread, name=f"MQTT-client-thread-{self.name}"
         )
         self._stop_requested = False
 
-    def _client_thread(self):
-        MAX_BACK_OFF = 1024
+    def _client_thread(self) -> None:
+        max_back_off = 1024
         backoff = 1
         while not self._stop_requested:
             try:
@@ -108,23 +102,20 @@ class MQTTClientWrapper:
                     self._client_config.host, port=self._client_config.effective_port()
                 )
                 self._client.loop_forever(retry_first_connection=True)
-            except BaseException as e:
+            except Exception as e:  # noqa: BLE001
                 self._receive_queue.put(
                     MQTTProblemsMessage(
                         client_name=self.name, problems=Problems(errors=[e])
                     )
                 )
             finally:
-                # noinspection PyBroadException
-                try:
+                with contextlib.suppress(Exception):
                     self._client.disconnect()
-                except:
-                    pass
             if not self._stop_requested:
-                if backoff >= MAX_BACK_OFF:
+                if backoff >= max_back_off:
                     backoff = 1
                 else:
-                    backoff = min(backoff * 2, MAX_BACK_OFF)
+                    backoff = min(backoff * 2, max_back_off)
                 responsive_sleep(
                     self,
                     backoff,
@@ -132,15 +123,15 @@ class MQTTClientWrapper:
                     running_field=False,
                 )
 
-    def start(self):
+    def start(self) -> None:
         self._thread.start()
 
-    def stop(self):
+    def stop(self) -> None:
         self._stop_requested = True
         try:
             self._client.disconnect()
             self._thread.join()
-        except:  # noqa
+        except:  # noqa: E722, S110
             pass
 
     def publish(self, topic: str, payload: bytes, qos: int) -> MQTTMessageInfo:
@@ -189,7 +180,11 @@ class MQTTClientWrapper:
     def subscription_items(self) -> list[Tuple[str, int]]:
         return list(cast(list[Tuple[str, int]], self._subscriptions.items()))
 
-    def on_message(self, _, userdata, message):
+    @property
+    def mqtt_client(self) -> PahoMQTTClient:
+        return self._client
+
+    def on_message(self, _: Any, userdata: Any, message: MQTTMessage) -> None:
         self._receive_queue.put(
             MQTTReceiptMessage(
                 client_name=self.name,
@@ -205,7 +200,9 @@ class MQTTClientWrapper:
                 self._pending_subscriptions.remove(topic)
         return len(self._pending_subscriptions)
 
-    def on_subscribe(self, _, userdata, mid, granted_qos):
+    def on_subscribe(
+        self, _: Any, userdata: Any, mid: int, granted_qos: list[int]
+    ) -> None:
         self._receive_queue.put(
             MQTTSubackMessage(
                 client_name=self.name,
@@ -215,7 +212,7 @@ class MQTTClientWrapper:
             )
         )
 
-    def on_connect(self, _, userdata, flags, rc):
+    def on_connect(self, _: Any, userdata: Any, flags: dict, rc: int) -> None:
         self._receive_queue.put(
             MQTTConnectMessage(
                 client_name=self.name,
@@ -225,7 +222,7 @@ class MQTTClientWrapper:
             )
         )
 
-    def on_connect_fail(self, _, userdata):
+    def on_connect_fail(self, _: Any, userdata: Any) -> None:
         self._receive_queue.put(
             MQTTConnectFailMessage(
                 client_name=self.name,
@@ -233,7 +230,7 @@ class MQTTClientWrapper:
             )
         )
 
-    def on_disconnect(self, _, userdata, rc):
+    def on_disconnect(self, _: Any, userdata: Any, rc: int) -> None:
         self._pending_subscriptions = set(self._subscriptions.keys())
         self._receive_queue.put(
             MQTTDisconnectMessage(
@@ -245,10 +242,10 @@ class MQTTClientWrapper:
 
     def enable_logger(
         self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
-    ):
+    ) -> None:
         self._client.enable_logger(logger)
 
-    def disable_logger(self):
+    def disable_logger(self) -> None:
         self._client.disable_logger()
 
 
@@ -258,17 +255,18 @@ class MQTTClients:
     upstream_client: str = ""
     primary_peer_client: str = ""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._send_queue = AsyncQueueWriter()
-        self.clients = dict()
+        self.clients = {}
 
     def add_client(
         self,
         name: str,
         client_config: config.MQTTClient,
+        *,
         upstream: bool = False,
         primary_peer: bool = False,
-    ):
+    ) -> None:
         if name in self.clients:
             raise ValueError(f"ERROR. MQTT client named {name} already exists")
         if upstream:
@@ -302,11 +300,13 @@ class MQTTClients:
     def handle_suback(self, suback: MQTTSubackPayload) -> int:
         return self.clients[suback.client_name].handle_suback(suback)
 
-    def stop(self):
+    def stop(self) -> None:
         for client in self.clients.values():
             client.stop()
 
-    def start(self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue):
+    def start(
+        self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
+    ) -> None:
         self._send_queue.set_async_loop(loop, async_queue)
         for client in self.clients.values():
             client.start()
@@ -325,11 +325,11 @@ class MQTTClients:
 
     def enable_loggers(
         self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
-    ):
+    ) -> None:
         for client_name in self.clients:
             self.clients[client_name].enable_logger(logger)
 
-    def disable_loggers(self):
+    def disable_loggers(self) -> None:
         for client_name in self.clients:
             self.clients[client_name].disable_logger()
 

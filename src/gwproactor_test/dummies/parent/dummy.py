@@ -1,37 +1,29 @@
 """Scada implementation"""
 
-from typing import Optional
-from typing import cast
+from typing import Optional, cast
 
-from gwproto import Decoders
-from gwproto import MQTTCodec
-from gwproto import MQTTTopic
-from gwproto import create_message_payload_discriminator
+from gwproto import MQTTCodec, MQTTTopic, create_message_model
 
 from gwproactor.links import QOS
 from gwproactor.message import Message
 from gwproactor.persister import SimpleDirectoryWriter
 from gwproactor.proactor_implementation import Proactor
-from gwproactor_test.dummies.names import DUMMY_CHILD_NAME
-from gwproactor_test.dummies.names import DUMMY_PARENT_NAME
+from gwproactor_test.dummies.names import DUMMY_CHILD_NAME, DUMMY_PARENT_NAME
 from gwproactor_test.dummies.parent.config import DummyParentSettings
 
 
-ParentMessageDecoder = create_message_payload_discriminator(
-    model_name="ParentMessageDecoder",
-    module_names=["gwproto.messages", "gwproactor.message"],
-)
-
-
 class ParentMQTTCodec(MQTTCodec):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
-            Decoders.from_objects(message_payload_discriminator=ParentMessageDecoder)
+            create_message_model(
+                model_name="ParentMessageDecoder",
+                module_names=["gwproto.messages", "gwproactor.message"],
+            )
         )
 
-    def validate_source_alias(self, source_alias: str):
+    def validate_source_alias(self, source_alias: str) -> None:
         if source_alias != DUMMY_CHILD_NAME:
-            raise Exception(f"alias {source_alias} not my Scada!")
+            raise ValueError(f"alias {source_alias} not my Scada!")
 
 
 class DummyParent(Proactor):
@@ -41,9 +33,9 @@ class DummyParent(Proactor):
         self,
         name: str = "",
         settings: Optional[DummyParentSettings] = None,
-    ):
+    ) -> None:
         super().__init__(
-            name=name if name else DUMMY_PARENT_NAME,
+            name=name or DUMMY_PARENT_NAME,
             settings=DummyParentSettings() if settings is None else settings,
         )
         self._links.add_mqtt_link(

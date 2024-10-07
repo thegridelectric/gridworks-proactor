@@ -4,41 +4,29 @@ REST commands into a message posted to main processing thread.
 """
 
 import asyncio
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Any
-from typing import Awaitable
-from typing import Callable
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Any, Awaitable, Callable, Optional
 
-import aiohttp as aiohttp
+import aiohttp
 import yarl
-from aiohttp import ClientResponse
-from aiohttp import ClientSession
-from aiohttp import ClientTimeout
+from aiohttp import ClientResponse, ClientSession, ClientTimeout
 from gwproto import Message
 from gwproto.data_classes.components.rest_poller_component import RESTPollerComponent
-from gwproto.type_helpers import AioHttpClientTimeout
-from gwproto.type_helpers import RESTPollerSettings
-from gwproto.type_helpers import URLConfig
+from gwproto.type_helpers import AioHttpClientTimeout, RESTPollerSettings, URLConfig
 from result import Result
 
-from gwproactor import Actor
-from gwproactor import Problems
-from gwproactor import ServicesInterface
-from gwproactor.proactor_interface import INVALID_IO_TASK_HANDLE
-from gwproactor.proactor_interface import IOLoopInterface
-
+from gwproactor import Actor, Problems, ServicesInterface
+from gwproactor.proactor_interface import INVALID_IO_TASK_HANDLE, IOLoopInterface
 
 Converter = Callable[[ClientResponse], Awaitable[Optional[Message]]]
 ThreadSafeForwarder = Callable[[Message], Any]
 
 
-async def null_converter(response: ClientResponse) -> Optional[Message]:  # noqa
+async def null_converter(_response: ClientResponse) -> Optional[Message]:
     return None
 
 
-def null_forwarder(message: Message) -> None:  # noqa
+def null_forwarder(_message: Message) -> None:
     return None
 
 
@@ -46,7 +34,7 @@ def to_client_timeout(
     timeout: Optional[AioHttpClientTimeout],
 ) -> Optional[ClientTimeout]:
     if timeout is not None:
-        return ClientTimeout(**timeout.dict())
+        return ClientTimeout(**timeout.model_dump())
     return None
 
 
@@ -73,15 +61,16 @@ class RESTPoller:
     _converter: Converter
     _forward: ThreadSafeForwarder
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         name: str,
         rest: RESTPollerSettings,
         loop_manager: IOLoopInterface,
+        *,
         convert: Converter = null_converter,
         forward: ThreadSafeForwarder = null_forwarder,
         cache_request_args: bool = True,
-    ):
+    ) -> None:
         self._name = name
         self._task_id = INVALID_IO_TASK_HANDLE
         self._rest = rest
@@ -102,7 +91,7 @@ class RESTPoller:
         return SessionArgs(
             self._make_base_url(),
             dict(
-                self._rest.session.dict(
+                self._rest.session.model_dump(
                     exclude={"base_url", "timeout"},
                     exclude_unset=True,
                 ),
@@ -115,7 +104,7 @@ class RESTPoller:
             self._rest.request.method,
             self._make_url(),
             dict(
-                self._rest.request.dict(
+                self._rest.request.model_dump(
                     exclude={"method", "url", "timeout"},
                     exclude_unset=True,
                 ),
@@ -131,10 +120,10 @@ class RESTPoller:
             response = await session.request(args.method, args.url, **args.kwargs)
             if self._rest.errors.request.error_for_http_status:
                 response.raise_for_status()
-        except BaseException as e:
+        except Exception as e:
             response = None
             if self._rest.errors.request.report:
-                try:
+                try:  # noqa: SIM105
                     self._forward(
                         Message(
                             Payload=Problems(errors=[e]).problem_event(
@@ -144,19 +133,19 @@ class RESTPoller:
                             )
                         )
                     )
-                except:  # noqa
+                except:  # noqa: E722, S110
                     pass
             if self._rest.errors.request.raise_exception:
-                raise e
+                raise
         return response
 
     async def _convert(self, response: ClientResponse) -> Optional[Message]:
         try:
             message = await self._converter(response)
-        except BaseException as convert_exception:
+        except Exception as convert_exception:
             message = None
             if self._rest.errors.convert.report:
-                try:
+                try:  # noqa: SIM105
                     self._forward(
                         Message(
                             Payload=Problems(errors=[convert_exception]).problem_event(
@@ -166,37 +155,31 @@ class RESTPoller:
                             )
                         )
                     )
-                except:  # noqa
+                except:  # noqa: E722, S110
                     pass
             if self._rest.errors.convert.raise_exception:
-                raise convert_exception
+                raise
         return message
 
     def _get_next_sleep_seconds(self) -> float:
         return self._rest.poll_period_seconds
 
-    async def _run(self):
-        try:
-            reconnect = True
-            while reconnect:
-                args = self._session_args
-                if args is None:
-                    args = self._make_session_args()
-                async with aiohttp.ClientSession(
-                    args.base_url, **args.kwargs
-                ) as session:
-                    while True:
-                        response = await self._make_request(session)
-                        if response is not None:
-                            async with response:
-                                message = await self._convert(response)
-                            if message is not None:
-                                self._forward(message)
-                        sleep_seconds = self._get_next_sleep_seconds()
-                        await asyncio.sleep(sleep_seconds)
-
-        except BaseException as e:
-            raise e
+    async def _run(self) -> None:
+        reconnect = True
+        while reconnect:
+            args = self._session_args
+            if args is None:
+                args = self._make_session_args()
+            async with aiohttp.ClientSession(args.base_url, **args.kwargs) as session:
+                while True:
+                    response = await self._make_request(session)
+                    if response is not None:
+                        async with response:
+                            message = await self._convert(response)
+                        if message is not None:
+                            self._forward(message)
+                    sleep_seconds = self._get_next_sleep_seconds()
+                    await asyncio.sleep(sleep_seconds)
 
     def start(self) -> None:
         self._task_id = self._io_loop_manager.add_io_coroutine(
@@ -215,17 +198,18 @@ class RESTPollerActor(Actor):
         self,
         name: str,
         services: ServicesInterface,
+        *,
         convert: Converter = null_converter,
         forward: ThreadSafeForwarder = null_forwarder,
         cache_request_args: bool = True,
-    ):
+    ) -> None:
         super().__init__(name, services)
         component = services.hardware_layout.component(self.name)
         if not isinstance(component, RESTPollerComponent):
             display_name = getattr(
                 component, "display_name", "MISSING ATTRIBUTE display_name"
             )
-            raise ValueError(
+            raise TypeError(
                 f"ERROR. Component <{display_name}> has type {type(component)}. "
                 f"Expected RESTPollerComponent.\n"
                 f"  Node: {self.name}\n"
@@ -240,7 +224,7 @@ class RESTPollerActor(Actor):
             cache_request_args=cache_request_args,
         )
 
-    def process_message(self, message: Message) -> Result[bool, BaseException]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:
         pass
 
     def start(self) -> None:

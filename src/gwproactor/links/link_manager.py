@@ -1,61 +1,56 @@
 import asyncio
 import json
 import logging
-from dataclasses import asdict
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Any
-from typing import Optional
-from typing import Tuple
-from typing import Union
+from dataclasses import asdict, dataclass, field
+from typing import Any, Optional, Tuple, Union
 
-from gwproto import Message
-from gwproto import MQTTCodec
-from gwproto.messages import Ack
-from gwproto.messages import CommEvent
-from gwproto.messages import EventT
-from gwproto.messages import MQTTConnectEvent
-from gwproto.messages import MQTTDisconnectEvent
-from gwproto.messages import MQTTFullySubscribedEvent
-from gwproto.messages import PeerActiveEvent
-from gwproto.messages import PingMessage
-from gwproto.messages import ProblemEvent
-from gwproto.messages import ResponseTimeoutEvent
-from gwproto.messages import StartupEvent
+from gwproto import Message, MQTTCodec
+from gwproto.messages import (
+    Ack,
+    CommEvent,
+    EventT,
+    MQTTConnectEvent,
+    MQTTDisconnectEvent,
+    MQTTFullySubscribedEvent,
+    PeerActiveEvent,
+    PingMessage,
+    ProblemEvent,
+    ResponseTimeoutEvent,
+    StartupEvent,
+)
 from paho.mqtt.client import MQTTMessageInfo
-from result import Err
-from result import Ok
-from result import Result
+from result import Err, Ok, Result
 
-from gwproactor.config import MQTTClient
-from gwproactor.config import ProactorSettings
+from gwproactor.config import MQTTClient, ProactorSettings
 from gwproactor.links import AckWaitInfo
-from gwproactor.links.acks import AckManager
-from gwproactor.links.acks import AckTimerCallback
-from gwproactor.links.link_state import InvalidCommStateInput
-from gwproactor.links.link_state import LinkState
-from gwproactor.links.link_state import LinkStates
-from gwproactor.links.link_state import StateName
-from gwproactor.links.link_state import Transition
-from gwproactor.links.message_times import LinkMessageTimes
-from gwproactor.links.message_times import MessageTimes
-from gwproactor.links.mqtt import QOS
-from gwproactor.links.mqtt import MQTTClients
-from gwproactor.links.mqtt import MQTTClientWrapper
+from gwproactor.links.acks import AckManager, AckTimerCallback
+from gwproactor.links.link_state import (
+    InvalidCommStateInput,
+    LinkState,
+    LinkStates,
+    StateName,
+    Transition,
+)
+from gwproactor.links.message_times import LinkMessageTimes, MessageTimes
+from gwproactor.links.mqtt import QOS, MQTTClients, MQTTClientWrapper
 from gwproactor.links.reuploads import Reuploads
 from gwproactor.links.timer_interface import TimerManagerInterface
 from gwproactor.logger import ProactorLogger
-from gwproactor.message import MQTTConnectFailPayload
-from gwproactor.message import MQTTConnectPayload
-from gwproactor.message import MQTTDisconnectPayload
-from gwproactor.message import MQTTReceiptPayload
-from gwproactor.message import MQTTSubackPayload
-from gwproactor.persister import ByteDecodingError
-from gwproactor.persister import DecodingError
-from gwproactor.persister import FileEmptyWarning
-from gwproactor.persister import JSONDecodingError
-from gwproactor.persister import PersisterInterface
-from gwproactor.persister import UIDMissingWarning
+from gwproactor.message import (
+    MQTTConnectFailPayload,
+    MQTTConnectPayload,
+    MQTTDisconnectPayload,
+    MQTTReceiptPayload,
+    MQTTSubackPayload,
+)
+from gwproactor.persister import (
+    ByteDecodingError,
+    DecodingError,
+    FileEmptyWarning,
+    JSONDecodingError,
+    PersisterInterface,
+    UIDMissingWarning,
+)
 from gwproactor.problems import Problems
 from gwproactor.stats import ProactorStats
 
@@ -79,7 +74,7 @@ class LinkManager:
     _message_times: MessageTimes
     _acks: AckManager
 
-    def __init__(
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         publication_name: str,
         settings: ProactorSettings,
@@ -88,7 +83,7 @@ class LinkManager:
         event_persister: PersisterInterface,
         timer_manager: TimerManagerInterface,
         ack_timeout_callback: AckTimerCallback,
-    ):
+    ) -> None:
         self.publication_name = publication_name
         self._settings = settings
         self._logger = logger
@@ -99,7 +94,7 @@ class LinkManager:
             self._settings.num_initial_event_reuploads,
         )
         self._mqtt_clients = MQTTClients()
-        self._mqtt_codecs = dict()
+        self._mqtt_codecs = {}
         self._states = LinkStates()
         self._message_times = MessageTimes()
         self._acks = AckManager(
@@ -126,6 +121,10 @@ class LinkManager:
     def num_reuploaded_unacked(self) -> int:
         return self._reuploads.num_reuploaded_unacked
 
+    @property
+    def ack_manager(self) -> AckManager:
+        return self._acks
+
     def reuploading(self) -> bool:
         return self._reuploads.reuploading()
 
@@ -143,11 +142,11 @@ class LinkManager:
 
     def enable_mqtt_loggers(
         self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
-    ):
-        return self._mqtt_clients.enable_loggers(logger)
+    ) -> None:
+        self._mqtt_clients.enable_loggers(logger)
 
-    def disable_mqtt_loggers(self):
-        return self._mqtt_clients.disable_loggers()
+    def disable_mqtt_loggers(self) -> None:
+        self._mqtt_clients.disable_loggers()
 
     def decoder(self, link_name: str) -> Optional[MQTTCodec]:
         return self._mqtt_codecs.get(link_name, None)
@@ -155,10 +154,10 @@ class LinkManager:
     def decode(self, link_name: str, topic: str, payload: bytes) -> Message[Any]:
         return self._mqtt_codecs[link_name].decode(topic, payload)
 
-    def link(self, name) -> Optional[LinkState]:
+    def link(self, name: str) -> Optional[LinkState]:
         return self._states.link(name)
 
-    def link_state(self, name) -> Optional[StateName]:
+    def link_state(self, name: str) -> Optional[StateName]:
         return self._states.link_state(name)
 
     def link_names(self) -> list[str]:
@@ -181,9 +180,10 @@ class LinkManager:
         name: str,
         mqtt_config: MQTTClient,
         codec: Optional[MQTTCodec] = None,
+        *,
         upstream: bool = False,
         primary_peer: bool = False,
-    ):
+    ) -> None:
         self._mqtt_clients.add_client(
             name,
             mqtt_config,
@@ -199,7 +199,7 @@ class LinkManager:
     def subscribe(self, client: str, topic: str, qos: int) -> Tuple[int, Optional[int]]:
         return self._mqtt_clients.subscribe(client, topic, qos)
 
-    def log_subscriptions(self, tag=""):
+    def log_subscriptions(self, tag: str = "") -> None:
         if self._logger.lifecycle_enabled:
             s = f"Subscriptions: [{tag}]]\n"
             for client in self._mqtt_clients.clients:
@@ -210,11 +210,11 @@ class LinkManager:
                     s += f"\t\t[{subscription}]\n"
             self._logger.lifecycle(s)
 
-    def get_reuploads_str(self, verbose: bool = True, num_events: int = 5) -> str:
+    def get_reuploads_str(self, verbose: bool = True, num_events: int = 5) -> str:  # noqa: FBT001, FBT002
         return self._reuploads.get_str(verbose=verbose, num_events=num_events)
 
     def publish_message(
-        self, client, message: Message, qos: int = 0, context: Any = None
+        self, client: str, message: Message, qos: int = 0, context: Any = None
     ) -> MQTTMessageInfo:
         topic = message.mqtt_topic()
         payload = self._mqtt_codecs[client].encode(message)
@@ -233,14 +233,14 @@ class LinkManager:
         return self._mqtt_clients.publish(client, topic, payload, qos)
 
     def publish_upstream(
-        self, payload, qos: QOS = QOS.AtMostOnce, **message_args: Any
+        self, payload: Any, qos: QOS = QOS.AtMostOnce, **message_args: Any
     ) -> MQTTMessageInfo:
         message = Message(Src=self.publication_name, Payload=payload, **message_args)
         return self.publish_message(
             self._mqtt_clients.upstream_client, message, qos=qos
         )
 
-    def generate_event(self, event: EventT) -> Result[bool, BaseException]:
+    def generate_event(self, event: EventT) -> Result[bool, Exception]:
         if isinstance(event, CommEvent):
             self._stats.link(event.PeerName).comm_event_counts[event.TypeName] += 1
         if isinstance(event, ProblemEvent) and self._logger.path_enabled:
@@ -254,13 +254,13 @@ class LinkManager:
             self.publish_upstream(event, AckRequired=True)
         return self._event_persister.persist(
             event.MessageId,
-            event.json(sort_keys=True, indent=2).encode(self.PERSISTER_ENCODING),
+            event.model_dump_json(indent=2).encode(self.PERSISTER_ENCODING),
         )
 
     def _start_reupload(self) -> None:
         if not self._reuploads.reuploading():
             self._continue_reupload(
-                self._reuploads.start_reupload(self._event_persister.pending())
+                self._reuploads.start_reupload(self._event_persister.pending_ids())
             )
 
     def _continue_reupload(self, event_ids: list[str]) -> None:
@@ -329,7 +329,7 @@ class LinkManager:
             continuation_count_dbg,
         )
 
-    def _reupload_event(self, event_id) -> Result[bool, Problems]:
+    def _reupload_event(self, event_id: str) -> Result[bool, Problems]:
         """Load event for event_id from storage, decoded to JSON and send it.
 
         Return either Ok(True) or Err(Problems(list of decoding errors)).
@@ -357,7 +357,7 @@ class LinkManager:
                     path_dbg |= 0x00000008
                     try:
                         event_str = event_bytes.decode(encoding=self.PERSISTER_ENCODING)
-                    except BaseException as e:
+                    except Exception as e:  # noqa: BLE001
                         path_dbg |= 0x00000010
                         problems.add_error(e).add_error(
                             ByteDecodingError("reupload_events", uid=event_id)
@@ -366,7 +366,7 @@ class LinkManager:
                         path_dbg |= 0x00000020
                         try:
                             event = json.loads(event_str)
-                        except BaseException as e:
+                        except Exception as e:  # noqa: BLE001
                             path_dbg |= 0x00000040
                             problems.add_error(e).add_error(
                                 JSONDecodingError(
@@ -380,7 +380,7 @@ class LinkManager:
                             self._logger.path(
                                 "--_reupload_event:1  path:0x%08X", path_dbg
                             )
-                            return Ok(True)
+                            return Ok(value=True)
             case Err(error):
                 path_dbg |= 0x00000100
                 problems.add_problems(error)
@@ -407,7 +407,7 @@ class LinkManager:
                     problems.errors.append(ret.err())
         self._mqtt_clients.stop()
         if problems is None:
-            return Ok(True)
+            return Ok(value=True)
         return Err(problems)
 
     def process_mqtt_connected(
@@ -458,7 +458,7 @@ class LinkManager:
 
     def process_ack_timeout(
         self, wait_info: AckWaitInfo
-    ) -> Result[LinkManagerTransition, BaseException]:
+    ) -> Result[LinkManagerTransition, Exception]:
         self._logger.path("++LinkManager.process_ack_timeout %s", wait_info.message_id)
         path_dbg = 0
         self._stats.link(wait_info.link_name).timeouts += 1
@@ -485,7 +485,7 @@ class LinkManager:
         self._logger.path("--LinkManager.process_ack_timeout path:0x%08X", path_dbg)
         return result
 
-    def process_ack(self, link_name: str, message_id: str):
+    def process_ack(self, link_name: str, message_id: str) -> None:
         self._logger.path("++LinkManager.process_ack  %s", message_id)
         path_dbg = 0
         wait_info = self._acks.cancel_ack_timer(link_name, message_id)
@@ -520,7 +520,7 @@ class LinkManager:
             for link_name in self.link_names()
         ]
 
-    async def send_ping(self, link_name: str):
+    async def send_ping(self, link_name: str) -> None:
         while not self._states.stopped(link_name):
             message_times = self._message_times.get_copy(link_name)
             link_state = self._states[link_name]
@@ -538,7 +538,7 @@ class LinkManager:
     def update_recv_time(self, link_name: str) -> None:
         self._message_times.update_recv(link_name)
 
-    def _recv_activated(self, transition: Transition):
+    def _recv_activated(self, transition: Transition) -> None:
         if transition.link_name == self.upstream_client:
             self._start_reupload()
         self.generate_event(PeerActiveEvent(PeerName=transition.link_name))

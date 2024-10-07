@@ -3,8 +3,7 @@ from pathlib import Path
 from ssl import VerifyMode
 from typing import Optional
 
-from pydantic import BaseModel
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 
 from gwproactor.config.paths import TLSPaths
 

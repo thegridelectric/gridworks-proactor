@@ -1,18 +1,15 @@
 import abc
+import contextlib
+import datetime
 import re
 import shutil
 import subprocess
 import time
 from abc import abstractmethod
 from pathlib import Path
-from typing import NamedTuple
-from typing import Optional
+from typing import NamedTuple, Optional
 
-import pendulum
-from pendulum import DateTime
-from result import Err
-from result import Ok
-from result import Result
+from result import Err, Ok, Result
 
 from gwproactor.problems import Problems
 
@@ -21,12 +18,14 @@ class PersisterException(Exception):
     path: Optional[Path] = None
     uid: str = ""
 
-    def __init__(self, msg: str = "", uid: str = "", path: Optional[Path] = None):
+    def __init__(
+        self, msg: str = "", uid: str = "", path: Optional[Path] = None
+    ) -> None:
         self.path = path
         self.uid = uid
         super().__init__(msg)
 
-    def __str__(self):
+    def __str__(self) -> str:
         s = self.__class__.__name__
         super_str = super().__str__()
         if super_str:
@@ -93,7 +92,7 @@ class PersisterInterface(abc.ABC):
         """Delete content persisted for uid. It is error to clear a uid which is not currently persisted."""
 
     @abstractmethod
-    def pending(self) -> list[str]:
+    def pending_ids(self) -> list[str]:
         """Get list of pending (persisted and not cleared) uids"""
 
     @property
@@ -120,13 +119,13 @@ class _PersistedItem(NamedTuple):
 
 
 class StubPersister(PersisterInterface):
-    def persist(self, uid: str, content: bytes) -> Result[bool, Problems]:
+    def persist(self, uid: str, content: bytes) -> Result[bool, Problems]:  # noqa: ARG002
         return Ok()
 
-    def clear(self, uid: str) -> Result[bool, Problems]:
+    def clear(self, uid: str) -> Result[bool, Problems]:  # noqa: ARG002
         return Ok()
 
-    def pending(self) -> list[str]:
+    def pending_ids(self) -> list[str]:
         return []
 
     @property
@@ -136,7 +135,7 @@ class StubPersister(PersisterInterface):
     def __contains__(self, uid: str) -> bool:
         return False
 
-    def retrieve(self, uid: str) -> Result[Optional[bytes], Problems]:
+    def retrieve(self, uid: str) -> Result[Optional[bytes], Problems]:  # noqa: ARG002
         return Ok(None)
 
     def reindex(self) -> Result[Optional[bool], Problems]:
@@ -149,11 +148,11 @@ class SimpleDirectoryWriter(StubPersister):
     def __init__(
         self,
         base_dir: Path | str,
-    ):
+    ) -> None:
         self._base_dir = Path(base_dir).resolve()
 
     @classmethod
-    def _make_name(cls, dt: DateTime, uid: str) -> str:
+    def _make_name(cls, dt: datetime, uid: str) -> str:
         return f"{dt.isoformat()}.uid[{uid}].json"
 
     def persist(self, uid: str, content: bytes) -> Result[bool, Problems]:
@@ -161,26 +160,27 @@ class SimpleDirectoryWriter(StubPersister):
         try:
             if not self._base_dir.exists():
                 self._base_dir.mkdir(parents=True, exist_ok=True)
-            path = self._base_dir / self._make_name(pendulum.now("utc"), uid)
+            path = self._base_dir / self._make_name(
+                datetime.datetime.now(tz=datetime.timezone.utc), uid
+            )
             try:
                 with path.open("wb") as f:
                     f.write(content)
-            except BaseException as e:  # pragma: no cover
+            except Exception as e:  # pragma: no cover  # noqa: BLE001
                 return Err(
                     problems.add_error(e).add_error(
-                        WriteFailed(f"Open or write failed", uid=uid, path=path)
+                        WriteFailed("Open or write failed", uid=uid, path=path)
                     )
                 )
-        except BaseException as e:
+        except Exception as e:  # noqa: BLE001
             return Err(
                 problems.add_error(e).add_error(
-                    PersisterError(f"Unexpected error", uid=uid)
+                    PersisterError("Unexpected error", uid=uid)
                 )
             )
         if problems:
             return Err(problems)
-        else:
-            return Ok()
+        return Ok()
 
 
 class TimedRollingFilePersister(PersisterInterface):
@@ -201,15 +201,15 @@ class TimedRollingFilePersister(PersisterInterface):
         base_dir: Path | str,
         max_bytes: int = DEFAULT_MAX_BYTES,
         pat_watchdog_args: Optional[list[str]] = None,
-        reindex_pat_seconds=REINDEX_PAT_SECONDS,
-    ):
+        reindex_pat_seconds: float = REINDEX_PAT_SECONDS,
+    ) -> None:
         self._base_dir = Path(base_dir).resolve()
         self._max_bytes = max_bytes
         self._curr_dir = self._today_dir()
         self._curr_bytes = 0
         self._pat_watchdog_args = pat_watchdog_args
         self._reindex_pat_seconds = reindex_pat_seconds
-        self._pending = dict()
+        self._pending = {}
 
     @property
     def max_bytes(self) -> int:
@@ -260,30 +260,27 @@ class TimedRollingFilePersister(PersisterInterface):
                     )
             self._roll_curr_dir()
             self._pending[uid] = self._curr_dir / self._make_name(
-                pendulum.now("utc"), uid
+                datetime.datetime.now(tz=datetime.timezone.utc), uid
             )
             try:
                 with self._pending[uid].open("wb") as f:
                     f.write(content)
                 self._curr_bytes += len(content)
-            except BaseException as e:  # pragma: no cover
+            except Exception as e:  # pragma: no cover  # noqa: BLE001
                 return Err(
                     problems.add_error(e).add_error(
-                        WriteFailed(
-                            f"Open or write failed", uid=uid, path=existing_path
-                        )
+                        WriteFailed("Open or write failed", uid=uid, path=existing_path)
                     )
                 )
-        except BaseException as e:
+        except Exception as e:  # noqa: BLE001
             return Err(
                 problems.add_error(e).add_error(
-                    PersisterError(f"Unexpected error", uid=uid)
+                    PersisterError("Unexpected error", uid=uid)
                 )
             )
         if problems:
             return Err(problems)
-        else:
-            return Ok()
+        return Ok()
 
     def _trim_old_storage(self, needed_bytes: int) -> Result[bool, Problems]:
         problems = Problems()
@@ -298,7 +295,7 @@ class TimedRollingFilePersister(PersisterInterface):
                 if last_day_dir is not None and last_day_dir != day_dir:
                     shutil.rmtree(last_day_dir, ignore_errors=True)
                 last_day_dir = day_dir
-            except BaseException as e:
+            except Exception as e:  # noqa: BLE001
                 problems.add_error(e)
                 problems.add_error(
                     PersisterError("Unexpected error", uid=uid, path=path)
@@ -306,19 +303,17 @@ class TimedRollingFilePersister(PersisterInterface):
             if self._curr_bytes <= self._max_bytes - needed_bytes:
                 break
         try:
-            if last_day_dir is not None:
-                if (
-                    not self._pending
-                    or next(iter(self._pending.values())).parent != last_day_dir
-                ):
-                    shutil.rmtree(last_day_dir, ignore_errors=True)
-        except BaseException as e:  # pragma: no cover
+            if last_day_dir is not None and (
+                not self._pending
+                or next(iter(self._pending.values())).parent != last_day_dir
+            ):
+                shutil.rmtree(last_day_dir, ignore_errors=True)
+        except Exception as e:  # pragma: no cover  # noqa: BLE001
             problems.add_error(e)
             problems.add_error(PersisterError("Unexpected error"))
         if problems:
             return Err(problems)
-        else:
-            return Ok()
+        return Ok()
 
     def clear(self, uid: str) -> Result[bool, Problems]:
         problems = Problems()
@@ -330,21 +325,24 @@ class TimedRollingFilePersister(PersisterInterface):
                 path_dir = path.parent
                 # Remove directory if empty.
                 # This is much faster than using iterdir.
-                try:
+                with contextlib.suppress(OSError):
                     path_dir.rmdir()
-                except OSError:
-                    ...
             else:
                 problems.add_warning(FileMissingWarning(uid=uid, path=path))
         else:
             problems.add_warning(UIDMissingWarning(uid=uid, path=path))
         if problems:
             return Err(problems)
-        else:
-            return Ok()
+        return Ok()
 
-    def pending(self) -> list[str]:
+    def pending_ids(self) -> list[str]:
         return list(self._pending.keys())
+
+    def pending_paths(self) -> list[Path]:
+        return list(self._pending.values())
+
+    def pending_dict(self) -> dict[str, Path]:
+        return dict(self._pending)
 
     @property
     def num_pending(self) -> int:
@@ -365,24 +363,22 @@ class TimedRollingFilePersister(PersisterInterface):
                 try:
                     with path.open("rb") as f:
                         content: bytes = f.read()
-                except BaseException as e:  # pragma: no cover
+                except Exception as e:  # pragma: no cover  # noqa: BLE001
                     problems.add_error(e).add_error(
-                        ReadFailed(f"Open or read failed", uid=uid, path=path)
+                        ReadFailed("Open or read failed", uid=uid, path=path)
                     )
             else:
                 problems.add_error(FileMissing(uid=uid, path=path))
         if problems:
             return Err(problems)
-        else:
-            return Ok(content)
+        return Ok(content)
 
     def reindex(self) -> Result[bool, Problems]:
         problems = Problems()
         self._curr_bytes = 0
         paths: list[_PersistedItem] = []
         last_pat = time.time()
-        for base_dir_entry in self._base_dir.iterdir():
-            # noinspection PyBroadException
+        for base_dir_entry in self._base_dir.iterdir():  # noqa: PLR1702
             try:
                 if base_dir_entry.is_dir() and self._is_iso_parseable(base_dir_entry):
                     for day_dir_entry in base_dir_entry.iterdir():
@@ -390,30 +386,37 @@ class TimedRollingFilePersister(PersisterInterface):
                             now = time.time()
                             if now > last_pat + self._reindex_pat_seconds:
                                 last_pat = now
-                                subprocess.run(self._pat_watchdog_args, check=True)
-                        # noinspection PyBroadException
+                                subprocess.run(self._pat_watchdog_args, check=True)  # noqa: S603
                         try:
                             if persisted_item := self._persisted_item_from_file_path(
                                 day_dir_entry
                             ):
                                 self._curr_bytes += persisted_item.path.stat().st_size
                                 paths.append(persisted_item)
-                        except BaseException as e:
+                        except Exception as e:  # noqa: BLE001
                             problems.add_error(e).add_error(
                                 ReindexError(path=day_dir_entry)
                             )
-            except BaseException as e:
+            except Exception as e:  # noqa: BLE001, PERF203
                 problems.add_error(e).add_error(ReindexError())
+        # The next line is correct, though PyCharm gives a false-positive warning.
+        # paths is a list of tuples, which the dict constructor will treat
+        # as a list of key-values pairs, which is the intended behavior.
         self._pending = dict(sorted(paths, key=lambda item: item.path))  # noqa
         if problems:
             return Err(problems)
-        else:
-            return Ok()
+        return Ok()
 
     def _today_dir(self) -> Path:
-        return self._base_dir / pendulum.today("utc").isoformat()
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        return (
+            self._base_dir
+            / datetime.datetime(
+                now.year, now.month, now.day, tzinfo=now.tzinfo
+            ).isoformat()
+        )
 
-    def _roll_curr_dir(self):
+    def _roll_curr_dir(self) -> None:
         today_dir = self._today_dir()
         if today_dir != self._curr_dir:
             self._curr_dir = today_dir
@@ -421,27 +424,26 @@ class TimedRollingFilePersister(PersisterInterface):
             self._curr_dir.mkdir(parents=True, exist_ok=True)
 
     @classmethod
-    def _make_name(cls, dt: DateTime, uid: str) -> str:
+    def _make_name(cls, dt: datetime.datetime, uid: str) -> str:
         return f"{dt.isoformat()}.uid[{uid}].json"
 
     @classmethod
     def _persisted_item_from_file_path(cls, filepath: Path) -> Optional[_PersistedItem]:
         item = None
-        # noinspection PyBroadException
+
         try:
             match = cls.FILENAME_RGX.match(filepath.name)
             if match and cls._is_iso_parseable(match.group("dt")):
                 item = _PersistedItem(match.group("uid"), filepath)
-        except:  # pragma: no cover
+        except:  # pragma: no cover  # noqa: E722, S110
             pass
         return item
 
     @classmethod
     def _is_iso_parseable(cls, s: str | Path) -> bool:
-        # noinspection PyBroadException
         try:
             if isinstance(s, Path):
                 s = s.name
-            return isinstance(pendulum.parse(s), DateTime)
-        except:
+            return isinstance(datetime.datetime.fromisoformat(s), datetime.datetime)
+        except:  # noqa: E722
             return False

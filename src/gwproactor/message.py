@@ -2,23 +2,13 @@
 
 import uuid
 from enum import Enum
-from typing import Any
-from typing import Dict
-from typing import Generic
-from typing import List
-from typing import Literal
-from typing import Optional
-from typing import TypeVar
+from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar
 
 from gwproto import as_enum
-from gwproto.message import Header
-from gwproto.message import Message
-from gwproto.message import ensure_arg
+from gwproto.message import Header, Message, ensure_arg
 from gwproto.messages import EventBase
-from paho.mqtt.client import MQTT_ERR_UNKNOWN
-from paho.mqtt.client import MQTTMessage
-from pydantic import BaseModel
-from pydantic import validator
+from paho.mqtt.client import MQTT_ERR_UNKNOWN, MQTTMessage
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from gwproactor.config import LoggerLevels
 from gwproactor.problems import Problems
@@ -44,7 +34,7 @@ class KnownNames(Enum):
 
 class MQTTClientsPayload(BaseModel):
     client_name: str
-    userdata: Optional[Any]
+    userdata: Optional[Any] = None
 
 
 MQTTClientsPayloadT = TypeVar("MQTTClientsPayloadT", bound=MQTTClientsPayload)
@@ -55,7 +45,7 @@ class MQTTClientMessage(Message[MQTTClientsPayloadT], Generic[MQTTClientsPayload
         self,
         message_type: MessageType,
         payload: MQTTClientsPayloadT,
-    ):
+    ) -> None:
         super().__init__(
             Header=Header(
                 Src=KnownNames.mqtt_clients.value,
@@ -79,7 +69,7 @@ class MQTTMessageModel(BaseModel):
     @classmethod
     def from_mqtt_message(cls, message: MQTTMessage) -> "MQTTMessageModel":
         model = MQTTMessageModel()
-        for field_name in model.__fields__:
+        for field_name in model.model_fields:
             setattr(model, field_name, getattr(message, field_name))
         return model
 
@@ -94,7 +84,7 @@ class MQTTReceiptMessage(MQTTClientMessage[MQTTReceiptPayload]):
         client_name: str,
         userdata: Optional[Any],
         message: MQTTMessage,
-    ):
+    ) -> None:
         super().__init__(
             message_type=MessageType.mqtt_message,
             payload=MQTTReceiptPayload(
@@ -117,7 +107,7 @@ class MQTTSubackMessage(MQTTClientMessage[MQTTSubackPayload]):
         userdata: Optional[Any],
         mid: int,
         granted_qos: List[int],
-    ):
+    ) -> None:
         super().__init__(
             message_type=MessageType.mqtt_suback,
             payload=MQTTSubackPayload(
@@ -144,7 +134,7 @@ class MQTTConnectMessage(MQTTClientMessage[MQTTConnectPayload]):
         userdata: Optional[Any],
         flags: Dict,
         rc: int,
-    ):
+    ) -> None:
         super().__init__(
             message_type=MessageType.mqtt_connected,
             payload=MQTTConnectPayload(
@@ -161,7 +151,7 @@ class MQTTConnectFailPayload(MQTTClientsPayload):
 
 
 class MQTTConnectFailMessage(MQTTClientMessage[MQTTConnectFailPayload]):
-    def __init__(self, client_name: str, userdata: Optional[Any]):
+    def __init__(self, client_name: str, userdata: Optional[Any]) -> None:
         super().__init__(
             message_type=MessageType.mqtt_connect_failed,
             payload=MQTTConnectFailPayload(
@@ -176,7 +166,7 @@ class MQTTDisconnectPayload(MQTTCommEventPayload):
 
 
 class MQTTDisconnectMessage(MQTTClientMessage[MQTTDisconnectPayload]):
-    def __init__(self, client_name: str, userdata: Optional[Any], rc: int):
+    def __init__(self, client_name: str, userdata: Optional[Any], rc: int) -> None:
         super().__init__(
             message_type=MessageType.mqtt_disconnected,
             payload=MQTTDisconnectPayload(
@@ -189,15 +179,13 @@ class MQTTDisconnectMessage(MQTTClientMessage[MQTTDisconnectPayload]):
 
 class MQTTProblemsPayload(MQTTCommEventPayload):
     problems: Problems
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class MQTTProblemsMessage(MQTTClientMessage[MQTTCommEventPayload]):
     def __init__(
         self, client_name: str, problems: Problems, rc: int = MQTT_ERR_UNKNOWN
-    ):
+    ) -> None:
         super().__init__(
             message_type=MessageType.mqtt_problems,
             payload=MQTTProblemsPayload(
@@ -222,7 +210,7 @@ class PatExternalWatchdog(PatWatchdog):
 
 
 class PatInternalWatchdogMessage(Message[PatInternalWatchdog]):
-    def __init__(self, src: str):
+    def __init__(self, src: str) -> None:
         super().__init__(
             Src=src,
             Dst=KnownNames.watchdog_manager.value,
@@ -231,7 +219,7 @@ class PatInternalWatchdogMessage(Message[PatInternalWatchdog]):
 
 
 class PatExternalWatchdogMessage(Message[PatExternalWatchdog]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             Src=KnownNames.watchdog_manager.value,
             Dst=KnownNames.watchdog_manager.value,
@@ -246,10 +234,9 @@ CommandT = TypeVar("CommandT", bound=Command)
 
 
 class CommandMessage(Message[CommandT], Generic[CommandT]):
-    def __init__(self, **data: Any):
-        ensure_arg("AckRequired", True, data)
-        ensure_arg("MessageId", str(uuid.uuid4()), data)
-        super().__init__(**data)
+    def __init__(self, *, AckRequired: bool = True, **kwargs: Any) -> None:
+        ensure_arg("MessageId", str(uuid.uuid4()), kwargs)
+        super().__init__(AckRequired=AckRequired, **kwargs)
 
 
 class Shutdown(Command):
@@ -258,15 +245,14 @@ class Shutdown(Command):
 
 
 class ShutdownMessage(CommandMessage[Shutdown]):
-    def __init__(self, **data: Any):
-        ensure_arg("Payload", Shutdown(Reason=data.get("Reason", "")), data)
+    def __init__(self, *, Reason: str = "", **data: Any) -> None:
+        ensure_arg("Payload", Shutdown(Reason=Reason), data)
         super().__init__(**data)
 
 
 class InternalShutdownMessage(ShutdownMessage):
-    def __init__(self, **data: Any):
-        ensure_arg("AckRequired", False, data)
-        super().__init__(**data)
+    def __init__(self, *, AckRequired: bool = False, **data: Any) -> None:
+        super().__init__(AckRequired=AckRequired, **data)
 
 
 class DBGCommands(Enum):
@@ -282,8 +268,9 @@ class DBGPayload(BaseModel):
     Command: Optional[DBGCommands] = None
     TypeName: Literal["gridworks.proactor.dbg"] = "gridworks.proactor.dbg"
 
-    @validator("Command", pre=True)
-    def command_value(cls, v) -> Optional[DBGCommands]:
+    @field_validator("Command", mode="before")
+    @classmethod
+    def command_value(cls, v: Any) -> Optional[DBGCommands]:
         return as_enum(v, DBGCommands)
 
 
