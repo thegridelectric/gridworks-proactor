@@ -789,18 +789,22 @@ name = "gridworks-protocol"
 version = "1.0.2"
 description = "Gridworks Protocol"
 optional = false
-python-versions = "<4.0,>=3.11"
-files = [
-    {file = "gridworks_protocol-1.0.2-py3-none-any.whl", hash = "sha256:92791ddba688d4a08cec67513e0923acaa3e5d66d3ef00a0a1b485276ece9290"},
-    {file = "gridworks_protocol-1.0.2.tar.gz", hash = "sha256:e45a9095ffa966f973138cc0756e3127d07655c80f292eb7538bd706de09ef9f"},
-]
+python-versions = "^3.11"
+files = []
+develop = false
 
 [package.dependencies]
-gridworks = ">=1.2.0,<2.0.0"
-pydantic = ">=2.8.2,<3.0.0"
-pydantic-extra-types = ">=2.9.0,<3.0.0"
-pytz = ">=2024.1,<2025.0"
-yarl = ">=1.9.2,<2.0.0"
+gridworks = "^1.2.0"
+pydantic = "^2.8.2"
+pydantic-extra-types = "^2.9.0"
+pytz = "^2024.1"
+yarl = "^1.9.2"
+
+[package.source]
+type = "git"
+url = "https://github.com/thegridelectric/gridworks-protocol.git"
+reference = "dev"
+resolved_reference = "e2217651548cf69d5eb27397331349e31f7e1873"
 
 [[package]]
 name = "h11"
@@ -2619,4 +2623,4 @@ tests = ["freezegun", "gridworks-cert", "pytest", "pytest-asyncio"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "e561e6d61d07a2b3ce360261a1586f729e768c5276c2ee1760692af8baac0ca3"
+content-hash = "205f02f2604519bc2513d5cbf48e3dc0670a90c31c097a8057e064b63c189270"
