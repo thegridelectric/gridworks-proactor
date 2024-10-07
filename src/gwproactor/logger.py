@@ -8,7 +8,7 @@ class MessageSummary:
     """Helper class for formating message summaries message receipt/publication single line summaries."""
 
     DEFAULT_FORMAT = (
-        "  {direction:15s}  {actor_alias:40s}  {broker_flag}  {arrow:2s}  {topic:90s}"
+        "  {direction:15s}  {actor_name:40s}  {broker_flag}  {arrow:2s}  {topic:90s}"
         "  {payload_type:40s}  {message_id}"
     )
 
@@ -16,7 +16,7 @@ class MessageSummary:
     def format(  # noqa: PLR0913
         cls,
         direction: str,
-        actor_alias: str,
+        actor_name: str,
         topic: str,
         *,
         payload_object: Any = None,
@@ -30,7 +30,7 @@ class MessageSummary:
 
         Args:
             direction: "IN" or "OUT"
-            actor_alias: The node alias of the sending or receiving actor.
+            actor_name: The node name of the sending or receiving actor.
             topic: The destination or source topic.
             payload_object: The payload of the message.
             broker_flag: "*" for the "gw" broker.
@@ -66,7 +66,7 @@ class MessageSummary:
             return format_.format(
                 timestamp=timestamp.isoformat(),
                 direction=direction,
-                actor_alias=actor_alias,
+                actor_name=actor_name,
                 broker_flag=broker_flag,
                 arrow=arrow,
                 topic=f"[{topic}]",
@@ -121,7 +121,7 @@ class ProactorLogger(logging.LoggerAdapter):
     def message_summary(  # noqa: PLR0913
         self,
         direction: str,
-        actor_alias: str,
+        actor_name: str,
         topic: str,
         payload_object: Any = None,
         broker_flag: str = " ",
@@ -132,7 +132,7 @@ class ProactorLogger(logging.LoggerAdapter):
             self.message_summary_logger.info(
                 MessageSummary.format(
                     direction=direction,
-                    actor_alias=actor_alias,
+                    actor_name=actor_name,
                     topic=topic,
                     payload_object=payload_object,
                     broker_flag=broker_flag,

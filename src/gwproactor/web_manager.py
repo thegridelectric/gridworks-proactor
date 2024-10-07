@@ -1,4 +1,5 @@
 import asyncio
+import copy
 from collections import defaultdict
 from typing import Any
 
@@ -6,34 +7,10 @@ from aiohttp import web
 from aiohttp.typedefs import Handler as HTTPHandler
 from aiohttp.web_routedef import RouteDef
 from gwproto import Message
-from gwproto.types import WebServerGt
+from gwproto.type_helpers import WebServerGt
 from result import Result
 
 from gwproactor.proactor_interface import Communicator, Runnable, ServicesInterface
-
-
-def enable_aiohttp_logging() -> None:
-    import logging
-
-    for logger_name in [
-        "aiohttp.access",
-        "aiohttp.client",
-        "aiohttp.internal",
-        "aiohttp.server",
-        "aiohttp.web",
-        "aiohttp.websocket",
-    ]:
-        logger_ = logging.getLogger(logger_name)
-        handler_ = logging.StreamHandler()
-        handler_.setFormatter(
-            logging.Formatter(
-                fmt="%(asctime)s.%(msecs)03d   %(message)s",
-                datefmt="%Y-%m-%d  %H:%M:%S",
-            )
-        )
-        logger_.addHandler(handler_)
-        logger_.setLevel(logging.INFO)
-        logger_.setLevel(logging.DEBUG)
 
 
 class _RunWebServer:
@@ -128,3 +105,12 @@ class _WebManager(Communicator, Runnable):
                 kwargs=kwargs,
             )
         )
+
+    def get_route_strings(self) -> dict[str, list[str]]:
+        return {
+            config_name: [str(route) for route in self._routes[config_name]]
+            for config_name in self._routes
+        }
+
+    def get_configs(self) -> dict[str, WebServerGt]:
+        return copy.deepcopy(self._configs)
