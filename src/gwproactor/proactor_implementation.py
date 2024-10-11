@@ -17,7 +17,6 @@ from typing import (
 
 import gwproto
 from aiohttp.typedefs import Handler as HTTPHandler
-from aiohttp.web_routedef import RouteDef
 from gwproto.data_classes.components.web_server_component import WebServerComponent
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
@@ -240,7 +239,7 @@ class Proactor(ServicesInterface, Runnable):
             server_name=server_name, method=method, path=path, handler=handler, **kwargs
         )
 
-    def get_web_server_route_strings(self) -> dict[str, list[RouteDef]]:
+    def get_web_server_route_strings(self) -> dict[str, list[str]]:
         return self._web_manager.get_route_strings()
 
     def get_web_server_configs(self) -> dict[str, WebServerGt]:
