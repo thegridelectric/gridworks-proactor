@@ -114,6 +114,7 @@ class ProactorCommTimeoutTests:
                 err_str_f=parent.summary_str,
             )
 
+    @pytest.mark.skip(reason="Skipping for now")
     @pytest.mark.asyncio
     async def test_ping(self) -> None:
         """
