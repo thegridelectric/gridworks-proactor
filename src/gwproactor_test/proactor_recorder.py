@@ -142,7 +142,7 @@ class RecorderLinks(LinkManager):
             # path_dbg |= 0x00000004
             for paused_ack in needs_ack:
                 # path_dbg |= 0x00000008
-                super().publish_message(**dataclasses.asdict(paused_ack))
+                super().publish_message(**dataclasses.asdict(paused_ack))  # noqa
         # self._logger.info(
         #     f"--release_acks: clear:{clear}  num_to_release:{num_to_release}  path:0x{path_dbg:08X}"
         # )
@@ -289,7 +289,7 @@ def make_recorder_class(  # noqa: C901
             match message.Payload:
                 case DBGPayload():
                     message.Header.Src = self.publication_name
-                    message.Header.Dst = self.primary_peer_client
+                    message.Header.Dst = self.links.topic_dst(self.primary_peer_client)
                     self._links.publish_message(self.primary_peer_client, message)
                 case _:
                     # noinspection PyProtectedMember

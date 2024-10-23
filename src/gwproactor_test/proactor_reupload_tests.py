@@ -311,10 +311,12 @@ class ProactorReuploadTests:
             assert child_links.num_pending == last_num_to_reupload + 1
             assert child_links.reuploading()
 
+            # noinspection PyTypeChecker
             parent_ack_topic = MQTTTopic.encode(
                 "gw",
                 h.parent.publication_name,
-                "gridworks-ack",  # noqa
+                h.parent.links.topic_dst(child.name),
+                "gridworks-ack",
             )
             acks_received_by_child = child.stats.num_received_by_topic[parent_ack_topic]
 

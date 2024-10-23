@@ -75,6 +75,11 @@ class LoggerGuards:
             for logger_name in logger_names
         }
 
+    def add_loggers(self, logger_names: Optional[Sequence[str]] = None) -> None:
+        for logger_name in logger_names:
+            if logger_name not in self.guards:
+                self.guards[logger_name] = LoggerGuard(logging.getLogger(logger_name))
+
     def restore(self) -> None:
         for guard in self.guards.values():
             guard.restore()

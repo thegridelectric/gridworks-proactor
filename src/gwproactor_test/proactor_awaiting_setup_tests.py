@@ -420,9 +420,12 @@ class ProactorCommAwaitingSetupTests:
 
             # (awaiting_setup -> message_from_peer -> awaiting_setup)
             # Receive another message from peer, remaining in awaiting_setup
+
+            # noinspection PyTypeChecker
             dbg_topic = MQTTTopic.encode(
                 "gw",
-                parent.publication_name,  # noqa
+                parent.publication_name,
+                parent.links.topic_dst(parent.primary_peer_client),
                 DBGPayload.model_fields["TypeName"].default,
             )
             assert stats.num_received_by_topic[dbg_topic] == 0

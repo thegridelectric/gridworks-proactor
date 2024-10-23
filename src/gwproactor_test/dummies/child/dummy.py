@@ -14,7 +14,12 @@ from gwproactor.links import QOS
 from gwproactor.persister import TimedRollingFilePersister
 from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies.child.config import DummyChildSettings
-from gwproactor_test.dummies.names import DUMMY_CHILD_NAME, DUMMY_PARENT_NAME
+from gwproactor_test.dummies.names import (
+    CHILD_SHORT_NAME,
+    DUMMY_CHILD_NAME,
+    DUMMY_PARENT_NAME,
+    PARENT_SHORT_NAME,
+)
 
 
 class ChildMQTTCodec(MQTTCodec):
@@ -29,10 +34,12 @@ class ChildMQTTCodec(MQTTCodec):
             )
         )
 
-    def validate_source_alias(self, source_alias: str) -> None:
-        if source_alias != DUMMY_PARENT_NAME:
+    def validate_source_and_destination(self, src: str, dst: str) -> None:
+        if src != DUMMY_PARENT_NAME or dst != CHILD_SHORT_NAME:
             raise ValueError(
-                f"alias {source_alias} not my AtomicTNode ({DUMMY_PARENT_NAME})!"
+                "ERROR validating src and/or dst\n"
+                f"  exp: {DUMMY_PARENT_NAME} -> {CHILD_SHORT_NAME}\n"
+                f"  got: {src} -> {dst}"
             )
 
 
@@ -49,18 +56,21 @@ class DummyChild(Proactor):
             settings=DummyChildSettings() if settings is None else settings,
         )
         self._links.add_mqtt_link(
-            DummyChild.PARENT_MQTT,
-            settings.parent_mqtt,
-            ChildMQTTCodec(),
+            client_name=DummyChild.PARENT_MQTT,
+            destination_short_name=PARENT_SHORT_NAME,
+            mqtt_config=settings.parent_mqtt,
+            codec=ChildMQTTCodec(),
             upstream=True,
             primary_peer=True,
         )
         for topic in [
-            MQTTTopic.encode_subscription(Message.type_name(), DUMMY_PARENT_NAME),
+            MQTTTopic.encode_subscription(
+                Message.type_name(), DUMMY_PARENT_NAME, CHILD_SHORT_NAME
+            ),
             # Enable awaiting_setup edge case testing, which depends on receiving multiple, separate
             # MQTT topic subscription acks:
-            MQTTTopic.encode_subscription(Message.type_name(), "1"),
-            MQTTTopic.encode_subscription(Message.type_name(), "2"),
+            MQTTTopic.encode_subscription(Message.type_name(), "1", "a"),
+            MQTTTopic.encode_subscription(Message.type_name(), "2", "b"),
         ]:
             self._links.subscribe(self.PARENT_MQTT, topic, QOS.AtMostOnce)
         self._links.log_subscriptions("construction")

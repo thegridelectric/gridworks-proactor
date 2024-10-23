@@ -21,7 +21,7 @@ def test_proactor_logger(caplog: Any) -> None:
         assert not logger.message_summary_enabled
         assert logger.message_summary_logger.level == logging.WARNING
         assert not logger.path_enabled
-        logger.message_summary("", "", "")
+        logger.message_summary("", "", "", "")
         assert len(caplog.records) == 0
         logger.path("foo")
         assert len(caplog.records) == 0
@@ -58,7 +58,7 @@ def test_proactor_logger(caplog: Any) -> None:
                 stacklevel=2,
             )
         caplog.clear()
-    logger.message_summary("IN", "x", "y")
+    logger.message_summary("IN", "x", "y", "z")
     if len(caplog.records) != 1:
         warnings.warn(
             f"len(caplog.records) ({len(caplog.records)}) != 1  (#3)",

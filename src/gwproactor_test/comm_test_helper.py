@@ -63,6 +63,7 @@ class CommTestHelper:
 
     def __init__(
         self,
+        *,
         child_settings: Optional[ChildSettingsT] = None,
         parent_settings: Optional[ParentSettingsT] = None,
         verbose: bool = False,
@@ -86,7 +87,12 @@ class CommTestHelper:
             child_name,
             child_path_name,
             (
-                self.child_settings_t(paths=Paths(name=Path(child_path_name)))
+                self.child_settings_t(
+                    logging=LoggingSettings(
+                        base_log_name=f"{child_path_name}_{DEFAULT_BASE_NAME}"
+                    ),
+                    paths=Paths(name=Path(child_path_name)),
+                )
                 if child_settings is None
                 else child_settings
             ),
@@ -98,7 +104,7 @@ class CommTestHelper:
             (
                 self.parent_settings_t(
                     logging=LoggingSettings(
-                        base_log_name=f"parent_{DEFAULT_BASE_NAME}"
+                        base_log_name=f"{parent_path_name}_{DEFAULT_BASE_NAME}"
                     ),
                     paths=Paths(name=Path(parent_path_name)),
                 )
@@ -213,9 +219,11 @@ class CommTestHelper:
         self.child_helper.settings.paths.mkdirs(parents=True)
         self.parent_helper.settings.paths.mkdirs(parents=True)
         errors = []
-        if not self.lifecycle_logging:
-            self.child_helper.settings.logging.levels.lifecycle = logging.WARNING
-            self.parent_helper.settings.logging.levels.lifecycle = logging.WARNING
+        if not self.lifecycle_logging and not self.verbose:
+            if not self.child_verbose:
+                self.child_helper.settings.logging.levels.lifecycle = logging.WARNING
+            if not self.parent_verbose:
+                self.parent_helper.settings.logging.levels.lifecycle = logging.WARNING
         self.logger_guards = LoggerGuards(
             list(self.child_helper.settings.logging.qualified_logger_names().values())
             + list(
@@ -239,12 +247,15 @@ class CommTestHelper:
         )
         assert not errors
 
-    async def stop_and_join(self) -> None:
-        proactors = [
+    def get_proactors(self) -> list[RecorderInterface]:
+        return [
             helper.proactor
             for helper in [self.child_helper, self.parent_helper]
             if helper.proactor is not None
         ]
+
+    async def stop_and_join(self) -> None:
+        proactors = self.get_proactors()
         for proactor in proactors:
             with contextlib.suppress(Exception):
                 proactor.stop()
@@ -255,6 +266,14 @@ class CommTestHelper:
     async def __aenter__(self) -> "CommTestHelper":
         return self
 
+    def get_log_path_str(self, exc: BaseException) -> str:
+        return (
+            f"CommTestHelper caught error {exc}.\n"
+            "Working log dirs:"
+            f"\n\t[{self.child_helper.settings.paths.log_dir}]"
+            f"\n\t[{self.parent_helper.settings.paths.log_dir}]"
+        )
+
     async def __aexit__(
         self,
         exc_type: Optional[Type[BaseException]],
@@ -263,12 +282,7 @@ class CommTestHelper:
     ) -> bool:
         await self.stop_and_join()
         if exc is not None:
-            logging.getLogger("gridworks").error(
-                "CommTestHelper caught error %s.\nWorking log dirs:\n\t[%s]\n\t[%s]",
-                exc,
-                self.child_helper.settings.paths.log_dir,
-                self.parent_helper.settings.paths.log_dir,
-            )
+            logging.getLogger("gridworks").error(self.get_log_path_str(exc))
         self.logger_guards.restore()
         return False
 

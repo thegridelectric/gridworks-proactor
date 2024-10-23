@@ -164,7 +164,8 @@ class Proactor(ServicesInterface, Runnable):
             self._logger.message_summary(
                 "OUT internal",
                 message.Header.Src,
-                f"{message.Header.Dst}/{message.Header.MessageType}",
+                message.Header.Dst,
+                f"{message.Header.Src}/to/{message.Header.Dst}/{message.Header.MessageType}",
                 message.Payload,
                 message_id=message.Header.MessageId,
             )
@@ -429,8 +430,10 @@ class Proactor(ServicesInterface, Runnable):
             path_dbg |= 0x00000001
             self._logger.message_summary(
                 "IN  internal",
+                message.src(),
                 self.name,
-                f"{message.Header.Src}/{message.Header.MessageType}",
+                message.dst(),
+                f"{message.src()}/to/{message.dst()}/{message.Header.MessageType}",
                 message.Payload,
                 message_id=message.Header.MessageId,
             )
@@ -517,6 +520,7 @@ class Proactor(ServicesInterface, Runnable):
             decoded_message = decode_result.value
             self._logger.message_summary(
                 "IN  mqtt    ",
+                decoded_message.src(),
                 self.name,
                 mqtt_receipt_message.Payload.message.topic,
                 decoded_message.Payload,

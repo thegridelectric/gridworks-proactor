@@ -357,9 +357,11 @@ class ProactorCommBasicTests:
                 parent.primary_peer_client
             ).mqtt_client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             # wait for child to get ping from parent when parent reconnects to mqtt
+            # noinspection PyTypeChecker
             parent_ping_topic = MQTTTopic.encode(
                 "gw",
-                parent.publication_name,  # noqa
+                parent.publication_name,
+                parent.links.topic_dst(child.name),
                 "gridworks-ping",
             )
             num_parent_pings = child_stats.num_received_by_topic[parent_ping_topic]

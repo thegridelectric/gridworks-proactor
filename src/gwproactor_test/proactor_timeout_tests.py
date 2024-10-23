@@ -132,27 +132,28 @@ class ProactorCommTimeoutTests:
             add_parent=True,
             child_settings=child_settings,
             parent_settings=parent_settings,
-            verbose=False,
         ) as h:
             parent = h.parent
             parent_stats = parent.stats.link(parent.primary_peer_client)
-            parent_ping_topic = MQTTTopic.encode(
-                "gw",
-                parent.publication_name,  # noqa
-                "gridworks-ping",
-            )
-
             child = h.child
+            # noinspection PyTypeChecker
+            pings_from_parent_topic = MQTTTopic.encode(
+                envelope_type="gw",
+                src=parent.publication_name,
+                dst=parent.links.topic_dst(parent.primary_peer_client),
+                message_type="gridworks-ping",
+            )
             child.disable_derived_events()
             child.set_ack_timeout_seconds(1)
             link = child.links.link(child.upstream_client)
             stats = child.stats.link(child.upstream_client)
-            child_ping_topic = MQTTTopic.encode(
-                "gw",
-                child.publication_name,  # noqa
-                "gridworks-ping",
+            # noinspection PyTypeChecker
+            ping_from_child_topic = MQTTTopic.encode(
+                envelope_type="gw",
+                src=child.publication_name,
+                dst=child.links.topic_dst(child.primary_peer_client),
+                message_type="gridworks-ping",
             )
-
             # start parent and child
             h.start_parent()
             h.start_child()
@@ -160,23 +161,26 @@ class ProactorCommTimeoutTests:
                 lambda: link.in_state(StateName.active),
                 3,
                 "ERROR waiting for child active",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
 
             # Test that ping sent peridoically if no messages sent
-            start_pings_from_parent = stats.num_received_by_topic[parent_ping_topic]
+            start_pings_from_parent = stats.num_received_by_topic[
+                pings_from_parent_topic
+            ]
             start_pings_from_child = parent_stats.num_received_by_topic[
-                child_ping_topic
+                ping_from_child_topic
             ]
             start_messages_from_parent = stats.num_received
             start_messages_from_child = parent_stats.num_received
             wait_seconds = 0.5
             await asyncio.sleep(wait_seconds)
             pings_from_parent = (
-                stats.num_received_by_topic[parent_ping_topic] - start_pings_from_parent
+                stats.num_received_by_topic[pings_from_parent_topic]
+                - start_pings_from_parent
             )
             pings_from_child = (
-                parent_stats.num_received_by_topic[child_ping_topic]
+                parent_stats.num_received_by_topic[ping_from_child_topic]
                 - start_pings_from_child
             )
             messages_from_parent = stats.num_received - start_messages_from_parent
@@ -185,22 +189,23 @@ class ProactorCommTimeoutTests:
                 wait_seconds / parent.settings.mqtt_link_poll_seconds
             ) - 1
             err_str = (
-                f"pings_from_parent: {pings_from_parent}\n"
+                f"\npings_from_parent: {pings_from_parent}  ({stats.num_received_by_topic[pings_from_parent_topic]} - {start_pings_from_parent})  on <{pings_from_parent_topic}>\n"
                 f"messages_from_parent: {messages_from_parent}\n"
-                f"pings_from_child: {pings_from_child}\n"
+                f"pings_from_child: {pings_from_child}  ({parent_stats.num_received_by_topic[ping_from_child_topic]} - {start_pings_from_child})  on {ping_from_child_topic}\n"
                 f"messages_from_child: {messages_from_child}\n"
                 f"exp_pings_nominal: {exp_pings_nominal}\n"
-                f"\n{child.summary_str()}\n"
-                f"\n{parent.summary_str()}\n"
+                f"\n{h.summary_str()}\n"
             )
             assert (pings_from_child + pings_from_parent) >= exp_pings_nominal, err_str
             assert messages_from_child >= exp_pings_nominal, err_str
             assert messages_from_parent >= exp_pings_nominal, err_str
 
             # Test that ping not sent peridoically if messages are sent
-            start_pings_from_parent = stats.num_received_by_topic[parent_ping_topic]
+            start_pings_from_parent = stats.num_received_by_topic[
+                pings_from_parent_topic
+            ]
             start_pings_from_child = parent_stats.num_received_by_topic[
-                child_ping_topic
+                ping_from_child_topic
             ]
             start_messages_from_parent = stats.num_received
             start_messages_from_child = parent_stats.num_received
@@ -209,23 +214,24 @@ class ProactorCommTimeoutTests:
                 parent.send_dbg_to_peer()
                 await asyncio.sleep(0.01)
             pings_from_parent = (
-                stats.num_received_by_topic[parent_ping_topic] - start_pings_from_parent
+                stats.num_received_by_topic[pings_from_parent_topic]
+                - start_pings_from_parent
             )
             pings_from_child = (
-                parent_stats.num_received_by_topic[child_ping_topic]
+                parent_stats.num_received_by_topic[ping_from_child_topic]
                 - start_pings_from_child
             )
             messages_from_parent = stats.num_received - start_messages_from_parent
             messages_from_child = parent_stats.num_received - start_messages_from_child
             exp_pings_nominal = 2
             err_str = (
-                f"pings_from_parent: {pings_from_parent}\n"
+                f"\npings_from_parent: {pings_from_parent}  ({stats.num_received_by_topic[pings_from_parent_topic]} - {start_pings_from_parent})  on <{pings_from_parent_topic}>\n"
                 f"messages_from_parent: {messages_from_parent}\n"
-                f"pings_from_child: {pings_from_child}\n"
+                f"pings_from_child: {pings_from_child}  ({parent_stats.num_received_by_topic[ping_from_child_topic]} - {start_pings_from_child})  on {ping_from_child_topic}\n"
                 f"messages_from_child: {messages_from_child}\n"
                 f"exp_pings_nominal: {exp_pings_nominal}\n"
-                f"\n{child.summary_str()}\n"
-                f"\n{parent.summary_str()}\n"
+                f"reps: {reps}, {reps * 0.5}\n"
+                f"\n{h.summary_str()}\n"
             )
             assert pings_from_parent <= exp_pings_nominal, err_str
             assert pings_from_child <= exp_pings_nominal, err_str
@@ -239,12 +245,12 @@ class ProactorCommTimeoutTests:
                 lambda: link.in_state(StateName.awaiting_peer),
                 child.links.ack_manager.default_delay_seconds + 1,
                 "ERROR waiting for for parent to be slow",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
             parent.release_acks(clear=True)
             await await_for(
                 lambda: link.in_state(StateName.active),
                 1,
                 "ERROR waiting for parent to respond",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
