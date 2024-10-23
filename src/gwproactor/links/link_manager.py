@@ -21,9 +21,10 @@ from gwproto.messages import (
 from paho.mqtt.client import MQTTMessageInfo
 from result import Err, Ok, Result
 
-from gwproactor.config import MQTTClient, ProactorSettings
+from gwproactor.config import ProactorSettings
 from gwproactor.links import AckWaitInfo
 from gwproactor.links.acks import AckManager, AckTimerCallback
+from gwproactor.links.link_settings import LinkSettings
 from gwproactor.links.link_state import (
     InvalidCommStateInput,
     LinkState,
@@ -63,6 +64,7 @@ class LinkManagerTransition(Transition):
 class LinkManager:
     PERSISTER_ENCODING = "utf-8"
     publication_name: str
+    subscription_name: str
     _settings: ProactorSettings
     _logger: ProactorLogger
     _stats: ProactorStats
@@ -77,6 +79,7 @@ class LinkManager:
     def __init__(  # noqa: PLR0913, PLR0917
         self,
         publication_name: str,
+        subscription_name: str,
         settings: ProactorSettings,
         logger: ProactorLogger,
         stats: ProactorStats,
@@ -85,6 +88,7 @@ class LinkManager:
         ack_timeout_callback: AckTimerCallback,
     ) -> None:
         self.publication_name = publication_name
+        self.subscription_name = subscription_name
         self._settings = settings
         self._logger = logger
         self._stats = stats
@@ -178,28 +182,17 @@ class LinkManager:
     def stopped(self, name: str) -> bool:
         return self._states.stopped(name)
 
-    def add_mqtt_link(  # noqa: PLR0913
-        self,
-        *,
-        client_name: str,
-        destination_short_name: str,
-        mqtt_config: MQTTClient,
-        codec: Optional[MQTTCodec] = None,
-        upstream: bool = False,
-        primary_peer: bool = False,
-    ) -> None:
-        self._mqtt_clients.add_client(
-            client_name,
-            destination_short_name,
-            mqtt_config,
-            upstream=upstream,
-            primary_peer=primary_peer,
+    def add_mqtt_link(self, settings: LinkSettings) -> None:
+        self._mqtt_clients.add_client(settings)
+        self._mqtt_codecs[settings.client_name] = settings.codec
+        self._states.add(settings.client_name)
+        self._message_times.add_link(settings.client_name)
+        self._stats.add_link(settings.client_name)
+        self.subscribe(
+            client=settings.client_name,
+            topic=settings.subscription_topic(self.subscription_name),
+            qos=QOS.AtMostOnce,
         )
-        if codec is not None:
-            self._mqtt_codecs[client_name] = codec
-        self._states.add(client_name)
-        self._message_times.add_link(client_name)
-        self._stats.add_link(client_name)
 
     def subscribe(self, client: str, topic: str, qos: int) -> Tuple[int, Optional[int]]:
         return self._mqtt_clients.subscribe(client, topic, qos)

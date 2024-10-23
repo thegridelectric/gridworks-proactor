@@ -11,6 +11,7 @@ from gwproto import (
 from gwproactor import ProactorSettings
 from gwproactor.external_watchdog import SystemDWatchdogCommandBuilder
 from gwproactor.links import QOS
+from gwproactor.links.link_settings import LinkSettings
 from gwproactor.persister import TimedRollingFilePersister
 from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies.child.config import DummyChildSettings
@@ -56,19 +57,17 @@ class DummyChild(Proactor):
             settings=DummyChildSettings() if settings is None else settings,
         )
         self._links.add_mqtt_link(
-            client_name=DummyChild.PARENT_MQTT,
-            destination_short_name=PARENT_SHORT_NAME,
-            mqtt_config=settings.parent_mqtt,
-            codec=ChildMQTTCodec(),
-            upstream=True,
-            primary_peer=True,
+            LinkSettings(
+                client_name=DummyChild.PARENT_MQTT,
+                gnode_name=DUMMY_PARENT_NAME,
+                spaceheat_name=PARENT_SHORT_NAME,
+                mqtt=settings.parent_mqtt,
+                codec=ChildMQTTCodec(),
+                upstream=True,
+                primary_peer=True,
+            )
         )
         for topic in [
-            MQTTTopic.encode_subscription(
-                Message.type_name(), DUMMY_PARENT_NAME, CHILD_SHORT_NAME
-            ),
-            # Enable awaiting_setup edge case testing, which depends on receiving multiple, separate
-            # MQTT topic subscription acks:
             MQTTTopic.encode_subscription(Message.type_name(), "1", "a"),
             MQTTTopic.encode_subscription(Message.type_name(), "2", "b"),
         ]:
@@ -87,6 +86,10 @@ class DummyChild(Proactor):
     @property
     def publication_name(self) -> str:
         return self.name
+
+    @property
+    def subscription_name(self) -> str:
+        return CHILD_SHORT_NAME
 
     @property
     def settings(self) -> DummyChildSettings:

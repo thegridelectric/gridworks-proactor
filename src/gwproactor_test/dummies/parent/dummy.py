@@ -2,10 +2,9 @@
 
 from typing import Optional, cast
 
-from gwproto import MQTTCodec, MQTTTopic, create_message_model
+from gwproto import MQTTCodec, create_message_model
 
-from gwproactor.links import QOS
-from gwproactor.message import Message
+from gwproactor.links.link_settings import LinkSettings
 from gwproactor.persister import SimpleDirectoryWriter
 from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies.names import (
@@ -48,18 +47,15 @@ class DummyParent(Proactor):
             settings=DummyParentSettings() if settings is None else settings,
         )
         self._links.add_mqtt_link(
-            client_name=self.CHILD_MQTT,
-            destination_short_name=CHILD_SHORT_NAME,
-            mqtt_config=self.settings.child_mqtt,
-            codec=ParentMQTTCodec(),
-            primary_peer=True,
-        )
-        self._links.subscribe(
-            self.CHILD_MQTT,
-            MQTTTopic.encode_subscription(
-                Message.type_name(), DUMMY_CHILD_NAME, PARENT_SHORT_NAME
-            ),
-            QOS.AtMostOnce,
+            LinkSettings(
+                client_name=self.CHILD_MQTT,
+                gnode_name=DUMMY_CHILD_NAME,
+                spaceheat_name=CHILD_SHORT_NAME,
+                mqtt=settings.child_mqtt,
+                codec=ParentMQTTCodec(),
+                upstream=False,
+                primary_peer=True,
+            )
         )
 
     @classmethod
@@ -75,3 +71,7 @@ class DummyParent(Proactor):
     @property
     def settings(self) -> DummyParentSettings:
         return cast(DummyParentSettings, self._settings)
+
+    @property
+    def subscription_name(self) -> str:
+        return PARENT_SHORT_NAME

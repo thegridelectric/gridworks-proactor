@@ -246,6 +246,11 @@ class ServicesInterface(CommunicatorInterface):
 
     @property
     @abstractmethod
+    def subscription_name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
     def settings(self) -> ProactorSettings:
         raise NotImplementedError
 

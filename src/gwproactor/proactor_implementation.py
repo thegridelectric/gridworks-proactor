@@ -126,6 +126,7 @@ class Proactor(ServicesInterface, Runnable):
             self._logger.error(reindex_result.err())
         self._links = LinkManager(
             publication_name=self.publication_name,
+            subscription_name=self.subscription_name,
             settings=settings,
             logger=self._logger,
             stats=self._stats,
@@ -192,6 +193,10 @@ class Proactor(ServicesInterface, Runnable):
     @property
     def publication_name(self) -> str:
         return self._name
+
+    @property
+    def subscription_name(self) -> str:
+        return self._name[0].lower()
 
     @property
     def monitored_names(self) -> Sequence[MonitoredName]:

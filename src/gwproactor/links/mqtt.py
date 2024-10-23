@@ -20,6 +20,7 @@ from paho.mqtt.client import MQTT_ERR_SUCCESS, MQTTMessage, MQTTMessageInfo
 from paho.mqtt.client import Client as PahoMQTTClient
 
 from gwproactor import config
+from gwproactor.links.link_settings import LinkSettings
 from gwproactor.message import (
     MQTTConnectFailMessage,
     MQTTConnectMessage,
@@ -57,12 +58,12 @@ class MQTTClientWrapper:
 
     def __init__(
         self,
-        _client_name: str,
+        client_name: str,
         topic_dst: str,
         client_config: config.MQTTClient,
         receive_queue: AsyncQueueWriter,
     ) -> None:
-        self._client_name = _client_name
+        self._client_name = client_name
         self.topic_dst = topic_dst
         self._client_config = client_config
         self._receive_queue = receive_queue
@@ -263,34 +264,31 @@ class MQTTClients:
         self._send_queue = AsyncQueueWriter()
         self.clients = {}
 
-    def add_client(
-        self,
-        client_name: str,
-        topic_dst: str,
-        client_config: config.MQTTClient,
-        *,
-        upstream: bool = False,
-        primary_peer: bool = False,
-    ) -> None:
-        if client_name in self.clients:
-            raise ValueError(f"ERROR. MQTT client named {client_name} already exists")
-        if upstream:
+    def add_client(self, settings: LinkSettings) -> None:
+        if settings.client_name in self.clients:
+            raise ValueError(
+                f"ERROR. MQTT client named {settings.client_name} already exists"
+            )
+        if settings.upstream:
             if self.upstream_client:
                 raise ValueError(
                     f"ERROR. upstream client already set as {self.upstream_client}. "
-                    f"Client {client_name} may not be set as upstream."
+                    f"Client {settings.client_name} may not be set as upstream."
                 )
-            self.upstream_client = client_name
-            self.upstream_topic_dst = topic_dst
-        if primary_peer:
+            self.upstream_client = settings.client_name
+            self.upstream_topic_dst = settings.spaceheat_name
+        if settings.primary_peer:
             if self.primary_peer_client:
                 raise ValueError(
                     f"ERROR. primary peer client already set as {self.primary_peer_client}. "
-                    f"Client {client_name} may not be set as primary peer."
+                    f"Client {settings.client_name} may not be set as primary peer."
                 )
-            self.primary_peer_client = client_name
-        self.clients[client_name] = MQTTClientWrapper(
-            client_name, topic_dst, client_config, self._send_queue
+            self.primary_peer_client = settings.client_name
+        self.clients[settings.client_name] = MQTTClientWrapper(
+            client_name=settings.client_name,
+            topic_dst=settings.spaceheat_name,
+            client_config=settings.mqtt,
+            receive_queue=self._send_queue,
         )
 
     def publish(
