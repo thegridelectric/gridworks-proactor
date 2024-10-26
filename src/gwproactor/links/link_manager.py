@@ -230,11 +230,11 @@ class LinkManager:
         topic = message.mqtt_topic()
         payload = self._mqtt_codecs[client].encode(message)
         self._logger.message_summary(
-            "OUT mqtt    ",
-            message.Header.Src,
-            message.Header.Dst,
-            topic,
-            message.Payload,
+            direction="OUT mqtt    ",
+            src=message.Header.Src,
+            dst=message.Header.Dst,
+            topic=topic,
+            payload_object=message.Payload,
             message_id=message.Header.MessageId,
         )
         if message.Header.AckRequired:
