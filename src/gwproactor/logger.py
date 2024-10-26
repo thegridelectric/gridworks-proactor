@@ -123,6 +123,7 @@ class ProactorLogger(logging.LoggerAdapter):
 
     def message_summary(  # noqa: PLR0913
         self,
+        *,
         direction: str,
         src: str,
         dst: str,

@@ -163,11 +163,11 @@ class Proactor(ServicesInterface, Runnable):
     def send(self, message: Message) -> None:
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_summary(
-                "OUT internal",
-                message.Header.Src,
-                message.Header.Dst,
-                f"{message.Header.Src}/to/{message.Header.Dst}/{message.Header.MessageType}",
-                message.Payload,
+                direction="OUT internal",
+                src=message.Header.Src,
+                dst=message.Header.Dst,
+                topic=f"{message.Header.Src}/to/{message.Header.Dst}/{message.Header.MessageType}",
+                payload_object=message.Payload,
                 message_id=message.Header.MessageId,
             )
         self._receive_queue.put_nowait(message)
@@ -434,12 +434,11 @@ class Proactor(ServicesInterface, Runnable):
         if not isinstance(message.Payload, (MQTTReceiptPayload, PatWatchdog)):
             path_dbg |= 0x00000001
             self._logger.message_summary(
-                "IN  internal",
-                message.src(),
-                self.name,
-                message.dst(),
-                f"{message.src()}/to/{message.dst()}/{message.Header.MessageType}",
-                message.Payload,
+                direction="IN  internal",
+                src=message.src(),
+                dst=message.dst(),
+                topic=f"{message.src()}/to/{message.dst()}/{message.Header.MessageType}",
+                payload_object=message.Payload,
                 message_id=message.Header.MessageId,
             )
         self._stats.add_message(message)
@@ -524,11 +523,11 @@ class Proactor(ServicesInterface, Runnable):
             path_dbg |= 0x00000001
             decoded_message = decode_result.value
             self._logger.message_summary(
-                "IN  mqtt    ",
-                decoded_message.src(),
-                self.name,
-                mqtt_receipt_message.Payload.message.topic,
-                decoded_message.Payload,
+                direction="IN  mqtt    ",
+                src=decoded_message.src(),
+                dst=decoded_message.dst(),
+                topic=mqtt_receipt_message.Payload.message.topic,
+                payload_object=decoded_message.Payload,
                 message_id=decoded_message.Header.MessageId,
             )
             link_mgr_results = self._links.process_mqtt_message(mqtt_receipt_message)
