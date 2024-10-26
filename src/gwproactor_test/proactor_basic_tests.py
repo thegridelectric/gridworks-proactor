@@ -359,10 +359,10 @@ class ProactorCommBasicTests:
             # wait for child to get ping from parent when parent reconnects to mqtt
             # noinspection PyTypeChecker
             parent_ping_topic = MQTTTopic.encode(
-                "gw",
-                parent.publication_name,
-                parent.links.topic_dst(child.name),
-                "gridworks-ping",
+                envelope_type="gw",
+                src=parent.publication_name,
+                dst=child.subscription_name,
+                message_type="gridworks-ping",
             )
             num_parent_pings = child_stats.num_received_by_topic[parent_ping_topic]
             await await_for(
