@@ -1,12 +1,7 @@
 import typing
 from typing import Optional
 
-from gwproto import (
-    Message,
-    MQTTCodec,
-    MQTTTopic,
-    create_message_model,
-)
+from gwproto import Message, MQTTCodec, MQTTTopic, create_message_model
 
 from gwproactor import ProactorSettings
 from gwproactor.external_watchdog import SystemDWatchdogCommandBuilder
@@ -14,13 +9,13 @@ from gwproactor.links import QOS
 from gwproactor.links.link_settings import LinkSettings
 from gwproactor.persister import TimedRollingFilePersister
 from gwproactor.proactor_implementation import Proactor
-from gwproactor_test.dummies.child.config import DummyChildSettings
 from gwproactor_test.dummies.names import (
     CHILD_SHORT_NAME,
     DUMMY_CHILD_NAME,
     DUMMY_PARENT_NAME,
     PARENT_SHORT_NAME,
 )
+from gwproactor_test.dummies.pair.child_config import DummyChildSettings
 
 
 class ChildMQTTCodec(MQTTCodec):
