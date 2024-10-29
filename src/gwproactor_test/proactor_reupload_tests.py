@@ -219,6 +219,7 @@ class ProactorReuploadTests:
             start_child=True,
             add_parent=True,
             child_settings=self.CTH.child_settings_t(num_initial_event_reuploads=5),
+            child_verbose=False,
             verbose=False,
             # parent_on_screen=True,
         ) as h:
@@ -315,7 +316,7 @@ class ProactorReuploadTests:
             parent_ack_topic = MQTTTopic.encode(
                 "gw",
                 h.parent.publication_name,
-                h.parent.links.topic_dst(child.name),
+                h.child.subscription_name,
                 "gridworks-ack",
             )
             acks_received_by_child = child.stats.num_received_by_topic[parent_ack_topic]
@@ -339,8 +340,12 @@ class ProactorReuploadTests:
                 await await_for(
                     lambda: child.stats.num_received_by_topic[parent_ack_topic]
                     == acks_received_by_child + acks_released,  # noqa: B023
-                    1,
-                    f"ERROR waiting for child to receive ack (acks_released: {acks_released})",
+                    timeout=1,
+                    tag=(
+                        "ERROR waiting for child to receive ack "
+                        f"(acks_released: {acks_released}) "
+                        f"on topic <{parent_ack_topic}>"
+                    ),
                     err_str_f=h.summary_str,
                 )
                 curr_num_reuploaded_unacked = child_links.num_reuploaded_unacked
