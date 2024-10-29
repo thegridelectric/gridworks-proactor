@@ -12,7 +12,7 @@ from gwproactor.config import DEFAULT_BASE_NAME, LoggingSettings, MQTTClient, Pa
 from gwproactor_test import copy_keys
 from gwproactor_test.certs import uses_tls
 from gwproactor_test.logger_guard import LoggerGuards
-from gwproactor_test.proactor_recorder import (
+from gwproactor_test.recorder import (
     ProactorT,
     RecorderInterface,
     make_recorder_class,
