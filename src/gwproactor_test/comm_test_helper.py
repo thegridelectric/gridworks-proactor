@@ -287,9 +287,13 @@ class CommTestHelper:
         return False
 
     def summary_str(self) -> str:
-        return (
-            "CHILD:\n"
-            f"{self.child.summary_str()}\n"
-            "PARENT:\n"
-            f"{self.parent.summary_str()}"
-        )
+        s = ""
+        if self.child:
+            s += "CHILD:\n" f"{self.child.summary_str()}\n"
+        else:
+            s += "CHILD: None\n"
+        if self.parent:
+            s += "PARENT:\n" f"{self.parent.summary_str()}"
+        else:
+            s += "PARENT: None\n"
+        return s
