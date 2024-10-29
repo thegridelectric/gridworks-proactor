@@ -36,13 +36,13 @@ class ProactorCommAwaitingSetupTests:
             assert link.state == StateName.not_started
 
             # start child
-            child.pause_subacks()
+            child.pause_upstream_subacks()
             h.start_child()
             await await_for(
-                lambda: len(child.pending_subacks) == 1,
+                lambda: child.num_upstream_subacks_available() == 1,
                 1,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -56,12 +56,12 @@ class ProactorCommAwaitingSetupTests:
                 assert comm_event.MessageId in child.event_persister
 
             # Allow suback to arrive
-            child.release_subacks()
+            child.release_upstream_subacks()
             await await_for(
                 lambda: link.in_state(StateName.awaiting_peer),
                 1,
                 "ERROR waiting mqtt_suback",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
             assert link.active_for_send()
             assert not link.active_for_recv()
@@ -74,15 +74,15 @@ class ProactorCommAwaitingSetupTests:
                 assert comm_event.MessageId in child.event_persister
 
             # Tell client we lost comm
-            child.pause_subacks()
+            child.pause_upstream_subacks()
             child.mqtt_client_wrapper(  # noqa: SLF001
                 child.upstream_client
             ).mqtt_client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             await await_for(
-                lambda: len(child.pending_subacks) == 1,
+                lambda: child.num_upstream_subacks_available() == 1,
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -96,7 +96,7 @@ class ProactorCommAwaitingSetupTests:
                 assert comm_event.MessageId in child.event_persister
 
             # Tell client we lost comm
-            child.pending_subacks = []
+            child.clear_upstream_subacks()
             child.mqtt_client_wrapper(  # noqa: SLF001
                 child.upstream_client
             ).mqtt_client._loop_rc_handle(MQTT_ERR_CONN_LOST)
@@ -104,13 +104,13 @@ class ProactorCommAwaitingSetupTests:
                 lambda: len(stats.comm_events) > 4,
                 1,
                 "ERROR waiting comm fail",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
             await await_for(
                 lambda: link.in_state(StateName.awaiting_setup_and_peer),
                 3,
                 "ERROR waiting comm restore",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -123,12 +123,12 @@ class ProactorCommAwaitingSetupTests:
                 assert comm_event.MessageId in child.event_persister
 
             # Allow suback to arrive
-            child.release_subacks()
+            child.release_upstream_subacks()
             await await_for(
                 lambda: link.in_state(StateName.awaiting_peer),
                 1,
                 "ERROR waiting mqtt_suback",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
             assert link.active_for_send()
             assert not link.active_for_recv()
@@ -180,13 +180,13 @@ class ProactorCommAwaitingSetupTests:
 
             # start child
             child.split_client_subacks(child.upstream_client)
-            child.pause_subacks()
+            child.pause_upstream_subacks()
             h.start_child()
             await await_for(
-                lambda: len(child.pending_subacks) == 3,
+                lambda: child.num_upstream_subacks_available() == 3,
                 3,
                 "ERROR waiting link reconnect",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
             assert not link.active_for_recv()
@@ -202,7 +202,7 @@ class ProactorCommAwaitingSetupTests:
             # suback 1/3
             # (mqtt_suback -> awaiting_setup_and_peer)
             num_subacks = child.stats.num_received_by_type["mqtt_suback"]
-            child.release_subacks(1)
+            child.release_upstream_subacks(1)
             exp_subacks = num_subacks + 1
             await await_for(
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
@@ -214,7 +214,7 @@ class ProactorCommAwaitingSetupTests:
 
             # suback 2/3
             # (mqtt_suback -> awaiting_setup_and_peer)
-            child.release_subacks(1)
+            child.release_upstream_subacks(1)
             exp_subacks += 1
             await await_for(
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
@@ -226,7 +226,7 @@ class ProactorCommAwaitingSetupTests:
 
             # suback 3/3
             # (mqtt_suback -> awaiting_peer)
-            child.release_subacks(1)
+            child.release_upstream_subacks(1)
             exp_subacks += 1
             await await_for(
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
@@ -247,15 +247,15 @@ class ProactorCommAwaitingSetupTests:
 
             # (message_from_peer -> awaiting_setup)
             # Tell client we lost comm
-            child.pause_subacks()
+            child.pause_upstream_subacks()
             child.mqtt_client_wrapper(  # noqa: SLF001
                 child.upstream_client
             ).mqtt_client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             await await_for(
-                lambda: len(child.pending_subacks) == 3,
+                lambda: child.num_upstream_subacks_available() == 3,
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -272,13 +272,13 @@ class ProactorCommAwaitingSetupTests:
             # (Not strictly necessary, since message receiving code does not check if the source topic suback
             #  has arrived).
             num_subacks = child.stats.num_received_by_type["mqtt_suback"]
-            child.release_subacks(1)
+            child.release_upstream_subacks(1)
             exp_subacks = num_subacks + 1
             await await_for(
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (1/3)",
-                err_str_f=child.summary_str,
+                err_str_f=h.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
 
@@ -340,12 +340,6 @@ class ProactorCommAwaitingSetupTests:
 
             parent = h.parent
 
-            def _err_str() -> str:
-                return (
-                    f"\nCHILD\n{child.summary_str()}\n"
-                    f"\nPARENT\n{parent.summary_str()}\n"
-                )
-
             # unstarted child
             assert stats.num_received == 0
             assert link.state == StateName.not_started
@@ -354,13 +348,13 @@ class ProactorCommAwaitingSetupTests:
             # (not_started -> started -> connecting)
             # (connecting -> connected -> awaiting_setup_and_peer)
             child.split_client_subacks(child.upstream_client)
-            child.pause_subacks()
+            child.pause_upstream_subacks()
             h.start_child()
             await await_for(
-                lambda: len(child.pending_subacks) == 3,
+                lambda: child.num_upstream_subacks_available() == 3,
                 3,
                 "ERROR waiting link reconnect",
-                err_str_f=_err_str,
+                err_str_f=h.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
             assert not link.active_for_recv()
@@ -376,13 +370,13 @@ class ProactorCommAwaitingSetupTests:
             # (Not strictly necessary, since message receiving code does not check if the source topic suback
             #  has arrived).
             num_subacks = child.stats.num_received_by_type["mqtt_suback"]
-            child.release_subacks(1)
+            child.release_upstream_subacks(1)
             exp_subacks = num_subacks + 1
             await await_for(
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (1/3)",
-                err_str_f=_err_str,
+                err_str_f=h.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
 
@@ -395,7 +389,7 @@ class ProactorCommAwaitingSetupTests:
                 lambda: link.in_state(StateName.awaiting_setup),
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=_err_str,
+                err_str_f=h.summary_str,
             )
             assert not link.active_for_send()
             assert not link.active_for_recv()
@@ -408,13 +402,13 @@ class ProactorCommAwaitingSetupTests:
 
             # (awaiting_setup -> mqtt_suback -> awaiting_setup)
             # Allow another suback to arrive, remaining in awaiting_setup
-            child.release_subacks(1)
+            child.release_upstream_subacks(1)
             exp_subacks = num_subacks + 1
             await await_for(
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (2/3)",
-                err_str_f=_err_str,
+                err_str_f=h.summary_str,
             )
             assert link.state == StateName.awaiting_setup
 
@@ -434,22 +428,22 @@ class ProactorCommAwaitingSetupTests:
                 lambda: stats.num_received_by_topic[dbg_topic] == 1,
                 1,
                 "ERROR waiting for dbg message",
-                err_str_f=_err_str,
+                err_str_f=h.summary_str,
             )
             assert link.state == StateName.awaiting_setup
 
             # (awaiting_setup -> disconnected -> connecting)
             # Tell client we lost comm
-            child.pending_subacks.clear()
-            child.pause_subacks()
+            child.clear_upstream_subacks()
+            child.pause_upstream_subacks()
             child.mqtt_client_wrapper(  # noqa: SLF001
                 child.upstream_client
             ).mqtt_client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             await await_for(
-                lambda: len(child.pending_subacks) == 3,
+                lambda: child.num_upstream_subacks_available() == 3,
                 3,
                 "ERROR waiting suback pending",
-                err_str_f=_err_str,
+                err_str_f=h.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
             assert comm_event_counts["gridworks.event.comm.mqtt.connect"] == 2
@@ -463,13 +457,13 @@ class ProactorCommAwaitingSetupTests:
             # (Not strictly necessary, since message receiving code does not check if the source topic suback
             #  has arrived).
             num_subacks = child.stats.num_received_by_type["mqtt_suback"]
-            child.release_subacks(1)
+            child.release_upstream_subacks(1)
             exp_subacks = num_subacks + 1
             await await_for(
                 lambda: child.stats.num_received_by_type["mqtt_suback"] == exp_subacks,
                 1,
                 f"ERROR waiting mqtt_suback {exp_subacks} (1/3)",
-                err_str_f=_err_str,
+                err_str_f=h.summary_str,
             )
             assert link.state == StateName.awaiting_setup_and_peer
 
@@ -482,15 +476,15 @@ class ProactorCommAwaitingSetupTests:
                 lambda: link.in_state(StateName.awaiting_setup),
                 3,
                 "ERROR waiting for message from peer",
-                err_str_f=_err_str,
+                err_str_f=h.summary_str,
             )
 
             # (awaiting_setup -> mqtt_suback -> active)
             # Release all subacks, allowing child to go active
-            child.release_subacks()
+            child.release_upstream_subacks()
             await await_for(
                 lambda: link.in_state(StateName.active),
                 1,
                 "ERROR waiting for active",
-                err_str_f=_err_str,
+                err_str_f=h.summary_str,
             )

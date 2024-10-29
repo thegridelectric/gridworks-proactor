@@ -1,6 +1,7 @@
 # ruff: noqa: ERA001
 import dataclasses
 from abc import abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional, Tuple, Type, TypeVar, cast
 
@@ -35,7 +36,7 @@ class RecorderLinkStats(LinkStats):
         if self.comm_events:
             s += "\n  Comm events:"
             for comm_event in self.comm_events:
-                s += f"\n    {comm_event}"
+                s += f"\n    {str(comm_event)[:184]}"
         return s
 
 
@@ -160,17 +161,17 @@ def make_recorder_class(  # noqa: C901
     proactor_type: Type[ProactorT],
 ) -> Callable[..., RecorderInterface]:
     class Recorder(proactor_type):
-        subacks_paused: bool
-        pending_subacks: list[Message]
-        mqtt_messages_dropped: bool
+        _subacks_paused: dict[str, bool]
+        _subacks_available: dict[str, list[Message]]
+        _mqtt_messages_dropped: dict[str, bool]
 
         def __init__(
             self, name: str, settings: ProactorSettings, **kwargs_: Any
         ) -> None:
             super().__init__(name=name, settings=settings, **kwargs_)
-            self.subacks_paused = False
-            self.pending_subacks = []
-            self.mqtt_messages_dropped = False
+            self._subacks_paused = defaultdict(bool)
+            self._subacks_available = defaultdict(list)
+            self._mqtt_messages_dropped = defaultdict(bool)
             self._links = RecorderLinks(self._links)
 
         @classmethod
@@ -180,6 +181,30 @@ def make_recorder_class(  # noqa: C901
         @property
         def needs_ack(self) -> list[_PausedAck]:
             return self._links.needs_ack
+
+        def subacks_paused(self, client_name: str) -> bool:
+            return self._subacks_paused[client_name]
+
+        def num_subacks_available(self, client_name: str) -> int:
+            return len(self._subacks_available[client_name])
+
+        def clear_subacks(self, client_name: str) -> None:
+            self._subacks_available[client_name] = []
+
+        def mqtt_messages_dropped(self, client_name: str) -> bool:
+            return self._mqtt_messages_dropped[client_name]
+
+        def upstream_subacks_paused(self) -> bool:
+            return self.subacks_paused(self.upstream_client)
+
+        def num_upstream_subacks_available(self) -> int:
+            return self.num_subacks_available(self.upstream_client)
+
+        def clear_upstream_subacks(self) -> None:
+            self._subacks_available[self.upstream_client] = []
+
+        def upstream_mqtt_messages_dropped(self) -> bool:
+            return self.mqtt_messages_dropped(self.upstream_cleint)
 
         def split_client_subacks(self: ProactorT, client_name: str) -> None:
             client_wrapper = self.mqtt_client_wrapper(client_name)
@@ -193,21 +218,33 @@ def make_recorder_class(  # noqa: C901
             client_wrapper = self.mqtt_client_wrapper(client_name)
             client_wrapper.subscribe_all = MQTTClientWrapper.subscribe_all
 
-        def pause_subacks(self) -> None:
-            self.subacks_paused = True
+        def pause_subacks(self, client_name: str) -> None:
+            self._subacks_paused[client_name] = True
 
-        def release_subacks(self: ProactorT, num_released: int = -1) -> None:
-            self.subacks_paused = False
+        def pause_upstream_subacks(self) -> None:
+            self.pause_subacks(self.upstream_client)
+
+        def release_subacks(
+            self: ProactorT, client_name: str, num_released: int = -1
+        ) -> None:
+            self._subacks_paused[client_name] = False
             if num_released < 0:
-                num_released = len(self.pending_subacks)
-            release = self.pending_subacks[:num_released]
-            self.pending_subacks = self.pending_subacks[num_released:]
+                num_released = len(self._subacks_available[client_name])
+            release = self._subacks_available[client_name][:num_released]
+            remaining = self._subacks_available[client_name][num_released:]
+            self._subacks_available[client_name] = remaining
             for message in release:
                 self._receive_queue.put_nowait(message)
 
+        def release_upstream_subacks(self: ProactorT, num_released: int = -1) -> None:
+            self.release_subacks(self.upstream_client, num_released)
+
         async def process_message(self, message: Message) -> None:
-            if self.subacks_paused and isinstance(message.Payload, MQTTSubackPayload):
-                self.pending_subacks.append(message)
+            if (
+                isinstance(message.Payload, MQTTSubackPayload)
+                and self._subacks_paused[message.Payload.client_name]
+            ):
+                self._subacks_available[message.Payload.client_name].append(message)
             else:
                 await super().process_message(message)
 
@@ -220,11 +257,11 @@ def make_recorder_class(  # noqa: C901
         def set_ack_timeout_seconds(self, delay: float) -> None:
             self.links.ack_manager._default_delay_seconds = delay  # noqa: SLF001
 
-        def drop_mqtt(self, drop: bool) -> None:
-            self.mqtt_messages_dropped = drop
+        def drop_mqtt(self, client_name: str, drop: bool) -> None:
+            self._mqtt_messages_dropped[client_name] = drop
 
         def _process_mqtt_message(self, message: Message[MQTTReceiptPayload]) -> None:
-            if not self.mqtt_messages_dropped:
+            if not self._mqtt_messages_dropped[message.Payload.client_name]:
                 # noinspection PyProtectedMember
                 super()._process_mqtt_message(message)
 
@@ -237,7 +274,13 @@ def make_recorder_class(  # noqa: C901
             for link_name in self.stats.links:
                 s += f"  {link_name:10s}  {self._links.num_acks(link_name):3d}\n"
             s += self._links.get_reuploads_str() + "\n"
-            s += f"subacks_paused: {self.subacks_paused}  pending_subacks: {len(self.pending_subacks)}\n"
+            s += "Paused Subacks:"
+            for link_name in self.stats.links:
+                s += (
+                    f"  {link_name:10s}  "
+                    f"subacks paused: {self._subacks_paused[link_name]}  "
+                    f"subacks available: {len(self._subacks_available[link_name])}\n"
+                )
             return s
 
         def summarize(self: ProactorT) -> None:
@@ -260,6 +303,12 @@ def make_recorder_class(  # noqa: C901
                 item[0]
                 for item in self.mqtt_client_wrapper(client_name).subscription_items()
             ]
+
+        def all_mqtt_subscriptions(self) -> list[str]:
+            subscriptions = []
+            for client_name in self.mqtt_clients.clients:
+                subscriptions.extend(self.mqtt_subscriptions(client_name))
+            return subscriptions
 
         def send_dbg_to_peer(
             self,
