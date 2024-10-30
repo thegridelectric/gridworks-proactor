@@ -193,6 +193,10 @@ class ServicesInterface(CommunicatorInterface):
     def send_threadsafe(self, message: Message) -> None:
         raise NotImplementedError
 
+    @abstractmethod
+    def add_task(self, task: asyncio.Task) -> None:
+        raise NotImplementedError
+
     @property
     @abstractmethod
     def async_receive_queue(self) -> Optional[asyncio.Queue]:

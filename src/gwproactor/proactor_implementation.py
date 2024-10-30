@@ -374,6 +374,9 @@ class Proactor(ServicesInterface, Runnable):
         except:  # noqa: E722
             self._logger.exception("ERROR stopping proactor")
 
+    def add_task(self, task: asyncio.Task) -> None:
+        self._tasks.append(task)
+
     def start_tasks(self) -> None:
         self._tasks = [
             asyncio.create_task(self.process_messages(), name="process_messages"),
