@@ -21,7 +21,7 @@ from gwproto.data_classes.components.web_server_component import WebServerCompon
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
 from gwproto.messages import Ack, EventBase, EventT, Ping, ProblemEvent, ShutdownEvent
-from gwproto.types.web_server_gt import WebServerGt
+from gwproto.named_types.web_server_gt import WebServerGt
 from result import Err, Ok, Result
 
 from gwproactor import ProactorSettings
