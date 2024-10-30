@@ -9,6 +9,8 @@ from gwproactor_test.basic_tests import ProactorCommBasicTests
 from gwproactor_test.comm_test_helper import CommTestHelper
 from gwproactor_test.reupload_tests import ProactorReuploadTests
 from gwproactor_test.timeout_tests import ProactorCommTimeoutTests
+from gwproactor_test.tree_basic_tests import ProactorTreeCommBasicTests
+from gwproactor_test.tree_comm_test_helper import TreeCommTestHelper
 
 
 @pytest.mark.asyncio
@@ -19,3 +21,7 @@ class ProactorCommTests(
     ProactorReuploadTests,
 ):
     CTH: Type[CommTestHelper]
+
+
+class ProactorTreeCommTests(ProactorTreeCommBasicTests):
+    CTH: Type[TreeCommTestHelper]

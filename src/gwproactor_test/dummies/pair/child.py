@@ -59,7 +59,6 @@ class DummyChild(Proactor):
                 mqtt=settings.parent_mqtt,
                 codec=ChildMQTTCodec(),
                 upstream=True,
-                primary_peer=True,
             )
         )
         for topic in [

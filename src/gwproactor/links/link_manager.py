@@ -110,8 +110,8 @@ class LinkManager:
         return self._mqtt_clients.upstream_client
 
     @property
-    def primary_peer_client(self) -> str:
-        return self._mqtt_clients.primary_peer_client
+    def downstream_client(self) -> str:
+        return self._mqtt_clients.downstream_client
 
     @property
     def num_pending(self) -> int:
@@ -198,8 +198,8 @@ class LinkManager:
         return self._mqtt_clients.subscribe(client, topic, qos)
 
     def subscription_str(self, tag: str = "") -> str:
-        s = f"\nLinkManager info for <{self.publication_name}> [{tag}]]\n"
-        s += "Links:\n"
+        tag_str = f"[{tag}]" if tag else ""
+        s = f"\nSubscription info for <{self.publication_name}> {tag_str}\n"
         for client_name in self._mqtt_clients.clients:
             client = self._mqtt_clients.client_wrapper(client_name)
             s += f"  Client name: <{client_name}>  topic_dst: <{client.topic_dst}>\n"
@@ -209,10 +209,10 @@ class LinkManager:
                 dst=client.topic_dst,
                 message_type="SOME_MESSAGE_TYPE",
             )
-            s += f"  Publish to: {publish_topic}\n"
-            s += "  Subscriptions:\n"
+            s += f"    Publish to: {publish_topic}\n"
+            s += "    Subscriptions:\n"
             for subscription in client.subscription_items():
-                s += f"    [{subscription}]\n"
+                s += f"      [{subscription}]\n"
         return s
 
     def log_subscriptions(self, tag: str = "") -> None:

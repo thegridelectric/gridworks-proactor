@@ -264,7 +264,7 @@ class ProactorReuploadTests:
             # Start parent, wait for parent to be subscribed.
             h.start_parent()
             await await_for(
-                lambda: h.parent.links.link_state(h.parent.primary_peer_client)
+                lambda: h.parent.links.link_state(h.parent.downstream_client)
                 == StateName.awaiting_peer,
                 1,
                 "ERROR waiting for parent awaiting_peer",

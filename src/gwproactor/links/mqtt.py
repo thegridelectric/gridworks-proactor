@@ -258,7 +258,7 @@ class MQTTClients:
     _send_queue: AsyncQueueWriter
     upstream_client: str = ""
     upstream_topic_dst: str = ""
-    primary_peer_client: str = ""
+    downstream_client: str = ""
 
     def __init__(self) -> None:
         self._send_queue = AsyncQueueWriter()
@@ -277,13 +277,13 @@ class MQTTClients:
                 )
             self.upstream_client = settings.client_name
             self.upstream_topic_dst = settings.spaceheat_name
-        if settings.primary_peer:
-            if self.primary_peer_client:
+        if settings.downstream:
+            if self.downstream_client:
                 raise ValueError(
-                    f"ERROR. primary peer client already set as {self.primary_peer_client}. "
+                    f"ERROR. primary peer client already set as {self.downstream_client}. "
                     f"Client {settings.client_name} may not be set as primary peer."
                 )
-            self.primary_peer_client = settings.client_name
+            self.downstream_client = settings.client_name
         self.clients[settings.client_name] = MQTTClientWrapper(
             client_name=settings.client_name,
             topic_dst=settings.spaceheat_name,
@@ -348,7 +348,7 @@ class MQTTClients:
         return self.clients[self.upstream_client]
 
     def primary_peer(self) -> MQTTClientWrapper:
-        return self.clients[self.primary_peer_client]
+        return self.clients[self.downstream_client]
 
     def topic_dst(self, client: str) -> str:
         if client in self.clients:

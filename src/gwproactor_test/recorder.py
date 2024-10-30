@@ -67,7 +67,7 @@ class RecorderInterface(ServicesInterface, Runnable):
     def release_subacks(self, num_released: int = -1) -> None: ...
 
     @abstractmethod
-    def ping_peer(self) -> None: ...
+    def force_ping(self, client_name: str) -> None: ...
 
     @abstractmethod
     def summary_str(self) -> None: ...
@@ -270,6 +270,7 @@ def make_recorder_class(  # noqa: C901
             s += "\nLink states:\n"
             for link_name in self.stats.links:
                 s += f"  {link_name:10s}  {self._links.link_state(link_name).value}\n"
+            s += self.links.subscription_str().lstrip()
             s += "Pending acks:\n"
             for link_name in self.stats.links:
                 s += f"  {link_name:10s}  {self._links.num_acks(link_name):3d}\n"
@@ -286,9 +287,9 @@ def make_recorder_class(  # noqa: C901
         def summarize(self: ProactorT) -> None:
             self._logger.info(self.summary_str())
 
-        def ping_peer(self) -> None:
+        def force_ping(self, client_name: str) -> None:
             self._links.publish_message(
-                self.primary_peer_client, PingMessage(Src=self.publication_name)
+                client_name, PingMessage(Src=self.publication_name)
             )
 
         @property
@@ -310,8 +311,9 @@ def make_recorder_class(  # noqa: C901
                 subscriptions.extend(self.mqtt_subscriptions(client_name))
             return subscriptions
 
-        def send_dbg_to_peer(
+        def send_dbg(
             self,
+            client_name: str,
             message_summary: int = -1,
             lifecycle: int = -1,
             comm_event: int = -1,
@@ -322,7 +324,7 @@ def make_recorder_class(  # noqa: C901
             self.send_threadsafe(
                 Message(
                     Src=self.name,
-                    Dst=self.name,
+                    Dst=client_name,
                     Payload=DBGPayload(
                         Levels=LoggerLevels(
                             message_summary=message_summary,
@@ -338,8 +340,9 @@ def make_recorder_class(  # noqa: C901
             match message.Payload:
                 case DBGPayload():
                     message.Header.Src = self.publication_name
-                    message.Header.Dst = self.links.topic_dst(self.primary_peer_client)
-                    self._links.publish_message(self.primary_peer_client, message)
+                    dst_client = message.Header.Dst
+                    message.Header.Dst = ""
+                    self._links.publish_message(dst_client, message)
                 case _:
                     # noinspection PyProtectedMember
                     super()._derived_process_message(message)

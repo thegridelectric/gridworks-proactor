@@ -53,8 +53,7 @@ class DummyParent(Proactor):
                 spaceheat_name=CHILD_SHORT_NAME,
                 mqtt=settings.child_mqtt,
                 codec=ParentMQTTCodec(),
-                upstream=False,
-                primary_peer=True,
+                downstream=True,
             )
         )
 

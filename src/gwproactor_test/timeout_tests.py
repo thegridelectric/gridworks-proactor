@@ -31,7 +31,7 @@ class ProactorCommTimeoutTests:
             link = child.links.link(child.upstream_client)
             stats = child.stats.link(child.upstream_client)
             parent = h.parent
-            parent_link = parent.links.link(parent.primary_peer_client)
+            parent_link = parent.links.link(parent.downstream_client)
 
             # Timeout while awaiting setup
             # (awaiting_peer -> response_timeout -> awaiting_peer)
@@ -86,7 +86,7 @@ class ProactorCommTimeoutTests:
             # Timeout while active
             # (active -> response_timeout -> awaiting_peer)
             parent.pause_acks()
-            child.ping_peer()
+            child.force_ping(child.upstream_client)
             exp_timeouts = stats.timeouts + len(
                 child.links.ack_manager._acks[child.upstream_client]  # noqa: SLF001
             )
@@ -134,13 +134,13 @@ class ProactorCommTimeoutTests:
             parent_settings=parent_settings,
         ) as h:
             parent = h.parent
-            parent_stats = parent.stats.link(parent.primary_peer_client)
+            parent_stats = parent.stats.link(parent.downstream_client)
             child = h.child
             # noinspection PyTypeChecker
             pings_from_parent_topic = MQTTTopic.encode(
                 envelope_type="gw",
                 src=parent.publication_name,
-                dst=parent.links.topic_dst(parent.primary_peer_client),
+                dst=parent.links.topic_dst(parent.downstream_client),
                 message_type="gridworks-ping",
             )
             child.disable_derived_events()
@@ -151,7 +151,7 @@ class ProactorCommTimeoutTests:
             ping_from_child_topic = MQTTTopic.encode(
                 envelope_type="gw",
                 src=child.publication_name,
-                dst=child.links.topic_dst(child.primary_peer_client),
+                dst=child.links.topic_dst(child.downstream_client),
                 message_type="gridworks-ping",
             )
             # start parent and child
@@ -211,7 +211,7 @@ class ProactorCommTimeoutTests:
             start_messages_from_child = parent_stats.num_received
             reps = 50
             for _ in range(reps):
-                parent.send_dbg_to_peer()
+                parent.send_dbg(parent.downstream_client)
                 await asyncio.sleep(0.01)
             pings_from_parent = (
                 stats.num_received_by_topic[pings_from_parent_topic]

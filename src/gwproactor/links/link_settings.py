@@ -7,10 +7,10 @@ class LinkSettings:
     client_name: str
     gnode_name: str
     spaceheat_name: str
-    upstream: bool
     mqtt: MQTTClient
     codec: MQTTCodec
-    primary_peer: bool = False
+    upstream: bool = False
+    downstream: bool = False
 
     def __init__(  # noqa: PLR0913
         self,
@@ -18,18 +18,23 @@ class LinkSettings:
         client_name: str,
         gnode_name: str,
         spaceheat_name: str,
-        upstream: bool,
         mqtt: MQTTClient,
         codec: MQTTCodec,
-        primary_peer: bool = False,
+        upstream: bool = False,
+        downstream: bool = False,
     ) -> None:
+        if upstream and downstream:
+            raise ValueError(
+                f"ERROR. Link {client_name} can be 0 or 1 of upstream and "
+                "downstream, but not both."
+            )
         self.client_name = client_name
         self.gnode_name = gnode_name
         self.spaceheat_name = spaceheat_name
         self.upstream = upstream
         self.mqtt = mqtt
         self.codec = codec
-        self.primary_peer = primary_peer
+        self.downstream = downstream
 
     def subscription_topic(self, receiver_spaceheat_name: str) -> str:
         return MQTTTopic.encode(

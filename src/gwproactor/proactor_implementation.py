@@ -196,7 +196,7 @@ class Proactor(ServicesInterface, Runnable):
 
     @property
     def subscription_name(self) -> str:
-        return self._name[0].lower()
+        return ""
 
     @property
     def monitored_names(self) -> Sequence[MonitoredName]:
@@ -269,8 +269,8 @@ class Proactor(ServicesInterface, Runnable):
         return self._links.upstream_client
 
     @property
-    def primary_peer_client(self) -> str:
-        return self._links.primary_peer_client
+    def downstream_client(self) -> str:
+        return self._links.downstream_client
 
     def _send(self, message: Message) -> None:
         self.send(message)
@@ -522,6 +522,9 @@ class Proactor(ServicesInterface, Runnable):
         if decode_result.is_ok():
             path_dbg |= 0x00000001
             decoded_message = decode_result.value
+            self._stats.add_decoded_mqtt_message_type(
+                mqtt_receipt_message.Payload.client_name, decoded_message.message_type()
+            )
             self._logger.message_summary(
                 direction="IN  mqtt    ",
                 src=decoded_message.src(),

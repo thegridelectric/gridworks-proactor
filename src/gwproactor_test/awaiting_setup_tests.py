@@ -419,11 +419,11 @@ class ProactorCommAwaitingSetupTests:
             dbg_topic = MQTTTopic.encode(
                 "gw",
                 parent.publication_name,
-                parent.links.topic_dst(parent.primary_peer_client),
+                parent.links.topic_dst(parent.downstream_client),
                 DBGPayload.model_fields["TypeName"].default,
             )
             assert stats.num_received_by_topic[dbg_topic] == 0
-            parent.send_dbg_to_peer()
+            parent.send_dbg(parent.downstream_client)
             await await_for(
                 lambda: stats.num_received_by_topic[dbg_topic] == 1,
                 1,
@@ -470,7 +470,7 @@ class ProactorCommAwaitingSetupTests:
             # (awaiting_setup_and_peer -> message_from_peer -> awaiting_setup)
             # Force parent to restore comm, delivering a message, sending us to awaiting_setup
             parent.mqtt_client_wrapper(  # noqa: SLF001
-                parent.primary_peer_client
+                parent.downstream_client
             ).mqtt_client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             await await_for(
                 lambda: link.in_state(StateName.awaiting_setup),
