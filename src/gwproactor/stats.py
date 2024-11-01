@@ -80,13 +80,18 @@ class ProactorStats:
         self.num_received_by_type[message.Header.MessageType] += 1
 
     def add_mqtt_message(self, message: Message[MQTTReceiptPayload]) -> None:
-        self.num_received_by_topic[message.Payload.message.topic] += 1
+        self.num_received_by_topic[message.Payload.message.topic] += 1  # noqa
         link_stats = self.link(message.Payload.client_name)
         link_stats.num_received_by_type[Message.type_name()] += 1
         link_stats.num_received_by_type[message.Header.MessageType] += 1
-        link_stats.num_received_by_topic[message.Payload.message.topic] += 1
+        link_stats.num_received_by_topic[message.Payload.message.topic] += 1  # noqa
         if "gridworks-event" in message.Payload.message.topic:
             self.num_events_received += 1
+
+    def add_decoded_mqtt_message_type(
+        self, link_name: str, decoded_message_type: str
+    ) -> None:
+        self.link(link_name).num_received_by_type[decoded_message_type] += 1
 
     def total_received(self, message_type: str) -> int:
         return self.num_received_by_type.get(message_type, 0)

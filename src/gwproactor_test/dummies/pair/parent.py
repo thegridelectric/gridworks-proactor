@@ -13,7 +13,7 @@ from gwproactor_test.dummies.names import (
     DUMMY_PARENT_NAME,
     PARENT_SHORT_NAME,
 )
-from gwproactor_test.dummies.parent.config import DummyParentSettings
+from gwproactor_test.dummies.pair.parent_config import DummyParentSettings
 
 
 class ParentMQTTCodec(MQTTCodec):
@@ -53,8 +53,7 @@ class DummyParent(Proactor):
                 spaceheat_name=CHILD_SHORT_NAME,
                 mqtt=settings.child_mqtt,
                 codec=ParentMQTTCodec(),
-                upstream=False,
-                primary_peer=True,
+                downstream=True,
             )
         )
 

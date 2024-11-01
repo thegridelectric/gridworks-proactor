@@ -12,7 +12,7 @@ from gwproactor.config import DEFAULT_BASE_NAME, LoggingSettings, MQTTClient, Pa
 from gwproactor_test import copy_keys
 from gwproactor_test.certs import uses_tls
 from gwproactor_test.logger_guard import LoggerGuards
-from gwproactor_test.proactor_recorder import (
+from gwproactor_test.recorder import (
     ProactorT,
     RecorderInterface,
     make_recorder_class,
@@ -280,10 +280,24 @@ class CommTestHelper:
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
     ) -> bool:
-        await self.stop_and_join()
-        if exc is not None:
-            logging.getLogger("gridworks").error(self.get_log_path_str(exc))
-        self.logger_guards.restore()
+        try:
+            await self.stop_and_join()
+        finally:
+            if exc is not None:
+                try:
+                    s = self.get_log_path_str(exc)
+                except Exception as e:  # noqa: BLE001
+                    try:
+                        s = (
+                            f"Caught {type(e)} / <{e}> while logging "
+                            f"{type(exc)} / <{exc}>"
+                        )
+                    except:  # noqa: E722
+                        s = "ERRORs upon errors in CommTestHelper cleanup"
+                with contextlib.suppress(Exception):
+                    logging.getLogger("gridworks").error(s)
+            with contextlib.suppress(Exception):
+                self.logger_guards.restore()
         return False
 
     def summary_str(self) -> str:
