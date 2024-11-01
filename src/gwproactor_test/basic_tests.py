@@ -225,7 +225,7 @@ class ProactorCommBasicTests:
             child_comm_event_counts = child_stats.comm_event_counts
             child_link = child.links.link(child.upstream_client)
             parent = h.parent
-            parent_link = parent.links.link(parent.primary_peer_client)
+            parent_link = parent.links.link(parent.downstream_client)
 
             # unstarted parent
             assert parent_link.state == StateName.not_started
@@ -280,7 +280,7 @@ class ProactorCommBasicTests:
             child_comm_event_counts = child_stats.comm_event_counts
             child_link = child.links.link(child.upstream_client)
             parent = h.parent
-            parent_link = parent.links.link(parent.primary_peer_client)
+            parent_link = parent.links.link(parent.downstream_client)
 
             # unstarted child, parent
             assert parent_link.state == StateName.not_started
@@ -354,13 +354,15 @@ class ProactorCommBasicTests:
 
             # Tell *parent* client we lost comm.
             parent.mqtt_client_wrapper(  # noqa: SLF001
-                parent.primary_peer_client
+                parent.downstream_client
             ).mqtt_client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             # wait for child to get ping from parent when parent reconnects to mqtt
+            # noinspection PyTypeChecker
             parent_ping_topic = MQTTTopic.encode(
-                "gw",
-                parent.publication_name,  # noqa
-                "gridworks-ping",
+                envelope_type="gw",
+                src=parent.publication_name,
+                dst=child.subscription_name,
+                message_type="gridworks-ping",
             )
             num_parent_pings = child_stats.num_received_by_topic[parent_ping_topic]
             await await_for(
@@ -394,7 +396,7 @@ class ProactorCommBasicTests:
 
             # Tell *both* clients we lost comm.
             parent.mqtt_client_wrapper(  # noqa: SLF001
-                parent.primary_peer_client
+                parent.downstream_client
             ).mqtt_client._loop_rc_handle(MQTT_ERR_CONN_LOST)
             child.mqtt_client_wrapper(  # noqa: SLF001
                 child.upstream_client

@@ -2,14 +2,18 @@
 
 from typing import Optional, cast
 
-from gwproto import MQTTCodec, MQTTTopic, create_message_model
+from gwproto import MQTTCodec, create_message_model
 
-from gwproactor.links import QOS
-from gwproactor.message import Message
+from gwproactor.links.link_settings import LinkSettings
 from gwproactor.persister import SimpleDirectoryWriter
 from gwproactor.proactor_implementation import Proactor
-from gwproactor_test.dummies.names import DUMMY_CHILD_NAME, DUMMY_PARENT_NAME
-from gwproactor_test.dummies.parent.config import DummyParentSettings
+from gwproactor_test.dummies.names import (
+    CHILD_SHORT_NAME,
+    DUMMY_CHILD_NAME,
+    DUMMY_PARENT_NAME,
+    PARENT_SHORT_NAME,
+)
+from gwproactor_test.dummies.pair.parent_config import DummyParentSettings
 
 
 class ParentMQTTCodec(MQTTCodec):
@@ -21,9 +25,13 @@ class ParentMQTTCodec(MQTTCodec):
             )
         )
 
-    def validate_source_alias(self, source_alias: str) -> None:
-        if source_alias != DUMMY_CHILD_NAME:
-            raise ValueError(f"alias {source_alias} not my Scada!")
+    def validate_source_and_destination(self, src: str, dst: str) -> None:
+        if src != DUMMY_CHILD_NAME or dst != PARENT_SHORT_NAME:
+            raise ValueError(
+                "ERROR validating src and/or dst\n"
+                f"  exp: {DUMMY_CHILD_NAME} -> {PARENT_SHORT_NAME}\n"
+                f"  got: {src} -> {dst}"
+            )
 
 
 class DummyParent(Proactor):
@@ -39,15 +47,14 @@ class DummyParent(Proactor):
             settings=DummyParentSettings() if settings is None else settings,
         )
         self._links.add_mqtt_link(
-            self.CHILD_MQTT,
-            self.settings.child_mqtt,
-            ParentMQTTCodec(),
-            primary_peer=True,
-        )
-        self._links.subscribe(
-            self.CHILD_MQTT,
-            MQTTTopic.encode_subscription(Message.type_name(), DUMMY_CHILD_NAME),
-            QOS.AtMostOnce,
+            LinkSettings(
+                client_name=self.CHILD_MQTT,
+                gnode_name=DUMMY_CHILD_NAME,
+                spaceheat_name=CHILD_SHORT_NAME,
+                mqtt=settings.child_mqtt,
+                codec=ParentMQTTCodec(),
+                downstream=True,
+            )
         )
 
     @classmethod
@@ -63,3 +70,7 @@ class DummyParent(Proactor):
     @property
     def settings(self) -> DummyParentSettings:
         return cast(DummyParentSettings, self._settings)
+
+    @property
+    def subscription_name(self) -> str:
+        return PARENT_SHORT_NAME

@@ -20,6 +20,7 @@ from paho.mqtt.client import MQTT_ERR_SUCCESS, MQTTMessage, MQTTMessageInfo
 from paho.mqtt.client import Client as PahoMQTTClient
 
 from gwproactor import config
+from gwproactor.links.link_settings import LinkSettings
 from gwproactor.message import (
     MQTTConnectFailMessage,
     MQTTConnectMessage,
@@ -45,7 +46,8 @@ class Subscription(NamedTuple):
 
 
 class MQTTClientWrapper:
-    _name: str
+    _client_name: str
+    topic_dst: str
     _client_config: config.MQTTClient
     _client: PahoMQTTClient
     _stop_requested: bool
@@ -56,11 +58,13 @@ class MQTTClientWrapper:
 
     def __init__(
         self,
-        name: str,
+        client_name: str,
+        topic_dst: str,
         client_config: config.MQTTClient,
         receive_queue: AsyncQueueWriter,
     ) -> None:
-        self.name = name
+        self._client_name = client_name
+        self.topic_dst = topic_dst
         self._client_config = client_config
         self._receive_queue = receive_queue
         self._client = PahoMQTTClient("-".join(str(uuid.uuid4()).split("-")[:-1]))
@@ -89,7 +93,7 @@ class MQTTClientWrapper:
         self._pending_subscriptions = set()
         self._pending_subacks = {}
         self._thread = threading.Thread(
-            target=self._client_thread, name=f"MQTT-client-thread-{self.name}"
+            target=self._client_thread, name=f"MQTT-client-thread-{self._client_name}"
         )
         self._stop_requested = False
 
@@ -105,7 +109,7 @@ class MQTTClientWrapper:
             except Exception as e:  # noqa: BLE001
                 self._receive_queue.put(
                     MQTTProblemsMessage(
-                        client_name=self.name, problems=Problems(errors=[e])
+                        client_name=self._client_name, problems=Problems(errors=[e])
                     )
                 )
             finally:
@@ -187,7 +191,7 @@ class MQTTClientWrapper:
     def on_message(self, _: Any, userdata: Any, message: MQTTMessage) -> None:
         self._receive_queue.put(
             MQTTReceiptMessage(
-                client_name=self.name,
+                client_name=self._client_name,
                 userdata=userdata,
                 message=message,
             )
@@ -205,7 +209,7 @@ class MQTTClientWrapper:
     ) -> None:
         self._receive_queue.put(
             MQTTSubackMessage(
-                client_name=self.name,
+                client_name=self._client_name,
                 userdata=userdata,
                 mid=mid,
                 granted_qos=granted_qos,
@@ -215,7 +219,7 @@ class MQTTClientWrapper:
     def on_connect(self, _: Any, userdata: Any, flags: dict, rc: int) -> None:
         self._receive_queue.put(
             MQTTConnectMessage(
-                client_name=self.name,
+                client_name=self._client_name,
                 userdata=userdata,
                 flags=flags,
                 rc=rc,
@@ -225,7 +229,7 @@ class MQTTClientWrapper:
     def on_connect_fail(self, _: Any, userdata: Any) -> None:
         self._receive_queue.put(
             MQTTConnectFailMessage(
-                client_name=self.name,
+                client_name=self._client_name,
                 userdata=userdata,
             )
         )
@@ -234,7 +238,7 @@ class MQTTClientWrapper:
         self._pending_subscriptions = set(self._subscriptions.keys())
         self._receive_queue.put(
             MQTTDisconnectMessage(
-                client_name=self.name,
+                client_name=self._client_name,
                 userdata=userdata,
                 rc=rc,
             )
@@ -253,35 +257,39 @@ class MQTTClients:
     clients: Dict[str, MQTTClientWrapper]
     _send_queue: AsyncQueueWriter
     upstream_client: str = ""
-    primary_peer_client: str = ""
+    upstream_topic_dst: str = ""
+    downstream_client: str = ""
 
     def __init__(self) -> None:
         self._send_queue = AsyncQueueWriter()
         self.clients = {}
 
-    def add_client(
-        self,
-        name: str,
-        client_config: config.MQTTClient,
-        *,
-        upstream: bool = False,
-        primary_peer: bool = False,
-    ) -> None:
-        if name in self.clients:
-            raise ValueError(f"ERROR. MQTT client named {name} already exists")
-        if upstream:
+    def add_client(self, settings: LinkSettings) -> None:
+        if settings.client_name in self.clients:
+            raise ValueError(
+                f"ERROR. MQTT client named {settings.client_name} already exists"
+            )
+        if settings.upstream:
             if self.upstream_client:
                 raise ValueError(
-                    f"ERROR. upstream client already set as {self.upstream_client}. Client {name} may not be set as upstream."
+                    f"ERROR. upstream client already set as {self.upstream_client}. "
+                    f"Client {settings.client_name} may not be set as upstream."
                 )
-            self.upstream_client = name
-        if primary_peer:
-            if self.primary_peer_client:
+            self.upstream_client = settings.client_name
+            self.upstream_topic_dst = settings.spaceheat_name
+        if settings.downstream:
+            if self.downstream_client:
                 raise ValueError(
-                    f"ERROR. primary peer client already set as {self.primary_peer_client}. Client {name} may not be set as primary peer."
+                    f"ERROR. primary peer client already set as {self.downstream_client}. "
+                    f"Client {settings.client_name} may not be set as primary peer."
                 )
-            self.primary_peer_client = name
-        self.clients[name] = MQTTClientWrapper(name, client_config, self._send_queue)
+            self.downstream_client = settings.client_name
+        self.clients[settings.client_name] = MQTTClientWrapper(
+            client_name=settings.client_name,
+            topic_dst=settings.spaceheat_name,
+            client_config=settings.mqtt,
+            receive_queue=self._send_queue,
+        )
 
     def publish(
         self, client: str, topic: str, payload: bytes, qos: int
@@ -340,4 +348,9 @@ class MQTTClients:
         return self.clients[self.upstream_client]
 
     def primary_peer(self) -> MQTTClientWrapper:
-        return self.clients[self.primary_peer_client]
+        return self.clients[self.downstream_client]
+
+    def topic_dst(self, client: str) -> str:
+        if client in self.clients:
+            return self.clients[client].topic_dst
+        return ""

@@ -12,7 +12,7 @@ from gwproactor.config import DEFAULT_BASE_NAME, LoggingSettings, MQTTClient, Pa
 from gwproactor_test import copy_keys
 from gwproactor_test.certs import uses_tls
 from gwproactor_test.logger_guard import LoggerGuards
-from gwproactor_test.proactor_recorder import (
+from gwproactor_test.recorder import (
     ProactorT,
     RecorderInterface,
     make_recorder_class,
@@ -63,6 +63,7 @@ class CommTestHelper:
 
     def __init__(
         self,
+        *,
         child_settings: Optional[ChildSettingsT] = None,
         parent_settings: Optional[ParentSettingsT] = None,
         verbose: bool = False,
@@ -86,7 +87,12 @@ class CommTestHelper:
             child_name,
             child_path_name,
             (
-                self.child_settings_t(paths=Paths(name=Path(child_path_name)))
+                self.child_settings_t(
+                    logging=LoggingSettings(
+                        base_log_name=f"{child_path_name}_{DEFAULT_BASE_NAME}"
+                    ),
+                    paths=Paths(name=Path(child_path_name)),
+                )
                 if child_settings is None
                 else child_settings
             ),
@@ -98,7 +104,7 @@ class CommTestHelper:
             (
                 self.parent_settings_t(
                     logging=LoggingSettings(
-                        base_log_name=f"parent_{DEFAULT_BASE_NAME}"
+                        base_log_name=f"{parent_path_name}_{DEFAULT_BASE_NAME}"
                     ),
                     paths=Paths(name=Path(parent_path_name)),
                 )
@@ -213,9 +219,11 @@ class CommTestHelper:
         self.child_helper.settings.paths.mkdirs(parents=True)
         self.parent_helper.settings.paths.mkdirs(parents=True)
         errors = []
-        if not self.lifecycle_logging:
-            self.child_helper.settings.logging.levels.lifecycle = logging.WARNING
-            self.parent_helper.settings.logging.levels.lifecycle = logging.WARNING
+        if not self.lifecycle_logging and not self.verbose:
+            if not self.child_verbose:
+                self.child_helper.settings.logging.levels.lifecycle = logging.WARNING
+            if not self.parent_verbose:
+                self.parent_helper.settings.logging.levels.lifecycle = logging.WARNING
         self.logger_guards = LoggerGuards(
             list(self.child_helper.settings.logging.qualified_logger_names().values())
             + list(
@@ -239,12 +247,15 @@ class CommTestHelper:
         )
         assert not errors
 
-    async def stop_and_join(self) -> None:
-        proactors = [
+    def get_proactors(self) -> list[RecorderInterface]:
+        return [
             helper.proactor
             for helper in [self.child_helper, self.parent_helper]
             if helper.proactor is not None
         ]
+
+    async def stop_and_join(self) -> None:
+        proactors = self.get_proactors()
         for proactor in proactors:
             with contextlib.suppress(Exception):
                 proactor.stop()
@@ -255,27 +266,48 @@ class CommTestHelper:
     async def __aenter__(self) -> "CommTestHelper":
         return self
 
+    def get_log_path_str(self, exc: BaseException) -> str:
+        return (
+            f"CommTestHelper caught error {exc}.\n"
+            "Working log dirs:"
+            f"\n\t[{self.child_helper.settings.paths.log_dir}]"
+            f"\n\t[{self.parent_helper.settings.paths.log_dir}]"
+        )
+
     async def __aexit__(
         self,
         exc_type: Optional[Type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
     ) -> bool:
-        await self.stop_and_join()
-        if exc is not None:
-            logging.getLogger("gridworks").error(
-                "CommTestHelper caught error %s.\nWorking log dirs:\n\t[%s]\n\t[%s]",
-                exc,
-                self.child_helper.settings.paths.log_dir,
-                self.parent_helper.settings.paths.log_dir,
-            )
-        self.logger_guards.restore()
+        try:
+            await self.stop_and_join()
+        finally:
+            if exc is not None:
+                try:
+                    s = self.get_log_path_str(exc)
+                except Exception as e:  # noqa: BLE001
+                    try:
+                        s = (
+                            f"Caught {type(e)} / <{e}> while logging "
+                            f"{type(exc)} / <{exc}>"
+                        )
+                    except:  # noqa: E722
+                        s = "ERRORs upon errors in CommTestHelper cleanup"
+                with contextlib.suppress(Exception):
+                    logging.getLogger("gridworks").error(s)
+            with contextlib.suppress(Exception):
+                self.logger_guards.restore()
         return False
 
     def summary_str(self) -> str:
-        return (
-            "CHILD:\n"
-            f"{self.child.summary_str()}\n"
-            "PARENT:\n"
-            f"{self.parent.summary_str()}"
-        )
+        s = ""
+        if self.child:
+            s += "CHILD:\n" f"{self.child.summary_str()}\n"
+        else:
+            s += "CHILD: None\n"
+        if self.parent:
+            s += "PARENT:\n" f"{self.parent.summary_str()}"
+        else:
+            s += "PARENT: None\n"
+        return s

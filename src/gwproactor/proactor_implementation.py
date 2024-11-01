@@ -21,7 +21,7 @@ from gwproto.data_classes.components.web_server_component import WebServerCompon
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
 from gwproto.messages import Ack, EventBase, EventT, Ping, ProblemEvent, ShutdownEvent
-from gwproto.types.web_server_gt import WebServerGt
+from gwproto.named_types.web_server_gt import WebServerGt
 from result import Err, Ok, Result
 
 from gwproactor import ProactorSettings
@@ -126,6 +126,7 @@ class Proactor(ServicesInterface, Runnable):
             self._logger.error(reindex_result.err())
         self._links = LinkManager(
             publication_name=self.publication_name,
+            subscription_name=self.subscription_name,
             settings=settings,
             logger=self._logger,
             stats=self._stats,
@@ -162,10 +163,11 @@ class Proactor(ServicesInterface, Runnable):
     def send(self, message: Message) -> None:
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_summary(
-                "OUT internal",
-                message.Header.Src,
-                f"{message.Header.Dst}/{message.Header.MessageType}",
-                message.Payload,
+                direction="OUT internal",
+                src=message.Header.Src,
+                dst=message.Header.Dst,
+                topic=f"{message.Header.Src}/to/{message.Header.Dst}/{message.Header.MessageType}",
+                payload_object=message.Payload,
                 message_id=message.Header.MessageId,
             )
         self._receive_queue.put_nowait(message)
@@ -191,6 +193,10 @@ class Proactor(ServicesInterface, Runnable):
     @property
     def publication_name(self) -> str:
         return self._name
+
+    @property
+    def subscription_name(self) -> str:
+        return ""
 
     @property
     def monitored_names(self) -> Sequence[MonitoredName]:
@@ -263,8 +269,8 @@ class Proactor(ServicesInterface, Runnable):
         return self._links.upstream_client
 
     @property
-    def primary_peer_client(self) -> str:
-        return self._links.primary_peer_client
+    def downstream_client(self) -> str:
+        return self._links.downstream_client
 
     def _send(self, message: Message) -> None:
         self.send(message)
@@ -431,10 +437,11 @@ class Proactor(ServicesInterface, Runnable):
         if not isinstance(message.Payload, (MQTTReceiptPayload, PatWatchdog)):
             path_dbg |= 0x00000001
             self._logger.message_summary(
-                "IN  internal",
-                self.name,
-                f"{message.Header.Src}/{message.Header.MessageType}",
-                message.Payload,
+                direction="IN  internal",
+                src=message.src(),
+                dst=message.dst(),
+                topic=f"{message.src()}/to/{message.dst()}/{message.Header.MessageType}",
+                payload_object=message.Payload,
                 message_id=message.Header.MessageId,
             )
         self._stats.add_message(message)
@@ -518,11 +525,15 @@ class Proactor(ServicesInterface, Runnable):
         if decode_result.is_ok():
             path_dbg |= 0x00000001
             decoded_message = decode_result.value
+            self._stats.add_decoded_mqtt_message_type(
+                mqtt_receipt_message.Payload.client_name, decoded_message.message_type()
+            )
             self._logger.message_summary(
-                "IN  mqtt    ",
-                self.name,
-                mqtt_receipt_message.Payload.message.topic,
-                decoded_message.Payload,
+                direction="IN  mqtt    ",
+                src=decoded_message.src(),
+                dst=decoded_message.dst(),
+                topic=mqtt_receipt_message.Payload.message.topic,
+                payload_object=decoded_message.Payload,
                 message_id=decoded_message.Header.MessageId,
             )
             link_mgr_results = self._links.process_mqtt_message(mqtt_receipt_message)

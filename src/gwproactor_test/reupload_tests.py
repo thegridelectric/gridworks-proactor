@@ -99,7 +99,6 @@ class _EventGen:
 class ProactorReuploadTests:
     CTH: Type[CommTestHelper]
 
-    @pytest.mark.skip(reason="Skipping for now")
     @pytest.mark.asyncio
     async def test_reupload_basic(self) -> None:
         """
@@ -151,7 +150,6 @@ class ProactorReuploadTests:
             assert child.links.num_reuploaded_unacked == 0
             assert not child.links.reuploading()
 
-    @pytest.mark.skip(reason="Skipping for now")
     @pytest.mark.asyncio
     async def test_reupload_flow_control_simple(self) -> None:
         """
@@ -211,8 +209,7 @@ class ProactorReuploadTests:
                 err_str_f=h.summary_str,
             )
 
-    @pytest.mark.skip(reason="Skipping for now")
-    @pytest.mark.asyncio    
+    @pytest.mark.asyncio
     async def test_reupload_flow_control_detail(self) -> None:
         """
         Test:
@@ -222,6 +219,7 @@ class ProactorReuploadTests:
             start_child=True,
             add_parent=True,
             child_settings=self.CTH.child_settings_t(num_initial_event_reuploads=5),
+            child_verbose=False,
             verbose=False,
             # parent_on_screen=True,
         ) as h:
@@ -266,7 +264,7 @@ class ProactorReuploadTests:
             # Start parent, wait for parent to be subscribed.
             h.start_parent()
             await await_for(
-                lambda: h.parent.links.link_state(h.parent.primary_peer_client)
+                lambda: h.parent.links.link_state(h.parent.downstream_client)
                 == StateName.awaiting_peer,
                 1,
                 "ERROR waiting for parent awaiting_peer",
@@ -314,10 +312,12 @@ class ProactorReuploadTests:
             assert child_links.num_pending == last_num_to_reupload + 1
             assert child_links.reuploading()
 
+            # noinspection PyTypeChecker
             parent_ack_topic = MQTTTopic.encode(
                 "gw",
                 h.parent.publication_name,
-                "gridworks-ack",  # noqa
+                h.child.subscription_name,
+                "gridworks-ack",
             )
             acks_received_by_child = child.stats.num_received_by_topic[parent_ack_topic]
 
@@ -340,8 +340,12 @@ class ProactorReuploadTests:
                 await await_for(
                     lambda: child.stats.num_received_by_topic[parent_ack_topic]
                     == acks_received_by_child + acks_released,  # noqa: B023
-                    1,
-                    f"ERROR waiting for child to receive ack (acks_released: {acks_released})",
+                    timeout=1,
+                    tag=(
+                        "ERROR waiting for child to receive ack "
+                        f"(acks_released: {acks_released}) "
+                        f"on topic <{parent_ack_topic}>"
+                    ),
                     err_str_f=h.summary_str,
                 )
                 curr_num_reuploaded_unacked = child_links.num_reuploaded_unacked
@@ -387,7 +391,9 @@ class ProactorReuploadTests:
 
             assert not child_links.reuploading()
 
-    @pytest.mark.skip(reason="Skipping for now")
+    @pytest.mark.skip(
+        reason="Test seems to gotten flakier; unclear if this is because test is too sensitive or because it is broken"
+    )
     @pytest.mark.asyncio
     async def test_reupload_errors(self) -> None:
         async with self.CTH(

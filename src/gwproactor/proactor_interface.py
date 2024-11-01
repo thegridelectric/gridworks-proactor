@@ -188,7 +188,7 @@ class ServicesInterface(CommunicatorInterface):
     @abstractmethod
     def send(self, message: Message) -> None:
         raise NotImplementedError
-    
+
     @abstractmethod
     def send_threadsafe(self, message: Message) -> None:
         raise NotImplementedError
@@ -196,7 +196,7 @@ class ServicesInterface(CommunicatorInterface):
     @abstractmethod
     def add_task(self, task: asyncio.Task) -> None:
         raise NotImplementedError
-    
+
     @property
     @abstractmethod
     def async_receive_queue(self) -> Optional[asyncio.Queue]:
@@ -246,6 +246,11 @@ class ServicesInterface(CommunicatorInterface):
     @property
     @abstractmethod
     def publication_name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def subscription_name(self) -> str:
         raise NotImplementedError
 
     @property
