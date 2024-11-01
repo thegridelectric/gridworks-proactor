@@ -258,12 +258,12 @@ class LinkManager:
         )
 
     def generate_event(self, event: EventT) -> Result[bool, Exception]:
-        if isinstance(event, CommEvent):
+        if not event.Src:
+            event.Src = self.publication_name
+        if isinstance(event, CommEvent) and event.Src == self.publication_name:
             self._stats.link(event.PeerName).comm_event_counts[event.TypeName] += 1
         if isinstance(event, ProblemEvent) and self._logger.path_enabled:
             self._logger.info(event)
-        if not event.Src:
-            event.Src = self.publication_name
         if (
             self._mqtt_clients.upstream_client
             and self._states[self._mqtt_clients.upstream_client].active_for_send()

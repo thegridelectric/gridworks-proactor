@@ -12,7 +12,7 @@ from gwproactor.persister import SimpleDirectoryWriter
 from gwproactor_test.dummies.names import DUMMY_SCADA2_SHORT_NAME
 from gwproactor_test.dummies.tree.codecs import DummyCodec
 from gwproactor_test.dummies.tree.messages import (
-    ReportRelay,
+    RelayReportEvent,
     SetRelay,
     SetRelayMessage,
 )
@@ -69,24 +69,24 @@ class DummyScada2(Proactor):
         )
         path_dbg = 0
         last_val = self.relays[message.Payload.relay_name]
-        report = ReportRelay(
+        event = RelayReportEvent(
             relay_name=message.Payload.relay_name,
             closed=message.Payload.closed,
             changed=last_val != message.Payload.closed,
         )
-        if report.changed:
+        if event.changed:
             path_dbg |= 0x00000001
-            self.relays[message.Payload.relay_name] = report.closed
-        self._links.publish_upstream(report)
+            self.relays[message.Payload.relay_name] = event.closed
+        self.generate_event(event)
         self._logger.path(
             f"--{self.name}._process_set_relay  "
             f"path:0x{path_dbg:08X}  "
             f"{int(last_val)} -> "
-            f"{int(report.closed)}"
+            f"{int(event.closed)}"
         )
 
     def _derived_process_mqtt_message(
-        self, message: Message[MQTTReceiptPayload], decoded: typing.Any
+        self, message: Message[MQTTReceiptPayload], decoded: Message[typing.Any]
     ) -> None:
         self._logger.path(
             f"++{self.name}._derived_process_mqtt_message {message.Payload.message.topic}",

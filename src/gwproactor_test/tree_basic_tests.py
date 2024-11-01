@@ -98,13 +98,12 @@ class ProactorTreeCommBasicTests:
 
             # exchange messages
             assert stats2.num_received_by_type["gridworks.dummy.set.relay"] == 0
-            assert stats2.num_received_by_type["gridworks.dummy.report.relay"] == 0
             relay_name = "scada2.relay1"
             child1.set_relay(relay_name, True)
 
             # wait for response to be received
             await await_for(
-                lambda: stats1.num_received_by_type["gridworks.dummy.report.relay"]
+                lambda: stats1.num_received_by_type["gridworks.event.relay.report"]
                 == 1,
                 1,
                 "ERROR waiting child1 to receive relay report from child2",
@@ -115,31 +114,82 @@ class ProactorTreeCommBasicTests:
             assert child2.relays == {relay_name: True}
             assert child1.relay_change_mimatches == 0
 
-    async def test_basic_comm_child_first(self) -> None:
-        async with self.CTH(add_child=True, add_parent=True) as h:
-            assert h is not None
-            # # unstarted child, parent
-            # # start child
-            # # start parent
-            # # wait for link to go active
-            # # wait for all events to be acked
-            # # Tell client we lost comm.
-            # # Wait for reconnect
-            # # wait for all events to be acked
+    @pytest.mark.asyncio
+    async def test_tree_parent_comm(self) -> None:
+        async with self.CTH(add_child=True) as h:
+            h.start_child1()
+            await await_for(
+                h.child1.mqtt_quiescent,
+                3,
+                "child1.mqtt_quiescent",
+                err_str_f=h.summary_str,
+            )
+            h.add_child2()
+            h.start_child2()
+            link1to2 = h.child1.links.link(h.child1.downstream_client)
+            link2to1 = h.child2.links.link(h.child2.upstream_client)
+            await await_for(
+                lambda: link1to2.active() and link2to1.active(),
+                3,
+                "link1to2.active() and link2to1.active()",
+                err_str_f=h.summary_str,
+            )
+            h.add_parent()
+            h.start_parent()
+            link1toAtn = h.child1.links.link(h.child1.upstream_client)
+            linkAtnto1 = h.parent.links.link(h.parent.downstream_client)
+            await await_for(
+                lambda: link1toAtn.active() and linkAtnto1.active(),
+                3,
+                "link1toAtn.active() and linkAtnto1.active()",
+                err_str_f=h.summary_str,
+            )
 
     @pytest.mark.asyncio
-    async def test_tree_basic_parent_comm_loss(self) -> None:
-        async with self.CTH(add_child=True, add_parent=True, verbose=False) as h:
-            assert h is not None
-            # # unstarted child, parent
-            # # start child, parent
-            # # wait for all events to be acked
-            # # Tell *child* client we lost comm.
-            # # Wait for reconnect
-            # # wait for all events to be acked
-            # # Tell *parent* client we lost comm.
-            # # wait for child to get ping from parent when parent reconnects to mqtt
-            # # verify no child comm state change has occurred.
-            # # Tell *both* clients we lost comm.
-            # # Wait for reconnect
-            # # wait for all events to be acked
+    async def test_tree_event_forward(self) -> None:
+        async with self.CTH(
+            start_child=True, start_child2=True, start_parent=True, verbose=False
+        ) as h:
+            link1to2 = h.child1.links.link(h.child1.downstream_client)
+            link2to1 = h.child2.links.link(h.child2.upstream_client)
+            link1toAtn = h.child1.links.link(h.child1.upstream_client)
+            linkAtnto1 = h.parent.links.link(h.parent.downstream_client)
+            await await_for(
+                lambda: (
+                    link1toAtn.active()
+                    and linkAtnto1.active()
+                    and link1to2.active()
+                    and link2to1.active()
+                ),
+                3,
+                "link1toAtn.active() and linkAtnto1.active()",
+                err_str_f=h.summary_str,
+            )
+            relay_name = "scada2.relay1"
+            h.child1.set_relay(relay_name, True)
+
+            def _atn_heard_reports() -> bool:
+                st_ = h.parent.stats.link(h.parent.downstream_client)
+                return all(
+                    st_.num_received_by_type[msg_type] == 1
+                    for msg_type in [
+                        "gridworks.event.relay.report",
+                        "gridworks.event.relay.report.received",
+                    ]
+                )
+
+            await await_for(
+                _atn_heard_reports,
+                1,
+                "ERROR waiting for atn to hear reports",
+                err_str_f=h.summary_str,
+            )
+
+            # print(h.parent.settings.paths.event_dir)
+            # for path in h.parent.settings.paths.event_dir.iterdir():
+            #     print(path.name)
+            #     with path.open() as f:
+            #         import rich
+            #
+            #         rich.print(json.loads(f.read()))
+            #         print()

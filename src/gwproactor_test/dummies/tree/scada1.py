@@ -12,7 +12,12 @@ from gwproactor.message import MQTTReceiptPayload
 from gwproactor.persister import SimpleDirectoryWriter
 from gwproactor_test.dummies.names import DUMMY_SCADA1_SHORT_NAME
 from gwproactor_test.dummies.tree.codecs import DummyCodec
-from gwproactor_test.dummies.tree.messages import ReportRelay, SetRelay, SetRelayMessage
+from gwproactor_test.dummies.tree.messages import (
+    RelayReportEvent,
+    RelayReportReceivedEvent,
+    SetRelay,
+    SetRelayMessage,
+)
 from gwproactor_test.dummies.tree.scada1_settings import DummyScada1Settings
 
 
@@ -109,35 +114,44 @@ class DummyScada1(Proactor):
             "--{self.name}._derived_process_message  path:0x{path_dbg:08X}"
         )
 
-    def _process_report_relay(self, report: ReportRelay) -> None:
+    def _process_report_relay_event(self, event: RelayReportEvent) -> None:
         self._logger.path(
-            f"++{self.name}._process_report_relay "
-            f"{report.relay_name}  "
-            f"closed:{report.closed}  "
-            f"changed: {report.changed}"
+            f"++{self.name}._process_set_relay_event "
+            f"{event.relay_name}  "
+            f"closed:{event.closed}  "
+            f"changed: {event.changed}"
         )
         path_dbg = 0
-        last_val = self.relays[report.relay_name]
-        self.relays[report.relay_name] = report.closed
-        changed = last_val != self.relays[report.relay_name]
+        last_val = self.relays[event.relay_name]
+        self.relays[event.relay_name] = event.closed
+        changed = last_val != self.relays[event.relay_name]
         self.logger.info(
-            f"{report.relay_name}:  {int(last_val)} -> "
-            f"{int(self.relays[report.relay_name])}  "
-            f"changed: {int(changed)}/{int(report.changed)}"
+            f"{event.relay_name}:  {int(last_val)} -> "
+            f"{int(self.relays[event.relay_name])}  "
+            f"changed: {int(changed)}/{int(event.changed)}"
         )
-        if changed != report.changed:
+        report_received_event = RelayReportReceivedEvent(
+            relay_name=event.relay_name,
+            closed=event.closed,
+            changed=event.changed,
+        )
+
+        if changed != event.changed:
             path_dbg |= 0x00000001
+            report_received_event.mismatch = True
             self.relay_change_mimatches += 1
+            report_received_event.mismatch_count = self.relay_change_mimatches
             self.logger.info(
-                f"State change mismatch for {report.relay_name}  "
-                f"found: {int(changed)}  reported: {report.changed}  "
+                f"State change mismatch for {event.relay_name}  "
+                f"found: {int(changed)}  reported: {event.changed}  "
                 f"total mismatches: {self.relay_change_mimatches}"
             )
+        self.generate_event(report_received_event)
         self._logger.path(
-            f"--{self.name}._process_report_relay "
-            f"{report.relay_name}  "
-            f"closed:{report.closed}  "
-            f"changed: {report.changed}  "
+            f"--{self.name}._process_set_relay_event "
+            f"{event.relay_name}  "
+            f"closed:{event.closed}  "
+            f"changed: {event.changed}  "
             f"path: 0x{path_dbg:08X}"
         )
 
@@ -145,25 +159,24 @@ class DummyScada1(Proactor):
         self._logger.path(
             f"++_process_event  {event.TypeName}  from:{event.Src}",
         )
-        # self.generate_event(event)  # noqa: ERA001
+        self.generate_event(event)  # noqa: ERA001
+        if isinstance(event, RelayReportEvent):
+            self._process_report_relay_event(event)
         self._logger.path("--_process_event")
 
     def _derived_process_mqtt_message(
-        self, message: Message[MQTTReceiptPayload], decoded: typing.Any
+        self, message: Message[MQTTReceiptPayload], decoded: Message[typing.Any]
     ) -> None:
         self._logger.path(
             f"++{self.name}._derived_process_mqtt_message {message.Payload.message.topic}",
         )
         path_dbg = 0
         match decoded.Payload:
-            case ReportRelay():
-                path_dbg |= 0x00000002
-                self._process_report_relay(decoded.Payload)
             case EventBase():
-                path_dbg |= 0x00000004
+                path_dbg |= 0x00000001
                 self._process_event(decoded.Payload)
             case _:
-                path_dbg |= 0x00000008
+                path_dbg |= 0x00000002
                 rich.print(decoded.Header)
                 raise ValueError(
                     f"There is no handler for mqtt message payload type [{type(decoded.Payload)}]\n"

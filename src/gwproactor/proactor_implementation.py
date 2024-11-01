@@ -391,7 +391,7 @@ class Proactor(ServicesInterface, Runnable):
         pass
 
     def _derived_process_mqtt_message(
-        self, message: Message[MQTTReceiptPayload], decoded: Any
+        self, message: Message[MQTTReceiptPayload], decoded: Message[Any]
     ) -> None:
         pass
 

@@ -1,8 +1,12 @@
 """Scada implementation"""
 
-from typing import Optional, cast
+from typing import Any, Optional, cast
+
+from gwproto import Message
+from gwproto.messages import EventBase
 
 from gwproactor.links.link_settings import LinkSettings
+from gwproactor.message import MQTTReceiptPayload
 from gwproactor.persister import SimpleDirectoryWriter
 from gwproactor.proactor_implementation import Proactor
 from gwproactor_test.dummies import DUMMY_ATN_NAME
@@ -46,5 +50,33 @@ class DummyAtn(Proactor):
         return self.name
 
     @property
+    def subscription_name(self) -> str:
+        return "a"
+
+    @property
     def settings(self) -> DummyAtnSettings:
         return cast(DummyAtnSettings, self._settings)
+
+    # ruff: noqa: ERA001
+    # def _process_event(self, event: EventBase) -> None:
+    #     import rich
+    #     rich.print(event)
+
+    def _derived_process_mqtt_message(
+        self, message: Message[MQTTReceiptPayload], decoded: Message[Any]
+    ) -> None:
+        self._logger.path(
+            f"++{self.name}._derived_process_mqtt_message %s",
+            message.Payload.message.topic,
+        )
+        path_dbg = 0
+        self.stats.add_message(decoded)
+        match decoded.Payload:
+            case EventBase():
+                path_dbg |= 0x00000008
+                # self._process_event(decoded.Payload)
+            case _:
+                path_dbg |= 0x00000040
+        self._logger.path(
+            f"--{self.name}._derived_process_mqtt_message  path:0x%08X", path_dbg
+        )

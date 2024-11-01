@@ -150,7 +150,9 @@ class RecorderLinks(LinkManager):
         return len(needs_ack)
 
     def generate_event(self, event: EventT) -> None:
-        if isinstance(event, CommEvent):
+        if not event.Src:
+            event.Src = self.publication_name
+        if isinstance(event, CommEvent) and event.Src == self.publication_name:
             cast(
                 RecorderLinkStats, self._stats.link(event.PeerName)
             ).comm_events.append(event)

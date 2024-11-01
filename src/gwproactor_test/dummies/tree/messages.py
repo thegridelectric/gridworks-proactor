@@ -1,6 +1,7 @@
 from typing import Literal
 
 from gwproto import Message
+from gwproto.messages import EventBase
 from pydantic import BaseModel
 
 
@@ -11,11 +12,6 @@ class RelayInfo(BaseModel):
 
 class SetRelay(RelayInfo):
     TypeName: Literal["gridworks.dummy.set.relay"] = "gridworks.dummy.set.relay"
-
-
-class ReportRelay(RelayInfo):
-    changed: bool = False
-    TypeName: Literal["gridworks.dummy.report.relay"] = "gridworks.dummy.report.relay"
 
 
 class SetRelayMessage(Message[SetRelay]):
@@ -34,3 +30,22 @@ class SetRelayMessage(Message[SetRelay]):
             AckRequired=ack_required,
             Payload=SetRelay(relay_name=relay_name, closed=closed),
         )
+
+
+class RelayReportEvent(EventBase):
+    """Dummy event, scada2 -> scada1"""
+
+    relay_name: str = ""
+    closed: bool = False
+    changed: bool = False
+    TypeName: Literal["gridworks.event.relay.report"] = "gridworks.event.relay.report"
+
+
+class RelayReportReceivedEvent(RelayReportEvent):
+    """Dummy event, scada1 *received* RelayReportEvent"""
+
+    mismatch: bool = False
+    mismatch_count: int = 0
+    TypeName: Literal["gridworks.event.relay.report.received"] = (
+        "gridworks.event.relay.report.received"
+    )
