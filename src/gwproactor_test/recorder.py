@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Optional, Tuple, Type, TypeVar, cast
 
 from gwproto import Message
-from gwproto.messages import CommEvent, EventT, PingMessage
+from gwproto.messages import CommEvent, EventBase, EventT, PingMessage
 from paho.mqtt.client import MQTT_ERR_SUCCESS, MQTTMessageInfo
 
 from gwproactor import Proactor, ProactorSettings, Runnable, ServicesInterface
@@ -30,13 +30,31 @@ def split_subscriptions(client_wrapper: MQTTClientWrapper) -> Tuple[int, Optiona
 @dataclass
 class RecorderLinkStats(LinkStats):
     comm_events: list[CommEvent] = field(default_factory=list)
+    forwarded: dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    event_counts: dict[str, dict[str, int]] = field(
+        default_factory=lambda: defaultdict(lambda: defaultdict(int))
+    )
 
     def __str__(self) -> str:
         s = super().__str__()
         if self.comm_events:
             s += "\n  Comm events:"
             for comm_event in self.comm_events:
-                s += f"\n    {str(comm_event)[:184]}"
+                copy_event = comm_event.model_copy(
+                    update={"MessageId": comm_event.MessageId[:6] + "..."}
+                )
+                s += f"\n    {str(copy_event)[:154]}"
+        if self.forwarded:
+            s += "\n  Forwarded events *sent* by type:"
+            for message_type in sorted(self.forwarded):
+                s += f"\n    {self.forwarded[message_type]:3d}: [{message_type}]"
+        if self.event_counts:
+            s += "\n  Events *received* by src and type:"
+            for event_src in sorted(self.event_counts):
+                s += f"\n    src: {event_src}"
+                forwards_from_src = self.event_counts[event_src]
+                for message_type in sorted(forwards_from_src):
+                    s += f"\n      {forwards_from_src[message_type]:3d}: [{message_type}]"
         return s
 
 
@@ -156,6 +174,10 @@ class RecorderLinks(LinkManager):
             cast(
                 RecorderLinkStats, self._stats.link(event.PeerName)
             ).comm_events.append(event)
+        if event.Src != self.publication_name:
+            cast(RecorderLinkStats, self._stats.link(event.Src)).forwarded[
+                event.TypeName
+            ] += 1
         super().generate_event(event)
 
 
@@ -249,6 +271,17 @@ def make_recorder_class(  # noqa: C901
                 self._subacks_available[message.Payload.client_name].append(message)
             else:
                 await super().process_message(message)
+
+        def _derived_process_mqtt_message(
+            self, message: Message[MQTTReceiptPayload], decoded: Message[Any]
+        ) -> None:
+            super()._derived_process_mqtt_message(message, decoded)  # noqa
+            match decoded.Payload:
+                case EventBase() as event:
+                    stats = cast(
+                        RecorderLinkStats, self._stats.link(message.Payload.client_name)
+                    )
+                    stats.event_counts[event.Src][event.TypeName] += 1
 
         def pause_acks(self) -> None:
             self._links.acks_paused = True

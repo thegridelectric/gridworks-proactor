@@ -1,8 +1,9 @@
+import uuid
 from typing import Literal
 
 from gwproto import Message
 from gwproto.messages import EventBase
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RelayInfo(BaseModel):
@@ -11,6 +12,7 @@ class RelayInfo(BaseModel):
 
 
 class SetRelay(RelayInfo):
+    MessageId: str = Field(default_factory=lambda: str(uuid.uuid4()))
     TypeName: Literal["gridworks.dummy.set.relay"] = "gridworks.dummy.set.relay"
 
 

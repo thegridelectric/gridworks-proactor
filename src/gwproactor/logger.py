@@ -8,8 +8,8 @@ class MessageSummary:
     """Helper class for formating message summaries message receipt/publication single line summaries."""
 
     DEFAULT_FORMAT = (
-        "  {direction:15s}  {src_dst:40s}  {broker_flag}  {arrow:2s}  {topic:90s}"
-        "  {payload_type:40s}  {message_id}"
+        "  {direction:15s}  {src_dst:50s}  {broker_flag}  {arrow:2s}  {topic:80s}"
+        "  {payload_type:25s}{message_id}"
     )
 
     @classmethod
@@ -63,8 +63,9 @@ class MessageSummary:
                 payload_str = payload_object.__class__.__name__
             else:
                 payload_str = type(payload_object)
-            if message_id and len(message_id) > logging.DEBUG + 1:
-                message_id = f"{message_id[:8]}..."
+            max_msg_id_len = 11
+            if message_id and len(message_id) > max_msg_id_len:
+                message_id = f" {message_id[:max_msg_id_len-3]}..."
             src_dst = f"{src} to {dst}"
             return format_.format(
                 timestamp=timestamp.isoformat(),

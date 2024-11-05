@@ -57,11 +57,6 @@ class DummyAtn(Proactor):
     def settings(self) -> DummyAtnSettings:
         return cast(DummyAtnSettings, self._settings)
 
-    # ruff: noqa: ERA001
-    # def _process_event(self, event: EventBase) -> None:
-    #     import rich
-    #     rich.print(event)
-
     def _derived_process_mqtt_message(
         self, message: Message[MQTTReceiptPayload], decoded: Message[Any]
     ) -> None:
@@ -74,7 +69,6 @@ class DummyAtn(Proactor):
         match decoded.Payload:
             case EventBase():
                 path_dbg |= 0x00000008
-                # self._process_event(decoded.Payload)
             case _:
                 path_dbg |= 0x00000040
         self._logger.path(

@@ -159,7 +159,7 @@ class DummyScada1(Proactor):
         self._logger.path(
             f"++_process_event  {event.TypeName}  from:{event.Src}",
         )
-        self.generate_event(event)  # noqa: ERA001
+        self.generate_event(event)
         if isinstance(event, RelayReportEvent):
             self._process_report_relay_event(event)
         self._logger.path("--_process_event")

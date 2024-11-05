@@ -528,14 +528,19 @@ class Proactor(ServicesInterface, Runnable):
             self._stats.add_decoded_mqtt_message_type(
                 mqtt_receipt_message.Payload.client_name, decoded_message.message_type()
             )
-            self._logger.message_summary(
-                direction="IN  mqtt    ",
-                src=decoded_message.src(),
-                dst=decoded_message.dst(),
-                topic=mqtt_receipt_message.Payload.message.topic,
-                payload_object=decoded_message.Payload,
-                message_id=decoded_message.Header.MessageId,
-            )
+            if self._logger.message_summary_enabled:
+                if isinstance(decoded_message.Payload, Ack):
+                    message_id = decoded_message.Payload.AckMessageID
+                else:
+                    message_id = decoded_message.Header.MessageId
+                self._logger.message_summary(
+                    direction="IN  mqtt    ",
+                    src=decoded_message.src(),
+                    dst=decoded_message.dst(),
+                    topic=mqtt_receipt_message.Payload.message.topic,
+                    payload_object=decoded_message.Payload,
+                    message_id=message_id,
+                )
             link_mgr_results = self._links.process_mqtt_message(mqtt_receipt_message)
             if link_mgr_results.is_ok():
                 path_dbg |= 0x00000002

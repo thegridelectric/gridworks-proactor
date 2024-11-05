@@ -235,7 +235,9 @@ class LinkManager:
             dst=message.Header.Dst,
             topic=topic,
             payload_object=message.Payload,
-            message_id=message.Header.MessageId,
+            message_id=message.Payload.AckMessageID
+            if isinstance(message.Payload, Ack)
+            else message.Header.MessageId,
         )
         if message.Header.AckRequired:
             self._acks.start_ack_timer(
@@ -477,7 +479,11 @@ class LinkManager:
     def process_ack_timeout(
         self, wait_info: AckWaitInfo
     ) -> Result[LinkManagerTransition, Exception]:
-        self._logger.path("++LinkManager.process_ack_timeout %s", wait_info.message_id)
+        self._logger.path(
+            "++LinkManager.process_ack_timeout  <%s>  <%s>",
+            wait_info.link_name,
+            wait_info.message_id,
+        )
         path_dbg = 0
         self._stats.link(wait_info.link_name).timeouts += 1
         state_result = self._states.process_ack_timeout(wait_info.link_name)
@@ -505,7 +511,7 @@ class LinkManager:
         return result
 
     def process_ack(self, link_name: str, message_id: str) -> None:
-        self._logger.path("++LinkManager.process_ack  %s", message_id)
+        self._logger.path("++LinkManager.process_ack  <%s>  %s", link_name, message_id)
         path_dbg = 0
         wait_info = self._acks.cancel_ack_timer(link_name, message_id)
         if wait_info is not None and message_id in self._event_persister:
