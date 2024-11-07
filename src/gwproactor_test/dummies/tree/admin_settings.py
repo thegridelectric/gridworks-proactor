@@ -21,8 +21,8 @@ class AdminLinkSettings(TreeLinkSettings):
         )
 
 
-class AdminSettings(ProactorSettings):
-    target_gnode: str
+class DummyAdminSettings(ProactorSettings):
+    target_gnode: str = ""
     paths: Paths = Field({}, validate_default=True)
     link: AdminLinkSettings = AdminLinkSettings()
     model_config = SettingsConfigDict(env_prefix="GWADMIN_", env_nested_delimiter="__")

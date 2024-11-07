@@ -18,7 +18,10 @@ from gwproactor_test.dummies.tree.admin_messages import (
     AdminCommandSetRelay,
     AdminInfo,
 )
-from gwproactor_test.dummies.tree.admin_settings import AdminLinkSettings, AdminSettings
+from gwproactor_test.dummies.tree.admin_settings import (
+    AdminLinkSettings,
+    DummyAdminSettings,
+)
 from gwproactor_test.dummies.tree.messages import RelayInfo, RelayStates
 
 app = typer.Typer(
@@ -45,7 +48,7 @@ class AppState(StrEnum):
 
 class MQTTAdmin:
     client: PahoMQTTClient
-    settings: AdminSettings
+    settings: DummyAdminSettings
     relay_name: str
     closed: bool
     user: str
@@ -60,7 +63,7 @@ class MQTTAdmin:
     def __init__(
         self,
         *,
-        settings: AdminSettings,
+        settings: DummyAdminSettings,
         relay_name: str,
         closed: bool,
         user: str,
@@ -212,7 +215,7 @@ def set_relay(
     user: str = "HeatpumpWizard",
     json: bool = False,
 ) -> None:
-    settings = AdminSettings(target_gnode=target_gnode)
+    settings = DummyAdminSettings(target_gnode=target_gnode)
     settings.link.long_name = target_gnode
     if not json:
         rich.print(settings)
