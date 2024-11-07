@@ -2,6 +2,7 @@
 
 import asyncio
 import sys
+import threading
 import traceback
 import uuid
 from typing import (
@@ -678,6 +679,21 @@ class Proactor(ServicesInterface, Runnable):
                 communicator.start()
         self.start_tasks()
         await self.join()
+
+    def run_in_thread(self, *, daemon: bool = True) -> threading.Thread:
+        async def _async_run_forever() -> None:
+            try:
+                await self.run_forever()
+
+            finally:
+                self.stop()
+
+        def _run_forever() -> None:
+            asyncio.run(_async_run_forever())
+
+        thread = threading.Thread(target=_run_forever, daemon=daemon)
+        thread.start()
+        return thread
 
     def start(self) -> NoReturn:
         raise RuntimeError("ERROR. Proactor must be started by awaiting run_forever()")

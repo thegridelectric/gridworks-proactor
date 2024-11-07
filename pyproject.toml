@@ -16,6 +16,9 @@ classifiers = [
     "Development Status :: 3 - Alpha",
 ]
 
+[tool.poetry.scripts]
+gwtest = "gwproactor_test.cli:app"
+
 [tool.poetry.urls]
 Changelog = "https://github.com/thegridelectric/gridworks-proactor/releases"
 
