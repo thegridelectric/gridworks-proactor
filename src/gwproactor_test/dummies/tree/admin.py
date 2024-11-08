@@ -89,7 +89,9 @@ class MQTTAdmin:
         if not self.json:
             rich.print(f"Connecting to broker at <{self.mqtt_config.host}>")
         self.state = AppState.awaiting_connect
-        self.client.connect(self.mqtt_config.host, self.mqtt_config.port)
+        self.client.connect(
+            self.mqtt_config.host, port=self.mqtt_config.effective_port()
+        )
         self.client.loop_forever()
 
     def on_connect(self, _: Any, _userdata: Any, _flags: dict, _rc: int) -> None:

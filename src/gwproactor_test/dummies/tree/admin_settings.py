@@ -5,15 +5,12 @@ from pydantic_settings import SettingsConfigDict
 
 from gwproactor import ProactorSettings
 from gwproactor.config import Paths
-from gwproactor.config.mqtt import TLSInfo
 from gwproactor_test.dummies.names import DUMMY_ADMIN_NAME, DUMMY_ADMIN_SHORT_NAME
 from gwproactor_test.dummies.tree.link_settings import TreeLinkSettings
 
 
 class AdminLinkSettings(TreeLinkSettings):
     def __init__(self, **kwargs: Any) -> None:
-        if "tls" not in kwargs:
-            kwargs["tls"] = TLSInfo(use_tls=False)
         super().__init__(
             client_name=DUMMY_ADMIN_NAME,
             long_name=DUMMY_ADMIN_NAME,
