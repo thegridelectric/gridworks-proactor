@@ -16,7 +16,7 @@ class AdminCommandSetRelay(BaseModel):
     CommandInfo: AdminInfo
     RelayInfo: RelayInfo
     MessageId: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    TypeName: Literal["gridworks.dummy.admin.set.relay"] = (
+    TypeName: Literal["gridworks.dummy.admin.command.set.relay"] = (
         "gridworks.dummy.admin.command.set.relay"
     )
 
@@ -24,7 +24,7 @@ class AdminCommandSetRelay(BaseModel):
 class AdminCommandReadRelays(BaseModel):
     CommandInfo: AdminInfo
     MessageId: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    TypeName: Literal["gridworks.dummy.admin.read.relays"] = (
+    TypeName: Literal["gridworks.dummy.admin.command.read.relays"] = (
         "gridworks.dummy.admin.command.read.relays"
     )
 

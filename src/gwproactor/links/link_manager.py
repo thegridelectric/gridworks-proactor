@@ -190,7 +190,11 @@ class LinkManager:
         self._stats.add_link(settings.client_name)
         self.subscribe(
             client=settings.client_name,
-            topic=settings.subscription_topic(self.subscription_name),
+            topic=settings.subscription_topic(
+                settings.subscription_name
+                if settings.subscription_name
+                else self.subscription_name
+            ),
             qos=QOS.AtMostOnce,
         )
 

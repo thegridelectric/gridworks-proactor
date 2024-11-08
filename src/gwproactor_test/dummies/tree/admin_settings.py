@@ -16,6 +16,7 @@ class AdminLinkSettings(TreeLinkSettings):
             kwargs["tls"] = TLSInfo(use_tls=False)
         super().__init__(
             client_name=DUMMY_ADMIN_NAME,
+            long_name=DUMMY_ADMIN_NAME,
             short_name=DUMMY_ADMIN_SHORT_NAME,
             **kwargs,
         )

@@ -72,13 +72,15 @@ class DummyScada1(Proactor):
             self._links.add_mqtt_link(
                 LinkSettings(
                     client_name=self.settings.admin_link.client_name,
-                    gnode_name=self.settings.admin_link.short_name,
-                    spaceheat_name=self.publication_name,
+                    gnode_name=self.settings.admin_link.long_name,
+                    spaceheat_name=self.settings.admin_link.long_name,
+                    subscription_name=self.publication_name,
                     mqtt=self.settings.admin_link,
                     codec=AdminCodec(),
                 ),
             )
         self.links.log_subscriptions("construction")
+        self.links.enable_mqtt_loggers(self.logger.message_summary_logger)
 
     @property
     def settings(self) -> DummyScada1Settings:

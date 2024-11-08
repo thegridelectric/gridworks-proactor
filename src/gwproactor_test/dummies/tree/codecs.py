@@ -1,7 +1,9 @@
 from gwproto import MQTTCodec, create_message_model
 
-from gwproactor_test.dummies.names import DUMMY_ADMIN_NAME, DUMMY_ADMIN_SHORT_NAME
-from gwproactor_test.dummies.tree.admin_messages import AdminCommandSetRelay
+from gwproactor_test.dummies.tree.admin_messages import (
+    AdminCommandReadRelays,
+    AdminCommandSetRelay,
+)
 
 
 class DummyCodec(MQTTCodec):
@@ -36,14 +38,8 @@ class AdminCodec(MQTTCodec):
         super().__init__(
             create_message_model(
                 model_name="AdminMessageDecoder",
-                explicit_types=[AdminCommandSetRelay],
+                explicit_types=[AdminCommandSetRelay, AdminCommandReadRelays],
             )
         )
 
-    def validate_source_and_destination(self, src: str, dst: str) -> None:
-        if src != DUMMY_ADMIN_NAME or dst != DUMMY_ADMIN_SHORT_NAME:
-            raise ValueError(
-                "ERROR validating src and/or dst\n"
-                f"  exp: {DUMMY_ADMIN_NAME} -> {DUMMY_ADMIN_SHORT_NAME}\n"
-                f"  got: {src} -> {dst}"
-            )
+    def validate_source_and_destination(self, src: str, dst: str) -> None: ...

@@ -9,7 +9,7 @@ from typer.main import get_group
 
 from gwproactor_test import test_ca_certificate_path, test_ca_private_key_path
 from gwproactor_test.certs import mqtt_client_fields
-from gwproactor_test.dummies.tree import scada1_cli
+from gwproactor_test.dummies.tree import admin_cli, atn1_cli, scada1_cli, scada2_cli
 from gwproactor_test.dummies.tree.admin_settings import DummyAdminSettings
 from gwproactor_test.dummies.tree.atn_settings import DummyAtnSettings
 from gwproactor_test.dummies.tree.scada1_settings import DummyScada1Settings
@@ -23,6 +23,9 @@ app = typer.Typer(
 )
 
 app.add_typer(scada1_cli.app, name="scada1", help="Use dummy scada1")
+app.add_typer(scada2_cli.app, name="scada2", help="Use dummy scada1")
+app.add_typer(atn1_cli.app, name="atn", help="Use dummy scada1")
+app.add_typer(admin_cli.app, name="admin", help="Use dummy admin")
 
 
 @app.command()
@@ -30,8 +33,7 @@ def gen_dummy_certs(
     dry_run: bool = False,
     env_file: str = ".env",
 ) -> None:
-    """Generate certs for dummy proactors dummy_scada1, dummy_scada1,
-    dummy_scada1 and dummy_admin"""
+    """Generate certs for dummy proactors."""
     console = rich.console.Console()
     env_file = dotenv.find_dotenv(env_file)
     ca_cert_path = test_ca_certificate_path()
@@ -77,7 +79,7 @@ def gen_dummy_certs(
 
 
 @app.command()
-def helper(ctx: typer.Context) -> None:
+def commands(ctx: typer.Context) -> None:
     """CLI command builder."""
     Trogon(get_group(app), click_context=ctx).run()
 

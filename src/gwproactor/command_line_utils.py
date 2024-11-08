@@ -66,6 +66,25 @@ def get_settings(
     return settings
 
 
+def print_settings(
+    *,
+    settings_type: Optional[Type[ProactorSettingsT]] = None,
+    settings: Optional[ProactorSettingsT] = None,
+    env_file: str | Path = ".env",
+) -> None:
+    dotenv_file = dotenv.find_dotenv(env_file)
+    rich.print(
+        f"Env file: <{dotenv_file}>  exists:{env_file and Path(dotenv_file).exists()}"
+    )
+    settings = get_settings(
+        settings_type=settings_type, settings=settings, env_file=dotenv_file
+    )
+    rich.print(settings)
+    missing_tls_paths_ = check_tls_paths_present(settings, raise_error=False)
+    if missing_tls_paths_:
+        rich.print(missing_tls_paths_)
+
+
 def get_proactor(  # noqa: PLR0913
     name: str,
     proactor_type: Type[ProactorT],
