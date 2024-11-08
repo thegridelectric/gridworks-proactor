@@ -7,9 +7,11 @@ from gwproactor import ProactorSettings
 from gwproactor_test.dummies import (
     DUMMY_ATN_NAME,
     DUMMY_SCADA1_ENV_PREFIX,
+    DUMMY_SCADA1_NAME,
     DUMMY_SCADA2_NAME,
 )
 from gwproactor_test.dummies.names import DUMMY_ATN_SHORT_NAME, DUMMY_SCADA2_SHORT_NAME
+from gwproactor_test.dummies.tree.admin_settings import AdminLinkSettings
 from gwproactor_test.dummies.tree.link_settings import TreeLinkSettings
 
 
@@ -36,15 +38,14 @@ class Scada2LinkSettings(TreeLinkSettings):
 class DummyScada1Settings(ProactorSettings):
     atn_link: AtnLinkSettings = AtnLinkSettings()
     scada2_link: Scada2LinkSettings = Scada2LinkSettings()
+    admin_link: AdminLinkSettings = AdminLinkSettings()
 
     model_config = SettingsConfigDict(env_prefix=DUMMY_SCADA1_ENV_PREFIX)
 
     @model_validator(mode="before")
     @classmethod
     def pre_root_validator(cls, values: dict) -> dict:
-        if "name" in values:
-            ProactorSettings.update_paths_name(values, values["name"])
-        return values
+        return ProactorSettings.update_paths_name(values, DUMMY_SCADA1_NAME)
 
     @model_validator(mode="after")
     def validate(self) -> Self:

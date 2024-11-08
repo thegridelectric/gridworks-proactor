@@ -7,6 +7,7 @@ import pytest
 
 from gwproactor.config import LoggerLevels, LoggingSettings
 from gwproactor.links import StateName
+from gwproactor_test.dummies.tree.messages import RelayInfoReported
 from gwproactor_test.dummies.tree.scada1_settings import DummyScada1Settings
 from gwproactor_test.recorder import RecorderLinkStats
 from gwproactor_test.tree_comm_test_helper import TreeCommTestHelper
@@ -115,9 +116,9 @@ class ProactorTreeCommBasicTests:
                 err_str_f=h.summary_str,
             )
             assert stats2.num_received_by_type["gridworks.dummy.set.relay"] == 1
-            assert child1.relays == {relay_name: True}
+            assert child1.relays.Relays == {relay_name: RelayInfoReported(Closed=True)}
             assert child2.relays == {relay_name: True}
-            assert child1.relay_change_mimatches == 0
+            assert child1.relays.TotalChangeMismatches == 0
 
     @pytest.mark.asyncio
     async def test_tree_parent_comm(self) -> None:
@@ -210,3 +211,6 @@ class ProactorTreeCommBasicTests:
                 err_str_f=h.summary_str,
             )
             # print(h.summary_str())
+
+    @pytest.mark.asyncio
+    async def test_tree_admin(self) -> None: ...

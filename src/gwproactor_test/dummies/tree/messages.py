@@ -7,8 +7,19 @@ from pydantic import BaseModel, Field
 
 
 class RelayInfo(BaseModel):
-    relay_name: str = ""
-    closed: bool = False
+    RelayName: str = ""
+    Closed: bool = False
+
+
+class RelayInfoReported(RelayInfo):
+    CurrentChangeMismatch: bool = False
+    MismatchCount: int = 0
+
+
+class RelayStates(BaseModel):
+    TotalChangeMismatches: int = 0
+    Relays: dict[str, RelayInfoReported] = {}
+    TypeName: Literal["gridworks.dummy.relay.states"] = "gridworks.dummy.relay.states"
 
 
 class SetRelay(RelayInfo):
@@ -30,7 +41,7 @@ class SetRelayMessage(Message[SetRelay]):
             Src=src,
             Dst=dst,
             AckRequired=ack_required,
-            Payload=SetRelay(relay_name=relay_name, closed=closed),
+            Payload=SetRelay(RelayName=relay_name, Closed=closed),
         )
 
 
