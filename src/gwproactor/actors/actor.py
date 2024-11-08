@@ -34,6 +34,11 @@ class Actor(ActorInterface, Communicator, ABC):
     def node(self) -> ShNode:
         return self._node
 
+    def is_boss_of(self, node: ShNode) -> bool:
+        immediate_boss = ".".join(node.Handle.split(".")[:-1])
+        return immediate_boss == self.node.handle
+
+
     def init(self) -> None:
         """Called after constructor so derived functions can be used in setup."""
 
