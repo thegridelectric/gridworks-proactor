@@ -4,10 +4,9 @@ from pydantic import model_validator
 from pydantic_settings import SettingsConfigDict
 
 from gwproactor import ProactorSettings
-from gwproactor_test.dummies import DUMMY_SCADA1_NAME
+from gwproactor_test.dummies import DUMMY_ATN_NAME, DUMMY_SCADA1_NAME
 from gwproactor_test.dummies.names import (
     DUMMY_PARENT_ENV_PREFIX,
-    DUMMY_PARENT_NAME,
     DUMMY_SCADA1_SHORT_NAME,
 )
 from gwproactor_test.dummies.tree.link_settings import TreeLinkSettings
@@ -32,7 +31,7 @@ class DummyAtnSettings(ProactorSettings):
     @model_validator(mode="before")
     @classmethod
     def pre_root_validator(cls, values: dict) -> dict:
-        return ProactorSettings.update_paths_name(values, DUMMY_PARENT_NAME)
+        return ProactorSettings.update_paths_name(values, DUMMY_ATN_NAME)
 
     @model_validator(mode="after")
     def validate(self) -> Self:

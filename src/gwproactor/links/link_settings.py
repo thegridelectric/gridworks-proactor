@@ -7,6 +7,7 @@ class LinkSettings:
     client_name: str
     gnode_name: str
     spaceheat_name: str
+    subscription_name: str = ""
     mqtt: MQTTClient
     codec: MQTTCodec
     upstream: bool = False
@@ -20,6 +21,7 @@ class LinkSettings:
         spaceheat_name: str,
         mqtt: MQTTClient,
         codec: MQTTCodec,
+        subscription_name: str = "",
         upstream: bool = False,
         downstream: bool = False,
     ) -> None:
@@ -31,6 +33,7 @@ class LinkSettings:
         self.client_name = client_name
         self.gnode_name = gnode_name
         self.spaceheat_name = spaceheat_name
+        self.subscription_name = subscription_name
         self.upstream = upstream
         self.mqtt = mqtt
         self.codec = codec

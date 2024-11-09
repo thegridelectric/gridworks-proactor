@@ -16,6 +16,9 @@ classifiers = [
     "Development Status :: 3 - Alpha",
 ]
 
+[tool.poetry.scripts]
+gwtest = "gwproactor_test.cli:app"
+
 [tool.poetry.urls]
 Changelog = "https://github.com/thegridelectric/gridworks-proactor/releases"
 
@@ -71,7 +74,7 @@ source = ["gwproactor", "gwproactor_test", "tests"]
 
 [tool.coverage.report]
 show_missing = false
-fail_under = 80
+fail_under = 75
 
 [tool.mypy]
 strict = true

@@ -1,5 +1,10 @@
 from gwproto import MQTTCodec, create_message_model
 
+from gwproactor_test.dummies.tree.admin_messages import (
+    AdminCommandReadRelays,
+    AdminCommandSetRelay,
+)
+
 
 class DummyCodec(MQTTCodec):
     src_name: str
@@ -26,3 +31,15 @@ class DummyCodec(MQTTCodec):
                 f"  exp: {self.src_name} -> {self.dst_name}\n"
                 f"  got: {src} -> {dst}"
             )
+
+
+class AdminCodec(MQTTCodec):
+    def __init__(self) -> None:
+        super().__init__(
+            create_message_model(
+                model_name="AdminMessageDecoder",
+                explicit_types=[AdminCommandSetRelay, AdminCommandReadRelays],
+            )
+        )
+
+    def validate_source_and_destination(self, src: str, dst: str) -> None: ...

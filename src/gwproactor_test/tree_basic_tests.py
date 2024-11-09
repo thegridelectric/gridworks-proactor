@@ -1,9 +1,15 @@
 # ruff: noqa: PLR2004, ERA001
+import logging
+import typing
 from typing import Type
 
 import pytest
 
+from gwproactor.config import LoggerLevels, LoggingSettings
 from gwproactor.links import StateName
+from gwproactor_test.dummies.tree.messages import RelayInfoReported
+from gwproactor_test.dummies.tree.scada1_settings import DummyScada1Settings
+from gwproactor_test.recorder import RecorderLinkStats
 from gwproactor_test.tree_comm_test_helper import TreeCommTestHelper
 from gwproactor_test.wait import await_for
 
@@ -110,9 +116,9 @@ class ProactorTreeCommBasicTests:
                 err_str_f=h.summary_str,
             )
             assert stats2.num_received_by_type["gridworks.dummy.set.relay"] == 1
-            assert child1.relays == {relay_name: True}
+            assert child1.relays.Relays == {relay_name: RelayInfoReported(Closed=True)}
             assert child2.relays == {relay_name: True}
-            assert child1.relay_change_mimatches == 0
+            assert child1.relays.TotalChangeMismatches == 0
 
     @pytest.mark.asyncio
     async def test_tree_parent_comm(self) -> None:
@@ -147,8 +153,24 @@ class ProactorTreeCommBasicTests:
 
     @pytest.mark.asyncio
     async def test_tree_event_forward(self) -> None:
+        child1_settings = DummyScada1Settings(
+            logging=LoggingSettings(
+                levels=LoggerLevels(
+                    message_summary=logging.INFO,
+                )
+            ),
+            mqtt_link_poll_seconds=5,
+        )
         async with self.CTH(
-            start_child=True, start_child2=True, start_parent=True, verbose=False
+            child_settings=child1_settings,
+            start_child=True,
+            start_child2=True,
+            start_parent=True,
+            # verbose=True,
+            # child1_verbose=True,
+            # child2_verbose=True,
+            child2_on_screen=False,
+            parent_on_screen=False,
         ) as h:
             link1to2 = h.child1.links.link(h.child1.downstream_client)
             link2to1 = h.child2.links.link(h.child2.upstream_client)
@@ -168,14 +190,18 @@ class ProactorTreeCommBasicTests:
             relay_name = "scada2.relay1"
             h.child1.set_relay(relay_name, True)
 
+            statsAtnTo1 = typing.cast(
+                RecorderLinkStats, h.parent.stats.link(h.parent.downstream_client)
+            )
+
             def _atn_heard_reports() -> bool:
-                st_ = h.parent.stats.link(h.parent.downstream_client)
-                return all(
-                    st_.num_received_by_type[msg_type] == 1
-                    for msg_type in [
-                        "gridworks.event.relay.report",
-                        "gridworks.event.relay.report.received",
-                    ]
+                es1 = statsAtnTo1.event_counts.get(str(h.child1.publication_name))
+                es2 = statsAtnTo1.event_counts.get(str(h.child2.publication_name))
+                return bool(
+                    es1
+                    and es1["gridworks.event.relay.report.received"] == 1
+                    and es2
+                    and es2["gridworks.event.relay.report"] == 1
                 )
 
             await await_for(
@@ -184,12 +210,7 @@ class ProactorTreeCommBasicTests:
                 "ERROR waiting for atn to hear reports",
                 err_str_f=h.summary_str,
             )
+            # print(h.summary_str())
 
-            # print(h.parent.settings.paths.event_dir)
-            # for path in h.parent.settings.paths.event_dir.iterdir():
-            #     print(path.name)
-            #     with path.open() as f:
-            #         import rich
-            #
-            #         rich.print(json.loads(f.read()))
-            #         print()
+    @pytest.mark.asyncio
+    async def test_tree_admin(self) -> None: ...
