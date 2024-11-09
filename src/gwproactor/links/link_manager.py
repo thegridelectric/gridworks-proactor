@@ -264,21 +264,36 @@ class LinkManager:
         )
 
     def generate_event(self, event: EventT) -> Result[bool, Exception]:
+        num_pending_dbg = self._event_persister.num_pending
+        self._logger.path("++generate_event %s  %d", event.TypeName, num_pending_dbg)
+        path_dbg = 0
         if not event.Src:
+            path_dbg |= 0x00000001
             event.Src = self.publication_name
         if isinstance(event, CommEvent) and event.Src == self.publication_name:
+            path_dbg |= 0x00000002
             self._stats.link(event.PeerName).comm_event_counts[event.TypeName] += 1
         if isinstance(event, ProblemEvent) and self._logger.path_enabled:
+            path_dbg |= 0x00000004
             self._logger.info(event)
         if (
             self._mqtt_clients.upstream_client
             and self._states[self._mqtt_clients.upstream_client].active_for_send()
         ):
+            path_dbg |= 0x00000008
             self.publish_upstream(event, AckRequired=True)
-        return self._event_persister.persist(
+        result = self._event_persister.persist(
             event.MessageId,
             event.model_dump_json(indent=2).encode(self.PERSISTER_ENCODING),
         )
+        self._logger.path(
+            "--generate_event %s  path:0x%08X  %d - %d",
+            event.TypeName,
+            path_dbg,
+            num_pending_dbg,
+            self._event_persister.num_pending,
+        )
+        return result
 
     def _start_reupload(self) -> None:
         if not self._reuploads.reuploading():
@@ -413,11 +428,13 @@ class LinkManager:
     def start(
         self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
     ) -> None:
+        self._logger.path("++LinkManager.start")
         if self.upstream_client:
             self._reuploads.stats = self._stats.link(self.upstream_client)
         self._mqtt_clients.start(loop, async_queue)
         self.generate_event(StartupEvent())
         self._states.start_all()
+        self._logger.path("--LinkManager.start")
 
     def stop(self) -> Result[bool, Problems]:
         problems: Optional[Problems] = None
@@ -568,9 +585,15 @@ class LinkManager:
         self._message_times.update_recv(link_name)
 
     def _recv_activated(self, transition: Transition) -> None:
+        self._logger.path("++LinkManager._recv_activated.<%s>", transition)
+        path_dbg = 0
         if transition.link_name == self.upstream_client:
+            path_dbg |= 0x00000001
             self._start_reupload()
         self.generate_event(PeerActiveEvent(PeerName=transition.link_name))
+        self._logger.path(
+            "--LinkManager._recv_activated.<%s>  path:0x%08X", transition, path_dbg
+        )
 
     def process_mqtt_suback(
         self, message: Message[MQTTSubackPayload]
