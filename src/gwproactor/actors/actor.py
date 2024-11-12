@@ -38,7 +38,6 @@ class Actor(ActorInterface, Communicator, ABC):
         immediate_boss = ".".join(node.Handle.split(".")[:-1])
         return immediate_boss == self.node.handle
 
-
     def init(self) -> None:
         """Called after constructor so derived functions can be used in setup."""
 
