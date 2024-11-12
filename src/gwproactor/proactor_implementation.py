@@ -676,9 +676,6 @@ class Proactor(ServicesInterface, Runnable):
         communicators and tasks.
         """
 
-    def _derived_start(self) -> None:
-        """Hook into _start() for derived classes"""
-
     def _start(self) -> None:
         self._loop = asyncio.get_running_loop()
         self._receive_queue = asyncio.Queue()
