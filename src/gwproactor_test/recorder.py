@@ -115,7 +115,7 @@ class RecorderInterface(ServicesInterface, Runnable):
 
 @dataclass
 class _PausedAck:
-    client: str
+    link_name: str
     message: Message
     qos: int
     context: Optional[Any]

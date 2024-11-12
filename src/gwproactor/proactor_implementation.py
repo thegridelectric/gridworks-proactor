@@ -23,6 +23,7 @@ from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
 from gwproto.messages import Ack, EventBase, EventT, Ping, ProblemEvent, ShutdownEvent
 from gwproto.named_types.web_server_gt import WebServerGt
+from paho.mqtt.client import MQTTMessageInfo
 from result import Err, Ok, Result
 
 from gwproactor import ProactorSettings
@@ -218,6 +219,11 @@ class Proactor(ServicesInterface, Runnable):
     @property
     def links(self) -> LinkManager:
         return self._links
+
+    def publish_message(
+        self, link_name: str, message: Message, qos: int = 0, context: Any = None
+    ) -> MQTTMessageInfo:
+        return self._links.publish_message(link_name, message, qos, context)
 
     @property
     def event_persister(self) -> PersisterInterface:
@@ -665,7 +671,15 @@ class Proactor(ServicesInterface, Runnable):
             f"Shutting down due to ShutdownMessage, [{message.Payload.Reason}]"
         )
 
-    async def run_forever(self) -> None:
+    def _pre_child_start(self) -> None:
+        """Hook into _start() for derived classes, prior to starting
+        communicators and tasks.
+        """
+
+    def _derived_start(self) -> None:
+        """Hook into _start() for derived classes"""
+
+    def _start(self) -> None:
         self._loop = asyncio.get_running_loop()
         self._receive_queue = asyncio.Queue()
         self._links.start(self._loop, self._receive_queue)
@@ -674,10 +688,14 @@ class Proactor(ServicesInterface, Runnable):
                 self._reindex_problems.problem_event("Startup event reindex() problems")
             )
         self._reindex_problems = None
+        self._pre_child_start()
         for communicator in self._communicators.values():
             if isinstance(communicator, Runnable):
                 communicator.start()
         self.start_tasks()
+
+    async def run_forever(self) -> None:
+        self._start()
         await self.join()
 
     def run_in_thread(self, *, daemon: bool = True) -> threading.Thread:

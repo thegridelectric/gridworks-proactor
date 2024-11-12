@@ -227,12 +227,12 @@ class LinkManager:
         return self._reuploads.get_str(verbose=verbose, num_events=num_events)
 
     def publish_message(
-        self, client: str, message: Message, qos: int = 0, context: Any = None
+        self, link_name: str, message: Message, qos: int = 0, context: Any = None
     ) -> MQTTMessageInfo:
         if not message.Header.Dst:
-            message.Header.Dst = self._mqtt_clients.topic_dst(client)
+            message.Header.Dst = self._mqtt_clients.topic_dst(link_name)
         topic = message.mqtt_topic()
-        payload = self._mqtt_codecs[client].encode(message)
+        payload = self._mqtt_codecs[link_name].encode(message)
         self._logger.message_summary(
             direction="OUT mqtt    ",
             src=message.Header.Src,
@@ -245,10 +245,10 @@ class LinkManager:
         )
         if message.Header.AckRequired:
             self._acks.start_ack_timer(
-                client, message.Header.MessageId, context=context
+                link_name, message.Header.MessageId, context=context
             )
-        self._message_times.update_send(client)
-        return self._mqtt_clients.publish(client, topic, payload, qos)
+        self._message_times.update_send(link_name)
+        return self._mqtt_clients.publish(link_name, topic, payload, qos)
 
     def publish_upstream(
         self, payload: Any, qos: QOS = QOS.AtMostOnce, **message_args: Any
