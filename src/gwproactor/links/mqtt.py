@@ -13,6 +13,7 @@ import enum
 import logging
 import ssl
 import threading
+import typing
 import uuid
 from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union, cast
 
@@ -141,13 +142,13 @@ class MQTTClientWrapper:
     def publish(self, topic: str, payload: bytes, qos: int) -> MQTTMessageInfo:
         return self._client.publish(topic, payload, qos)
 
-    def subscribe(self, topic: str, qos: int) -> Tuple[int, Optional[int]]:
+    def subscribe(self, topic: str, qos: int) -> tuple[int, Optional[int]]:
         self._subscriptions[topic] = qos
         self._pending_subscriptions.add(topic)
         subscribe_result = self._client.subscribe(topic, qos)
         if subscribe_result[0] == MQTT_ERR_SUCCESS:
             self._pending_subacks[subscribe_result[1]] = [topic]
-        return subscribe_result
+        return typing.cast(tuple[int, Optional[int]], subscribe_result)
 
     def subscribe_all(self) -> Tuple[int, Optional[int]]:
         if self._subscriptions:
@@ -161,14 +162,14 @@ class MQTTClientWrapper:
                 self._pending_subacks[subscribe_result[1]] = topics
         else:
             subscribe_result = MQTT_ERR_SUCCESS, None
-        return subscribe_result
+        return typing.cast(tuple[int, Optional[int]], subscribe_result)
 
     def unsubscribe(self, topic: str) -> Tuple[int, Optional[int]]:
         self._subscriptions.pop(topic, None)
-        return self._client.unsubscribe(topic)
+        return typing.cast(tuple[int, Optional[int]], self._client.unsubscribe(topic))
 
     def connected(self) -> bool:
-        return self._client.is_connected()
+        return typing.cast(bool, self._client.is_connected())
 
     def num_subscriptions(self) -> int:
         return len(self._subscriptions)
@@ -216,7 +217,7 @@ class MQTTClientWrapper:
             )
         )
 
-    def on_connect(self, _: Any, userdata: Any, flags: dict, rc: int) -> None:
+    def on_connect(self, _: Any, userdata: Any, flags: dict[str, Any], rc: int) -> None:
         self._receive_queue.put(
             MQTTConnectMessage(
                 client_name=self._client_name,
@@ -245,7 +246,10 @@ class MQTTClientWrapper:
         )
 
     def enable_logger(
-        self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
+        self,
+        logger: Optional[
+            Union[logging.Logger, logging.LoggerAdapter[logging.Logger]]
+        ] = None,
     ) -> None:
         self._client.enable_logger(logger)
 
@@ -313,7 +317,7 @@ class MQTTClients:
             client.stop()
 
     def start(
-        self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
+        self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue[Any]
     ) -> None:
         self._send_queue.set_async_loop(loop, async_queue)
         for client in self.clients.values():
@@ -332,7 +336,10 @@ class MQTTClients:
         return self.clients[client].subscribed()
 
     def enable_loggers(
-        self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
+        self,
+        logger: Optional[
+            Union[logging.Logger, logging.LoggerAdapter[logging.Logger]]
+        ] = None,
     ) -> None:
         for client_name in self.clients:
             self.clients[client_name].enable_logger(logger)

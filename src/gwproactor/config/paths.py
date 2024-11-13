@@ -50,9 +50,11 @@ class TLSPaths(BaseModel):
                 "ERROR. TLSPaths.mkdirs() requires all paths to nave non-None values. "
                 f"Current values: {self.model_dump()}"
             )
-        self.ca_cert_path.parent.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
-        self.cert_path.parent.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
-        self.private_key_path.parent.mkdir(
+        Path(self.ca_cert_path).parent.mkdir(
+            mode=mode, parents=parents, exist_ok=exist_ok
+        )
+        Path(self.cert_path).parent.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
+        Path(self.private_key_path).parent.mkdir(
             mode=mode, parents=parents, exist_ok=exist_ok
         )
 
@@ -153,10 +155,10 @@ class Paths(BaseModel):
     def mkdirs(
         self, *, mode: int = 0o777, parents: bool = True, exist_ok: bool = True
     ) -> None:
-        self.data_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
-        self.config_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
-        self.event_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
-        self.log_dir.mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
+        Path(self.data_dir).mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
+        Path(self.config_dir).mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
+        Path(self.event_dir).mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
+        Path(self.log_dir).mkdir(mode=mode, parents=parents, exist_ok=exist_ok)
 
     def copy(self, **kwargs: Any) -> "Paths":
         fields = self.model_dump(exclude_unset=True)

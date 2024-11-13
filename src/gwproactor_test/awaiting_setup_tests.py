@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, ERA001
+# mypy: disable-error-code="union-attr"
 
 import warnings
 from typing import Any, Type

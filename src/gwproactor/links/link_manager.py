@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple
 
 from gwproto import Message, MQTTCodec, MQTTTopic
 from gwproto.messages import (
@@ -148,7 +148,8 @@ class LinkManager:
         return self._mqtt_clients.client_wrapper(client_name)
 
     def enable_mqtt_loggers(
-        self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
+        self,
+        logger: Optional[logging.Logger | logging.LoggerAdapter[logging.Logger]] = None,
     ) -> None:
         self._mqtt_clients.enable_loggers(logger)
 
@@ -227,7 +228,7 @@ class LinkManager:
         return self._reuploads.get_str(verbose=verbose, num_events=num_events)
 
     def publish_message(
-        self, link_name: str, message: Message, qos: int = 0, context: Any = None
+        self, link_name: str, message: Message[Any], qos: int = 0, context: Any = None
     ) -> MQTTMessageInfo:
         if not message.Header.Dst:
             message.Header.Dst = self._mqtt_clients.topic_dst(link_name)
@@ -253,7 +254,7 @@ class LinkManager:
     def publish_upstream(
         self, payload: Any, qos: QOS = QOS.AtMostOnce, **message_args: Any
     ) -> MQTTMessageInfo:
-        message = Message(
+        message = Message[Any](
             Src=self.publication_name,
             Dst=self._mqtt_clients.upstream_topic_dst,
             Payload=payload,
@@ -322,19 +323,20 @@ class LinkManager:
                     event_path_dbg = 0x00000004
                     tried_count_dbg += 1
                     problems = Problems()
-                    ret = self._reupload_event(event_id)
-                    if ret.is_ok():
-                        event_path_dbg |= 0x00000008
-                        if ret.value:
-                            path_dbg |= 0x00000010
-                            sent_count_dbg += 1
-                            sent_one = True
-                        else:
-                            event_path_dbg |= 0x00000020
-                            problems.add_error(DecodingError(uid=event_id))
-                    else:
-                        event_path_dbg |= 0x00000040
-                        problems.add_problems(ret.err())
+
+                    match ret := self._reupload_event(event_id):
+                        case Ok():
+                            event_path_dbg |= 0x00000008
+                            if ret.value:
+                                path_dbg |= 0x00000010
+                                sent_count_dbg += 1
+                                sent_one = True
+                            else:
+                                event_path_dbg |= 0x00000020
+                                problems.add_error(DecodingError(uid=event_id))
+                        case Err():
+                            event_path_dbg |= 0x00000040
+                            problems.add_problems(ret.err())
                     if problems:
                         event_path_dbg |= 0x00000080
                         # There was some error decoding this event.
@@ -426,7 +428,7 @@ class LinkManager:
         return Err(problems)
 
     def start(
-        self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue
+        self, loop: asyncio.AbstractEventLoop, async_queue: asyncio.Queue[Any]
     ) -> None:
         self._logger.path("++LinkManager.start")
         if self.upstream_client:
@@ -440,11 +442,12 @@ class LinkManager:
         problems: Optional[Problems] = None
         for link_name in self._states.link_names():
             ret = self._states.stop(link_name)
-            if ret.is_err():
-                if problems is None:
-                    problems = Problems(errors=[ret.err()])
-                else:
-                    problems.errors.append(ret.err())
+            match ret := self._states.stop(link_name):
+                case Err():
+                    if problems is None:
+                        problems = Problems(errors=[ret.err()])
+                    else:
+                        problems.errors.append(ret.err())
         self._mqtt_clients.stop()
         if problems is None:
             return Ok(value=True)
@@ -464,20 +467,22 @@ class LinkManager:
         self, message: Message[MQTTDisconnectPayload]
     ) -> Result[LinkManagerTransition, InvalidCommStateInput]:
         state_result = self._states.process_mqtt_disconnected(message)
-        if state_result.is_ok():
-            # noinspection PyTypeChecker
-            result = Ok(LinkManagerTransition(**(asdict(state_result.value))))
-            self.generate_event(
-                MQTTDisconnectEvent(PeerName=message.Payload.client_name)
-            )
-            self._logger.comm_event(str(result.value))
-            if result.value.recv_deactivated() or result.value.send_deactivated():
-                result.value.canceled_acks = self._acks.cancel_ack_timers(
-                    message.Payload.client_name
+        result: Result[LinkManagerTransition, InvalidCommStateInput]
+        match state_result:
+            case Ok():
+                # noinspection PyTypeChecker
+                result = Ok(LinkManagerTransition(**(asdict(state_result.value))))
+                self.generate_event(
+                    MQTTDisconnectEvent(PeerName=message.Payload.client_name)
                 )
-                self._reuploads.clear()
-        else:
-            result = state_result
+                self._logger.comm_event(str(result.value))
+                if result.value.recv_deactivated() or result.value.send_deactivated():
+                    result.value.canceled_acks = self._acks.cancel_ack_timers(
+                        message.Payload.client_name
+                    )
+                    self._reuploads.clear()
+            case Err():
+                result = state_result
         return result
 
     def process_mqtt_connect_fail(
@@ -488,13 +493,13 @@ class LinkManager:
     def process_mqtt_message(
         self, message: Message[MQTTReceiptPayload]
     ) -> Result[Transition, InvalidCommStateInput]:
-        result = self._states.process_mqtt_message(message)
-        if result.is_ok():
-            self.update_recv_time(message.Payload.client_name)
-        if result.value:
-            self._logger.comm_event(str(result.value))
-        if result.value.recv_activated():
-            self._recv_activated(result.value)
+        match result := self._states.process_mqtt_message(message):
+            case Ok():
+                self.update_recv_time(message.Payload.client_name)
+                if result.value:
+                    self._logger.comm_event(str(result.value))
+                if result.value.recv_activated():
+                    self._recv_activated(result.value)
         return result
 
     def process_ack_timeout(
@@ -507,27 +512,27 @@ class LinkManager:
         )
         path_dbg = 0
         self._stats.link(wait_info.link_name).timeouts += 1
-        state_result = self._states.process_ack_timeout(wait_info.link_name)
-        if state_result.is_ok():
-            # noinspection PyTypeChecker
-            result = Ok(
-                LinkManagerTransition(
-                    canceled_acks=[wait_info], **(asdict(state_result.value))
+        result: Result[LinkManagerTransition, Exception]
+        match state_result := self._states.process_ack_timeout(wait_info.link_name):
+            case Ok():
+                result = Ok(
+                    LinkManagerTransition(
+                        canceled_acks=[wait_info], **(asdict(state_result.value))
+                    )
                 )
-            )
-            path_dbg |= 0x00000001
-            if result.value.deactivated():
-                path_dbg |= 0x00000002
-                self._reuploads.clear()
-                self.generate_event(
-                    ResponseTimeoutEvent(PeerName=result.value.link_name)
-                )
-                self._logger.comm_event(str(result.value))
-                result.value.canceled_acks.extend(
-                    self._acks.cancel_ack_timers(wait_info.link_name)
-                )
-        else:
-            result = Err(state_result.err())
+                path_dbg |= 0x00000001
+                if result.value.deactivated():
+                    path_dbg |= 0x00000002
+                    self._reuploads.clear()
+                    self.generate_event(
+                        ResponseTimeoutEvent(PeerName=result.value.link_name)
+                    )
+                    self._logger.comm_event(str(result.value))
+                    result.value.canceled_acks.extend(
+                        self._acks.cancel_ack_timers(wait_info.link_name)
+                    )
+            case Err():
+                result = Err(state_result.err())
         self._logger.path("--LinkManager.process_ack_timeout path:0x%08X", path_dbg)
         return result
 
@@ -558,7 +563,7 @@ class LinkManager:
                 ),
             )
 
-    def start_ping_tasks(self) -> list[asyncio.Task]:
+    def start_ping_tasks(self) -> list[asyncio.Task[Any]]:
         return [
             asyncio.create_task(
                 self.send_ping(link_name), name=f"send_ping<{link_name}>"
@@ -606,7 +611,7 @@ class LinkManager:
             message.Payload.client_name,
             self._mqtt_clients.handle_suback(message.Payload),
         )
-        if state_result.is_ok():
+        if isinstance(state_result, Ok):
             path_dbg |= 0x00000001
             if state_result.value:
                 path_dbg |= 0x00000002

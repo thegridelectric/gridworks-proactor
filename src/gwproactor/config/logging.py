@@ -40,7 +40,7 @@ class RotatingFileHandlerSettings(BaseModel):
         self, log_dir: Path | str, formatter: logging.Formatter
     ) -> RotatingFileHandler:
         handler = logging.handlers.RotatingFileHandler(
-            filename=log_dir / self.filename,
+            filename=Path(log_dir) / self.filename,
             maxBytes=self.bytes_per_log_file,
             backupCount=self.num_log_files - 1,
         )

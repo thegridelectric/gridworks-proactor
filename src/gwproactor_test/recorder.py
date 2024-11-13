@@ -1,4 +1,6 @@
 # ruff: noqa: ERA001
+# mypy: disable-error-code="union-attr"
+
 import dataclasses
 from abc import abstractmethod
 from collections import defaultdict

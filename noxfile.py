@@ -1,3 +1,4 @@
+# type: ignore  # noqa: PGH003
 """Nox sessions."""
 # ruff: noqa: S101
 

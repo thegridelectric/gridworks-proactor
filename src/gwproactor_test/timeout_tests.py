@@ -1,4 +1,6 @@
 # ruff: noqa: PLR2004, ERA001
+# mypy: disable-error-code="union-attr"
+
 
 import asyncio
 from typing import Type
@@ -114,9 +116,9 @@ class ProactorCommTimeoutTests:
                 err_str_f=parent.summary_str,
             )
 
-    @pytest.mark.skip(
-        reason="Test seems to gotten flakier; unclear if this is because test is too sensitive or because it is broken"
-    )
+    # @pytest.mark.skip(
+    #     reason="Test seems to gotten flakier; unclear if this is because test is too sensitive or because it is broken"
+    # )
     @pytest.mark.asyncio
     async def test_ping(self) -> None:
         """

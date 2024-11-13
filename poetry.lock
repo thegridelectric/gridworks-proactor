@@ -823,8 +823,8 @@ yarl = "^1.9.2"
 [package.source]
 type = "git"
 url = "https://github.com/thegridelectric/gridworks-protocol.git"
-reference = "dev"
-resolved_reference = "c6e5d979e44f4bf2bbf6659f578fcc020aa32d8c"
+reference = "as/mypy"
+resolved_reference = "0045440b1237699203286f65d8033996901b44d8"
 
 [[package]]
 name = "h11"
@@ -2332,6 +2332,17 @@ shellingham = ">=1.3.0"
 typing-extensions = ">=3.7.4.3"
 
 [[package]]
+name = "types-paho-mqtt"
+version = "1.6.0.20240321"
+description = "Typing stubs for paho-mqtt"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-paho-mqtt-1.6.0.20240321.tar.gz", hash = "sha256:694eec160340f2a2b151237dcc3f107a63e1c4e5b8f9fcda0ba392049af9cbec"},
+    {file = "types_paho_mqtt-1.6.0.20240321-py3-none-any.whl", hash = "sha256:cd275c14f39363c2a0f8286ead9a46962e5421ebd477547b892ae016699f5a4a"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -2756,4 +2767,4 @@ tests = ["freezegun", "gridworks-cert", "pytest", "pytest-asyncio"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "205f02f2604519bc2513d5cbf48e3dc0670a90c31c097a8057e064b63c189270"
+content-hash = "5f1f7d132b542f7296e2ff31058e9a81827418a08edabc61d1334ac1d3b5eaca"

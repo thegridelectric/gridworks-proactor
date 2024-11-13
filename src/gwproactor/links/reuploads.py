@@ -83,7 +83,7 @@ class Reuploads:
 
     stats: Optional[LinkStats] = None
     """Object into which we can record reupload start and complete. Set during
-    LinkManager.start() since upstream client does not exist durin LinkManager
+    LinkManager.start() since upstream client does not exist during LinkManager
     construction. """
 
     _logger: ProactorLogger
@@ -108,7 +108,7 @@ class Reuploads:
         self._reupload_pending = dict.fromkeys(
             pending_events[self._num_initial_events :]
         )
-        if self.reuploading():
+        if self.reuploading() and self.stats is not None:
             self.stats.start_reupload()
         self._log_start_reupload(len(pending_events), len(reupload_now))
         return reupload_now
@@ -150,7 +150,7 @@ class Reuploads:
         elif ack_id in self._reupload_pending:
             path_dbg |= 0x00000004
             self._reupload_pending.pop(ack_id)
-        if was_reuploading and not self.reuploading():
+        if was_reuploading and not self.reuploading() and self.stats is not None:
             path_dbg |= 0x00000008
             self.stats.complete_reupload()
         if self._logger.path_enabled:
