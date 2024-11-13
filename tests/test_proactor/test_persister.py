@@ -1,11 +1,12 @@
 # ruff: noqa: PLR2004
+# mypy: disable-error-code="union-attr"
 
 import datetime
 import json
 import shutil
 import time
 from pathlib import Path
-from typing import Any, NoReturn, Optional, Union
+from typing import Any, Optional, Union
 
 import gwproto.messages
 from freezegun import freeze_time
@@ -859,7 +860,7 @@ def test_persister_problems() -> None:
 
         # persist, unexpected error
         class BrokenRoller(TimedRollingFilePersister):
-            def _roll_curr_dir(self) -> NoReturn:
+            def _roll_curr_dir(self) -> None:
                 raise ValueError("whoops")
 
         broken = BrokenRoller(settings.paths.event_dir)
@@ -916,7 +917,7 @@ def test_persister_problems() -> None:
 
         class BrokenRoller3(TimedRollingFilePersister):
             @classmethod
-            def _persisted_item_from_file_path(cls, filepath: Path) -> NoReturn:  # noqa: ARG003
+            def _persisted_item_from_file_path(cls, filepath: Path) -> None:  # noqa: ARG003
                 raise ValueError("arg")
 
         p = BrokenRoller3(settings.paths.event_dir, max_bytes=len(buf) + 50)

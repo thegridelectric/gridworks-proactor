@@ -87,13 +87,14 @@ exclude = [
     "hacking",
 ]
 plugins = [
-  "pydantic.mypy"
+    "pydantic.mypy"
 ]
 
 
 [[tool.mypy.overrides]]
 module = [
     "paho.mqtt.client",
+    "trogon",
 ]
 ignore_missing_imports = true
 
@@ -135,7 +136,6 @@ show-fixes = true
 preview = true
 explicit-preview-rules = true
 # default select used by  ruff: ["E4", "E7", "E9", "F"]
-# select = ["B","C90","E4", "E7", "E9","F","I","N","PL", "TRY", "W",]
 select = ["ALL"]
 ignore = [
     "ANN101", # Deprecated

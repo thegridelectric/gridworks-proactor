@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import TracebackType
-from typing import Callable, Optional, Type, TypeVar
+from typing import Any, Callable, Optional, Type, TypeVar
 
 from gwproactor import Proactor, ProactorSettings, setup_logging
 from gwproactor.config import DEFAULT_BASE_NAME, LoggingSettings, MQTTClient, Paths
@@ -79,8 +79,8 @@ class CommTestHelper:
         parent_name: str = "",
         child_path_name: str = "child",
         parent_path_name: str = "parent",
-        child_kwargs: Optional[dict] = None,
-        parent_kwargs: Optional[dict] = None,
+        child_kwargs: Optional[dict[str, Any]] = None,
+        parent_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         self.setup_class()
         self.child_helper = ProactorTestHelper(

@@ -165,6 +165,7 @@ async def run_async_main(  # noqa: PLR0913
             verbose=verbose,
             message_summary=message_summary,
         )
+        # noinspection PyTypeChecker
         exception_logger = proactor.logger
         try:
             await proactor.run_forever()

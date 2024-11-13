@@ -1,5 +1,5 @@
 # ruff: noqa: PLR2004, ERA001
-# mypy: disable-error-code="union-attr"
+# mypy: disable-error-code="union-attr,attr-defined"
 
 
 import typing

@@ -1,5 +1,6 @@
+import typing
 from pathlib import Path
-from typing import Self
+from typing import Any, Self
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -14,7 +15,7 @@ NUM_INITIAL_EVENT_REUPLOADS: int = 5
 
 
 class ProactorSettings(BaseSettings):
-    paths: Paths = Field({}, validate_default=True)
+    paths: Paths = Field(typing.cast(Paths, {}), validate_default=True)
     logging: LoggingSettings = LoggingSettings()
     mqtt_link_poll_seconds: float = MQTT_LINK_POLL_SECONDS
     ack_timeout_seconds: float = ACK_TIMEOUT_SECONDS
@@ -29,7 +30,7 @@ class ProactorSettings(BaseSettings):
         return v
 
     @classmethod
-    def update_paths_name(cls, values: dict, name: str) -> dict:
+    def update_paths_name(cls, values: dict[str, Any], name: str) -> dict[str, Any]:
         """Update paths member with a new 'name' attribute, e.g., a name known by a derived class.
 
         This is meant to be called in a 'pre=True' root validator of a derived class.

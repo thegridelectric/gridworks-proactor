@@ -80,7 +80,10 @@ class MessageSummary:
         return ""
 
 
-class ProactorLogger(logging.LoggerAdapter):
+LoggerAdapterT = logging.LoggerAdapter[logging.Logger]
+
+
+class ProactorLogger(LoggerAdapterT):
     MESSAGE_DELIMITER_WIDTH = 88
     MESSAGE_ENTRY_DELIMITER = "+" * MESSAGE_DELIMITER_WIDTH
     MESSAGE_EXIT_DELIMITER = "-" * MESSAGE_DELIMITER_WIDTH
@@ -95,7 +98,7 @@ class ProactorLogger(logging.LoggerAdapter):
         message_summary: str,
         lifecycle: str,
         comm_event: str,
-        extra: Optional[dict] = None,
+        extra: Optional[dict[str, Any]] = None,
     ) -> None:
         super().__init__(logging.getLogger(base), extra=extra)
         self.message_summary_logger = logging.getLogger(message_summary)

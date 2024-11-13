@@ -1,5 +1,5 @@
 # ruff: noqa: ERA001
-# mypy: disable-error-code="union-attr"
+# mypy: disable-error-code="union-attr,attr-defined"
 
 import dataclasses
 from abc import abstractmethod

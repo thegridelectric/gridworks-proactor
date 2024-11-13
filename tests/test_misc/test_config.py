@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,attr-defined"
 """Test config module"""
 
 import shutil

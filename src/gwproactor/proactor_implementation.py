@@ -9,7 +9,6 @@ from typing import (
     Any,
     Dict,
     List,
-    NoReturn,
     Optional,
     Sequence,
     Type,
@@ -18,6 +17,7 @@ from typing import (
 
 import gwproto
 from aiohttp.typedefs import Handler as HTTPHandler
+from gwproto import Message
 from gwproto.data_classes.components.web_server_component import WebServerComponent
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
@@ -44,7 +44,6 @@ from gwproactor.message import (
     DBGCommands,
     DBGEvent,
     DBGPayload,
-    Message,
     MQTTConnectFailPayload,
     MQTTConnectPayload,
     MQTTDisconnectPayload,
@@ -81,12 +80,12 @@ class Proactor(ServicesInterface, Runnable):
     _event_persister: PersisterInterface
     _reindex_problems: Optional[Problems] = None
     _loop: Optional[asyncio.AbstractEventLoop] = None
-    _receive_queue: Optional[asyncio.Queue] = None
+    _receive_queue: Optional[asyncio.Queue[Any]] = None
     _links: LinkManager
     _communicators: Dict[str, CommunicatorInterface]
     _stop_requested: bool
     _stopped: bool
-    _tasks: List[asyncio.Task]
+    _tasks: List[asyncio.Task[Any]]
     _io_loop_manager: IOLoop
     _web_manager: _WebManager
     _watchdog: WatchdogManager
@@ -162,7 +161,7 @@ class Proactor(ServicesInterface, Runnable):
     def make_event_persister(cls, settings: ProactorSettings) -> PersisterInterface:  # noqa: ARG003
         return StubPersister()
 
-    def send(self, message: Message) -> None:
+    def send(self, message: Message[Any]) -> None:
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_summary(
                 direction="OUT internal",
@@ -174,7 +173,7 @@ class Proactor(ServicesInterface, Runnable):
             )
         self._receive_queue.put_nowait(message)
 
-    def send_threadsafe(self, message: Message) -> None:
+    def send_threadsafe(self, message: Message[Any]) -> None:
         self._loop.call_soon_threadsafe(self._receive_queue.put_nowait, message)
 
     def get_communicator(self, name: str) -> Optional[CommunicatorInterface]:
@@ -221,7 +220,7 @@ class Proactor(ServicesInterface, Runnable):
         return self._links
 
     def publish_message(
-        self, link_name: str, message: Message, qos: int = 0, context: Any = None
+        self, link_name: str, message: Message[Any], qos: int = 0, context: Any = None
     ) -> MQTTMessageInfo:
         return self._links.publish_message(link_name, message, qos, context)
 
@@ -279,7 +278,7 @@ class Proactor(ServicesInterface, Runnable):
     def downstream_client(self) -> str:
         return self._links.downstream_client
 
-    def _send(self, message: Message) -> None:
+    def _send(self, message: Message[Any]) -> None:
         self.send(message)
 
     def generate_event(self, event: EventT) -> Result[bool, Exception]:
@@ -345,7 +344,7 @@ class Proactor(ServicesInterface, Runnable):
             self._watchdog.add_monitored_name(monitored)
 
     @property
-    def async_receive_queue(self) -> Optional[asyncio.Queue]:
+    def async_receive_queue(self) -> Optional[asyncio.Queue[Any]]:
         return self._receive_queue
 
     @property
@@ -381,7 +380,7 @@ class Proactor(ServicesInterface, Runnable):
         except:  # noqa: E722
             self._logger.exception("ERROR stopping proactor")
 
-    def add_task(self, task: asyncio.Task) -> None:
+    def add_task(self, task: asyncio.Task[Any]) -> None:
         self._tasks.append(task)
 
     def start_tasks(self) -> None:
@@ -394,7 +393,7 @@ class Proactor(ServicesInterface, Runnable):
     def _start_derived_tasks(self) -> None:
         pass
 
-    def _derived_process_message(self, message: Message) -> None:
+    def _derived_process_message(self, message: Message[Any]) -> None:
         pass
 
     def _derived_process_mqtt_message(
@@ -710,7 +709,7 @@ class Proactor(ServicesInterface, Runnable):
         thread.start()
         return thread
 
-    def start(self) -> NoReturn:
+    def start(self) -> None:
         raise RuntimeError("ERROR. Proactor must be started by awaiting run_forever()")
 
     def stop(self) -> None:
