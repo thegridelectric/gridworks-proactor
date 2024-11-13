@@ -262,7 +262,7 @@ class ServicesInterface(CommunicatorInterface):
         raise NotImplementedError
 
     @abstractmethod
-    def generate_event(self, event: EventT) -> None:
+    def generate_event(self, event: EventT) -> Result[bool, Exception]:
         raise NotImplementedError
 
     @property

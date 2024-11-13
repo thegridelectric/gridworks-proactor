@@ -732,6 +732,8 @@ class Proactor(ServicesInterface, Runnable):
                 "--Proactor.join()  proactor: <%s>  (already stopped)", self.name
             )
             return
+        if self._loop is None:
+            raise ValueError("Proactor cannot be joined until it is started")
         self._logger.lifecycle(str_tasks(self._loop, "Proactor.join() - all tasks"))
         running: List[asyncio.Task] = self._tasks[:]
         for communicator in self._communicators.values():

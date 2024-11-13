@@ -35,8 +35,10 @@ class Actor(ActorInterface, Communicator, ABC):
         return self._node
 
     def is_boss_of(self, node: ShNode) -> bool:
-        immediate_boss = ".".join(node.Handle.split(".")[:-1])
-        return immediate_boss == self.node.handle
+        return (
+            node.Handle is not None
+            and ".".join(node.Handle.split(".")[:-1]) == self.node.handle
+        )
 
     def init(self) -> None:
         """Called after constructor so derived functions can be used in setup."""
@@ -57,7 +59,7 @@ class SyncThreadActor(Actor, Generic[SyncThreadT]):
         super().__init__(name, services)
         self._sync_thread = sync_thread
 
-    def process_message(self, message: Message) -> Result[bool, Exception]:
+    def process_message(self, message: Message[Any]) -> Result[bool, Exception]:
         raise ValueError(
             f"Error. {self.__class__.__name__} does not process any messages. Received {message.Header}"
         )
@@ -66,6 +68,11 @@ class SyncThreadActor(Actor, Generic[SyncThreadT]):
         self._sync_thread.put_to_sync_queue(message)
 
     def start(self) -> None:
+        if (
+            self.services.event_loop is None
+            or self.services.async_receive_queue is None
+        ):
+            raise ValueError("ERROR. Actor started before ServicesInterface started")
         self._sync_thread.set_async_loop_and_start(
             self.services.event_loop, self.services.async_receive_queue
         )

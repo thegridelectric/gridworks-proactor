@@ -8,12 +8,12 @@ from gwproto import Message
 from result import Result
 
 from gwproactor import ProactorLogger
-from gwproactor.actors import MonitoredName
 from gwproactor.message import KnownNames, PatInternalWatchdogMessage, ShutdownMessage
 from gwproactor.proactor_interface import (
     INVALID_IO_TASK_HANDLE,
     Communicator,
     IOLoopInterface,
+    MonitoredName,
     ServicesInterface,
 )
 from gwproactor.problems import Problems

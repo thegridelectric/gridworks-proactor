@@ -69,16 +69,17 @@ class MQTTClientWrapper:
         self._client_config = client_config
         self._receive_queue = receive_queue
         self._client = PahoMQTTClient("-".join(str(uuid.uuid4()).split("-")[:-1]))
-        self._client.username_pw_set(
-            username=self._client_config.username,
-            password=self._client_config.password.get_secret_value(),
-        )
+        if self._client_config.username is not None:
+            self._client.username_pw_set(
+                username=self._client_config.username,
+                password=self._client_config.password.get_secret_value(),
+            )
         tls_config = self._client_config.tls
         if tls_config.use_tls:
             self._client.tls_set(
-                ca_certs=tls_config.paths.ca_cert_path,
-                certfile=tls_config.paths.cert_path,
-                keyfile=tls_config.paths.private_key_path,
+                ca_certs=str(tls_config.paths.ca_cert_path),
+                certfile=str(tls_config.paths.cert_path),
+                keyfile=str(tls_config.paths.private_key_path),
                 cert_reqs=tls_config.cert_reqs,
                 tls_version=ssl.PROTOCOL_TLS_CLIENT,
                 ciphers=tls_config.ciphers,
@@ -150,7 +151,8 @@ class MQTTClientWrapper:
             self._pending_subacks[subscribe_result[1]] = [topic]
         return typing.cast(tuple[int, Optional[int]], subscribe_result)
 
-    def subscribe_all(self) -> Tuple[int, Optional[int]]:
+    def subscribe_all(self) -> tuple[int, Optional[int]]:
+        subscribe_result: tuple[int, Optional[int]]
         if self._subscriptions:
             topics = list(self._subscriptions.keys())
             for topic in topics:
@@ -162,14 +164,14 @@ class MQTTClientWrapper:
                 self._pending_subacks[subscribe_result[1]] = topics
         else:
             subscribe_result = MQTT_ERR_SUCCESS, None
-        return typing.cast(tuple[int, Optional[int]], subscribe_result)
+        return subscribe_result
 
     def unsubscribe(self, topic: str) -> Tuple[int, Optional[int]]:
         self._subscriptions.pop(topic, None)
         return typing.cast(tuple[int, Optional[int]], self._client.unsubscribe(topic))
 
     def connected(self) -> bool:
-        return typing.cast(bool, self._client.is_connected())
+        return self._client.is_connected()
 
     def num_subscriptions(self) -> int:
         return len(self._subscriptions)
@@ -206,7 +208,11 @@ class MQTTClientWrapper:
         return len(self._pending_subscriptions)
 
     def on_subscribe(
-        self, _: Any, userdata: Any, mid: int, granted_qos: list[int]
+        self,
+        _: PahoMQTTClient,
+        userdata: Any,
+        mid: int,
+        granted_qos: typing.Sequence[int],
     ) -> None:
         self._receive_queue.put(
             MQTTSubackMessage(
@@ -251,7 +257,7 @@ class MQTTClientWrapper:
             Union[logging.Logger, logging.LoggerAdapter[logging.Logger]]
         ] = None,
     ) -> None:
-        self._client.enable_logger(logger)
+        self._client.enable_logger(typing.cast(logging.Logger | None, logger))
 
     def disable_logger(self) -> None:
         self._client.disable_logger()
