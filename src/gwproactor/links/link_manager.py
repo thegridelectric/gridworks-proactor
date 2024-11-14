@@ -481,7 +481,7 @@ class LinkManager:
                         message.Payload.client_name
                     )
                     self._reuploads.clear()
-            case Err():
+            case _:
                 result = state_result
         return result
 
@@ -515,12 +515,14 @@ class LinkManager:
         result: Result[LinkManagerTransition, Exception]
         match state_result := self._states.process_ack_timeout(wait_info.link_name):
             case Ok():
+                path_dbg |= 0x00000001
+                # https://youtrack.jetbrains.com/issue/PY-76059/Incorrect-Type-warning-with-asdict-and-Dataclass
+                # noinspection PyTypeChecker
                 result = Ok(
                     LinkManagerTransition(
                         canceled_acks=[wait_info], **(asdict(state_result.value))
                     )
                 )
-                path_dbg |= 0x00000001
                 if result.value.deactivated():
                     path_dbg |= 0x00000002
                     self._reuploads.clear()
@@ -531,7 +533,7 @@ class LinkManager:
                     result.value.canceled_acks.extend(
                         self._acks.cancel_ack_timers(wait_info.link_name)
                     )
-            case Err():
+            case _:
                 result = Err(state_result.err())
         self._logger.path("--LinkManager.process_ack_timeout path:0x%08X", path_dbg)
         return result

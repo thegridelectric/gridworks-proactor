@@ -103,7 +103,7 @@ class LoggingSettings(BaseModel):
     formatter: FormatterSettings = FormatterSettings()
     file_handler: RotatingFileHandlerSettings = RotatingFileHandlerSettings()
 
-    def qualified_logger_names(self) -> dict[str, str]:
+    def qualified_logger_names(self) -> typing.Mapping[str, str]:
         return dict(
             self.levels.qualified_logger_names(self.base_log_name),
             base=self.base_log_name,
