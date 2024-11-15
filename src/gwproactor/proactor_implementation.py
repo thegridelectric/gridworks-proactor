@@ -117,7 +117,9 @@ class Proactor(ServicesInterface, Runnable):
             )
         self._layout = hardware_layout
         self._node = self._layout.node(name)
-        self._logger = ProactorLogger(**settings.logging.qualified_logger_names())
+        self._logger = ProactorLogger(
+            extra=None, **settings.logging.qualified_logger_names()
+        )
         self._stats = self.make_stats()
         self._event_persister = self.make_event_persister(settings)
         reindex_result = self._event_persister.reindex()
@@ -162,6 +164,8 @@ class Proactor(ServicesInterface, Runnable):
         return StubPersister()
 
     def send(self, message: Message[Any]) -> None:
+        if self._receive_queue is None:
+            raise RuntimeError("ERROR. send() called before Proactor started.")
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_summary(
                 direction="OUT internal",
@@ -174,6 +178,10 @@ class Proactor(ServicesInterface, Runnable):
         self._receive_queue.put_nowait(message)
 
     def send_threadsafe(self, message: Message[Any]) -> None:
+        if self._loop is None or self._receive_queue is None:
+            raise RuntimeError(
+                "ERROR. send_threadsafe() called before Proactor started."
+            )
         self._loop.call_soon_threadsafe(self._receive_queue.put_nowait, message)
 
     def get_communicator(self, name: str) -> Optional[CommunicatorInterface]:
@@ -352,6 +360,10 @@ class Proactor(ServicesInterface, Runnable):
         return self._loop
 
     async def process_messages(self) -> None:
+        if self._receive_queue is None:
+            raise RuntimeError(
+                "ERROR. process_messages() called before Proactor started."
+            )
         try:
             self._start_processing_messages()
             while not self._stop_requested:
@@ -405,7 +417,7 @@ class Proactor(ServicesInterface, Runnable):
     def _second_caller(cls) -> str:
         try:
             # noinspection PyProtectedMember,PyUnresolvedReferences
-            return sys._getframe(2).f_back.f_code.co_name  # noqa: SLF001
+            return sys._getframe(2).f_back.f_code.co_name  # type: ignore[union-attr] # noqa: SLF001
         except Exception as e:  # noqa: BLE001
             return f"[ERROR extracting caller of _report_errors: {e}"
 
@@ -432,7 +444,7 @@ class Proactor(ServicesInterface, Runnable):
     def _start_processing_messages(self) -> None:
         """Hook for processing before any messages are pulled from queue"""
 
-    async def process_message(self, message: Message) -> None:  # noqa: C901, PLR0912
+    async def process_message(self, message: Message[Any]) -> None:  # noqa: C901, PLR0912
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_enter(
                 "++Proactor.process_message %s/%s",
@@ -507,7 +519,7 @@ class Proactor(ServicesInterface, Runnable):
                     Summary=f"Decoding error topic [{mqtt_payload.message.topic}]  error [{type(e)}]",
                     Details=(
                         f"Topic: {mqtt_payload.message.topic}\n"
-                        f"Message: {mqtt_payload.message.payload[:clip_len]}"
+                        f"Message: {mqtt_payload.message.payload[:clip_len]!r}"
                         f"{'...' if len(mqtt_payload.message.payload) > clip_len else ''}\n"
                         f"{traceback.format_exception(e)}\n"
                         f"Exception: {e}"
@@ -735,11 +747,11 @@ class Proactor(ServicesInterface, Runnable):
         if self._loop is None:
             raise ValueError("Proactor cannot be joined until it is started")
         self._logger.lifecycle(str_tasks(self._loop, "Proactor.join() - all tasks"))
-        running: List[asyncio.Task] = self._tasks[:]
+        running: set[asyncio.Task[Any]] = set(self._tasks)
         for communicator in self._communicators.values():
             communicator_name = communicator.name
             if isinstance(communicator, Runnable):
-                running.append(
+                running.add(
                     self._loop.create_task(
                         communicator.join(), name=f"{communicator_name}.join"
                     )
