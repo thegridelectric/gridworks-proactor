@@ -2,6 +2,7 @@
 # mypy: disable-error-code="union-attr,attr-defined"
 
 import dataclasses
+import typing
 from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -199,7 +200,7 @@ def make_recorder_class(  # noqa: C901
             self._subacks_paused = defaultdict(bool)
             self._subacks_available = defaultdict(list)
             self._mqtt_messages_dropped = defaultdict(bool)
-            self._links = RecorderLinks(self._links)
+            self._links = RecorderLinks(self.links)
 
         @classmethod
         def make_stats(cls) -> RecorderStats:
@@ -374,7 +375,7 @@ def make_recorder_class(  # noqa: C901
                 )
             )
 
-        def _derived_process_message(self, message: Message) -> None:
+        def _derived_process_message(self, message: Message[Any]) -> None:
             match message.Payload:
                 case DBGPayload():
                     message.Header.Src = self.publication_name
@@ -387,7 +388,7 @@ def make_recorder_class(  # noqa: C901
 
         def mqtt_quiescent(self) -> bool:
             if hasattr(super(), "mqtt_quiescent"):
-                return super().mqtt_quiescent()
+                return typing.cast(bool, super().mqtt_quiescent())
             return self._links.link(self.upstream_client).active_for_send()
 
         def _call_super_if_present(self, function_name: str) -> None:
