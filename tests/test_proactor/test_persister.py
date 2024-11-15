@@ -124,8 +124,14 @@ def test_problems() -> None:
     p2.add_warning(PersisterWarning(uid="12"))
     assert len(p2.errors) == 4
     assert len(p2.warnings) == 4
-    assert [int(entry.uid) for entry in p2.errors] == [3, 4, 1, 7]  # noqa
-    assert [int(entry.uid) for entry in p2.warnings] == [5, 6, 2, 9]  # noqa
+    assert all(isinstance(entry, PersisterError) for entry in p2.errors)
+    assert all(isinstance(entry, PersisterWarning) for entry in p2.warnings)
+    for error, exp_uid in zip(p2.errors, [3, 4, 1, 7]):
+        assert isinstance(error, PersisterError)
+        assert int(error.uid) == exp_uid
+    for error, exp_uid in zip(p2.warnings, [5, 6, 2, 9]):
+        assert isinstance(error, PersisterWarning)
+        assert int(error.uid) == exp_uid
     assert str(p2)
 
 

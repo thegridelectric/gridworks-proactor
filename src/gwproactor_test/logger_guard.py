@@ -19,7 +19,7 @@ class LoggerGuard:
         self.level = logger.level
         self.propagate = logger.propagate
         self.handlers = set(logger.handlers)
-        self.filters = set(logger.filters)
+        self.filters = set(logger.filters)  # type: ignore[arg-type]
 
     def restore(self) -> None:
         screen_handlers = [
@@ -42,7 +42,7 @@ class LoggerGuard:
             self.logger.removeHandler(handler)
         for handler in self.handlers - curr_handlers:
             self.logger.addHandler(handler)
-        curr_filters = set(self.logger.filters)
+        curr_filters: set[logging.Filter] = set(self.logger.filters)  # type: ignore[arg-type]
         for filter_ in curr_filters - self.filters:
             self.logger.removeFilter(filter_)
         for filter_ in self.filters - curr_filters:
@@ -75,7 +75,7 @@ class LoggerGuards:
             for logger_name in logger_names
         }
 
-    def add_loggers(self, logger_names: Optional[Sequence[str]] = None) -> None:
+    def add_loggers(self, logger_names: Sequence[str]) -> None:
         for logger_name in logger_names:
             if logger_name not in self.guards:
                 self.guards[logger_name] = LoggerGuard(logging.getLogger(logger_name))

@@ -10,6 +10,7 @@ from typing import Any, Callable, Optional, Tuple, Type, TypeVar, cast
 from gwproto import Message
 from gwproto.messages import CommEvent, EventBase, EventT, PingMessage
 from paho.mqtt.client import MQTT_ERR_SUCCESS, MQTTMessageInfo
+from result import Result
 
 from gwproactor import Proactor, ProactorSettings, Runnable, ServicesInterface
 from gwproactor.config import LoggerLevels
@@ -118,7 +119,7 @@ class RecorderInterface(ServicesInterface, Runnable):
 @dataclass
 class _PausedAck:
     link_name: str
-    message: Message
+    message: Message[Any]
     qos: int
     context: Optional[Any]
 
@@ -134,7 +135,7 @@ class RecorderLinks(LinkManager):
         self.needs_ack = []
 
     def publish_message(
-        self, client: str, message: Message, qos: int = 0, context: Any = None
+        self, client: str, message: Message[Any], qos: int = 0, context: Any = None
     ) -> MQTTMessageInfo:
         if self.acks_paused:
             self.needs_ack.append(_PausedAck(client, message, qos, context))
@@ -169,7 +170,7 @@ class RecorderLinks(LinkManager):
         # )
         return len(needs_ack)
 
-    def generate_event(self, event: EventT) -> None:
+    def generate_event(self, event: EventT) -> Result[bool, Exception]:
         if not event.Src:
             event.Src = self.publication_name
         if isinstance(event, CommEvent) and event.Src == self.publication_name:
@@ -180,15 +181,15 @@ class RecorderLinks(LinkManager):
             cast(RecorderLinkStats, self._stats.link(event.Src)).forwarded[
                 event.TypeName
             ] += 1
-        super().generate_event(event)
+        return super().generate_event(event)
 
 
 def make_recorder_class(  # noqa: C901
     proactor_type: Type[ProactorT],
 ) -> Callable[..., RecorderInterface]:
-    class Recorder(proactor_type):
+    class Recorder(proactor_type):  # type: ignore  # noqa: PGH003
         _subacks_paused: dict[str, bool]
-        _subacks_available: dict[str, list[Message]]
+        _subacks_available: dict[str, list[Message[Any]]]
         _mqtt_messages_dropped: dict[str, bool]
 
         def __init__(
@@ -265,7 +266,7 @@ def make_recorder_class(  # noqa: C901
         def release_upstream_subacks(self: ProactorT, num_released: int = -1) -> None:
             self.release_subacks(self.upstream_client, num_released)
 
-        async def process_message(self, message: Message) -> None:
+        async def process_message(self, message: Message[Any]) -> None:
             if (
                 isinstance(message.Payload, MQTTSubackPayload)
                 and self._subacks_paused[message.Payload.client_name]
