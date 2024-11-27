@@ -66,6 +66,10 @@ class Actor(ActorInterface, Communicator, ABC):
         else:
             self.services._links.publish_message(self.services.LOCAL_MQTT, message)
 
+    def log(self, note: str) -> None:
+        log_str = f"[{self.name}] {note}"
+        self.services.logger.error(log_str)
+
     def init(self) -> None:
         """Called after constructor so derived functions can be used in setup."""
 
