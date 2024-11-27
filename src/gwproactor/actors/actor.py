@@ -5,10 +5,11 @@ SyncAsyncInteractionThread
 """
 
 from abc import ABC
-from typing import Any, cast, Generic, Sequence, TypeVar
-from gwproto.data_classes.house_0_names import H0N
-from gwproto.data_classes.house_0_layout import House0Layout
+from typing import Any, Generic, Sequence, TypeVar, cast
+
 from gwproto import Message, ShNode
+from gwproto.data_classes.house_0_layout import House0Layout
+from gwproto.data_classes.house_0_names import H0N
 from result import Result
 
 from gwproactor.proactor_interface import (
@@ -53,7 +54,7 @@ class Actor(ActorInterface, Communicator, ABC):
     def direct_reports(self) -> list[ShNode]:
         return [n for n in self.layout.nodes.values() if self.is_boss_of(n)]
 
-    def _send_to(self, dst: ShNode, payload) -> None:
+    def _send_to(self, dst: ShNode, payload: Any) -> None:
         if dst is None:
             return
         message = Message(Src=self.name, Dst=dst.name, Payload=payload)

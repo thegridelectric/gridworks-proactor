@@ -8,7 +8,7 @@ from gwproto.messages import EventBase
 from gwproactor import Proactor
 from gwproactor.links.link_settings import LinkSettings
 from gwproactor.message import MQTTReceiptPayload
-from gwproactor.persister import SimpleDirectoryWriter
+from gwproactor.persister import TimedRollingFilePersister
 from gwproactor_test.dummies.names import DUMMY_SCADA1_SHORT_NAME
 from gwproactor_test.dummies.tree.admin_messages import (
     AdminCommandReadRelays,
@@ -97,8 +97,8 @@ class DummyScada1(Proactor):
     @classmethod
     def make_event_persister(
         cls, settings: DummyScada1Settings
-    ) -> SimpleDirectoryWriter:
-        return SimpleDirectoryWriter(settings.paths.event_dir)
+    ) -> TimedRollingFilePersister:
+        return TimedRollingFilePersister(settings.paths.event_dir)
 
     def set_relay(self, relay_name: str, closed: bool) -> None:
         self.send_threadsafe(

@@ -1,14 +1,11 @@
 # ruff: noqa: PLR2004, ERA001
-import logging
 import typing
 from typing import Type
 
 import pytest
 
-from gwproactor.config import LoggerLevels, LoggingSettings
 from gwproactor.links import StateName
 from gwproactor_test.dummies.tree.messages import RelayInfoReported
-from gwproactor_test.dummies.tree.scada1_settings import DummyScada1Settings
 from gwproactor_test.recorder import RecorderLinkStats
 from gwproactor_test.tree_comm_test_helper import TreeCommTestHelper
 from gwproactor_test.wait import await_for
@@ -153,16 +150,16 @@ class ProactorTreeCommBasicTests:
 
     @pytest.mark.asyncio
     async def test_tree_event_forward(self) -> None:
-        child1_settings = DummyScada1Settings(
-            logging=LoggingSettings(
-                levels=LoggerLevels(
-                    message_summary=logging.INFO,
-                )
-            ),
-            mqtt_link_poll_seconds=5,
-        )
+        # child1_settings = DummyScada1Settings(
+        #     logging=LoggingSettings(
+        #         levels=LoggerLevels(
+        #             message_summary=logging.INFO,
+        #         )
+        #     ),
+        #     mqtt_link_poll_seconds=5,
+        # )
         async with self.CTH(
-            child_settings=child1_settings,
+            # child_settings=child1_settings,
             start_child=True,
             start_child2=True,
             start_parent=True,
@@ -210,7 +207,3 @@ class ProactorTreeCommBasicTests:
                 "ERROR waiting for atn to hear reports",
                 err_str_f=h.summary_str,
             )
-            # print(h.summary_str())
-
-    @pytest.mark.asyncio
-    async def test_tree_admin(self) -> None: ...
