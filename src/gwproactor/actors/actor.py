@@ -36,21 +36,18 @@ class Actor(ActorInterface, Communicator, ABC):
     @property
     def node(self) -> ShNode:
         return self._node
-    
+
     def boss(self) -> ShNode:
         if ".".join(self.node.handle.split(".")[:-1]) == "":
             return self.node
 
         boss_handle = ".".join(self.node.handle.split(".")[:-1])
-        return next(
-            n for n in self.layout.nodes.values()
-            if n.handle == boss_handle
-        )
+        return next(n for n in self.layout.nodes.values() if n.handle == boss_handle)
 
     def is_boss_of(self, node: ShNode) -> bool:
         immediate_boss = ".".join(node.Handle.split(".")[:-1])
         return immediate_boss == self.node.handle
-    
+
     def direct_reports(self) -> list[ShNode]:
         return [n for n in self.layout.nodes.values() if self.is_boss_of(n)]
 
