@@ -27,6 +27,7 @@ class Actor(ActorInterface, Communicator, ABC):
     def __init__(self, name: str, services: ServicesInterface) -> None:
         self._node = services.hardware_layout.node(name)
         self.layout = cast(House0Layout, services.hardware_layout)
+        self.primary_scada: ShNode = self.layout.node(H0N.primary_scada)
         super().__init__(name, services)
 
     @property
@@ -55,14 +56,14 @@ class Actor(ActorInterface, Communicator, ABC):
         if dst is None:
             return
         message = Message(Src=self.name, Dst=dst.name, Payload=payload)
-        if dst.name in set(self.services._communicators.keys()) | {self.services.name}:
+        if dst.name in set(self.services._communicators.keys()) | {self.services.name}:  # noqa: SLF001
             self.services.send(message)
         elif dst.Name == H0N.admin:
-            self.services._links.publish_message(self.services.ADMIN_MQTT, message)
+            self.services._links.publish_message(self.services.ADMIN_MQTT, message)  # noqa: SLF001
         elif dst.Name == H0N.atn:
-            self.services._links.publish_upstream(payload)
+            self.services._links.publish_upstream(payload)  # noqa: SLF001
         else:
-            self.services._links.publish_message(self.services.LOCAL_MQTT, message)
+            self.services._links.publish_message(self.services.LOCAL_MQTT, message)  # noqa: SLF001
 
     def log(self, note: str) -> None:
         log_str = f"[{self.name}] {note}"
