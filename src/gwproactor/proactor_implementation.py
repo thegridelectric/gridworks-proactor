@@ -115,6 +115,7 @@ class Proactor(ServicesInterface, Runnable):
                 components={},
                 nodes={},
                 data_channels={},
+                synth_channels={},
             )
         self._layout = hardware_layout
         self._node = self._layout.node(name)

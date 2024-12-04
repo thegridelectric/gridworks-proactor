@@ -5,11 +5,10 @@ SyncAsyncInteractionThread
 """
 
 from abc import ABC
-from typing import Any, Generic, Sequence, TypeVar, cast
+from typing import Any, Generic, Sequence, TypeVar
 
-from gwproto import Message, ShNode
-from gwproto.data_classes.house_0_layout import House0Layout
-from gwproto.data_classes.house_0_names import H0N
+from gwproto import Message
+from gwproto.data_classes.sh_node import ShNode
 from result import Result
 
 from gwproactor.proactor_interface import (
@@ -22,12 +21,8 @@ from gwproactor.sync_thread import SyncAsyncInteractionThread
 
 
 class Actor(ActorInterface, Communicator, ABC):
-    _node: ShNode
-
     def __init__(self, name: str, services: ServicesInterface) -> None:
         self._node = services.hardware_layout.node(name)
-        self.layout = cast(House0Layout, services.hardware_layout)
-        self.primary_scada: ShNode = self.layout.node(H0N.primary_scada)
         super().__init__(name, services)
 
     @property
@@ -35,39 +30,10 @@ class Actor(ActorInterface, Communicator, ABC):
         return self._name
 
     @property
+    # note this is over-written in the derived class ScadaActor
+    # so that it is not static.
     def node(self) -> ShNode:
         return self._node
-
-    def boss(self) -> ShNode:
-        if ".".join(self.node.handle.split(".")[:-1]) == "":
-            return self.node
-
-        boss_handle = ".".join(self.node.handle.split(".")[:-1])
-        return next(n for n in self.layout.nodes.values() if n.handle == boss_handle)
-
-    def is_boss_of(self, node: ShNode) -> bool:
-        immediate_boss = ".".join(node.Handle.split(".")[:-1])
-        return immediate_boss == self.node.handle
-
-    def direct_reports(self) -> list[ShNode]:
-        return [n for n in self.layout.nodes.values() if self.is_boss_of(n)]
-
-    def _send_to(self, dst: ShNode, payload: Any) -> None:
-        if dst is None:
-            return
-        message = Message(Src=self.name, Dst=dst.name, Payload=payload)
-        if dst.name in set(self.services._communicators.keys()) | {self.services.name}:  # noqa: SLF001
-            self.services.send(message)
-        elif dst.Name == H0N.admin:
-            self.services._links.publish_message(self.services.ADMIN_MQTT, message)  # noqa: SLF001
-        elif dst.Name == H0N.atn:
-            self.services._links.publish_upstream(payload)  # noqa: SLF001
-        else:
-            self.services._links.publish_message(self.services.LOCAL_MQTT, message)  # noqa: SLF001
-
-    def log(self, note: str) -> None:
-        log_str = f"[{self.name}] {note}"
-        self.services.logger.error(log_str)
 
     def init(self) -> None:
         """Called after constructor so derived functions can be used in setup."""
