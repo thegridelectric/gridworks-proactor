@@ -8,15 +8,16 @@ class MessageSummary:
     """Helper class for formating message summaries message receipt/publication single line summaries."""
 
     DEFAULT_FORMAT = (
-        "  {direction:15s}  {actor_name:40s}  {broker_flag}  {arrow:2s}  {topic:90s}"
-        "  {payload_type:40s}  {message_id}"
+        "  {direction:15s}  {src_dst:50s}  {broker_flag}  {arrow:2s}  {topic:80s}"
+        "  {payload_type:25s}{message_id}"
     )
 
     @classmethod
     def format(  # noqa: PLR0913
         cls,
         direction: str,
-        actor_name: str,
+        src: str,
+        dst: str,
         topic: str,
         *,
         payload_object: Any = None,
@@ -30,7 +31,8 @@ class MessageSummary:
 
         Args:
             direction: "IN" or "OUT"
-            actor_name: The node name of the sending or receiving actor.
+            src: The node name of the sending or receiving actor.
+            dst: The node name of the inteded recipient
             topic: The destination or source topic.
             payload_object: The payload of the message.
             broker_flag: "*" for the "gw" broker.
@@ -61,12 +63,14 @@ class MessageSummary:
                 payload_str = payload_object.__class__.__name__
             else:
                 payload_str = type(payload_object)
-            if message_id and len(message_id) > logging.DEBUG + 1:
-                message_id = f"{message_id[:8]}..."
+            max_msg_id_len = 11
+            if message_id and len(message_id) > max_msg_id_len:
+                message_id = f" {message_id[:max_msg_id_len-3]}..."
+            src_dst = f"{src} to {dst}"
             return format_.format(
                 timestamp=timestamp.isoformat(),
                 direction=direction,
-                actor_name=actor_name,
+                src_dst=src_dst,
                 broker_flag=broker_flag,
                 arrow=arrow,
                 topic=f"[{topic}]",
@@ -120,8 +124,10 @@ class ProactorLogger(logging.LoggerAdapter):
 
     def message_summary(  # noqa: PLR0913
         self,
+        *,
         direction: str,
-        actor_name: str,
+        src: str,
+        dst: str,
         topic: str,
         payload_object: Any = None,
         broker_flag: str = " ",
@@ -132,7 +138,8 @@ class ProactorLogger(logging.LoggerAdapter):
             self.message_summary_logger.info(
                 MessageSummary.format(
                     direction=direction,
-                    actor_name=actor_name,
+                    src=src,
+                    dst=dst,
                     topic=topic,
                     payload_object=payload_object,
                     broker_flag=broker_flag,

@@ -7,7 +7,8 @@ SyncAsyncInteractionThread
 from abc import ABC
 from typing import Any, Generic, Sequence, TypeVar
 
-from gwproto import Message, ShNode
+from gwproto import Message
+from gwproto.data_classes.sh_node import ShNode
 from result import Result
 
 from gwproactor.proactor_interface import (
@@ -20,8 +21,6 @@ from gwproactor.sync_thread import SyncAsyncInteractionThread
 
 
 class Actor(ActorInterface, Communicator, ABC):
-    _node: ShNode
-
     def __init__(self, name: str, services: ServicesInterface) -> None:
         self._node = services.hardware_layout.node(name)
         super().__init__(name, services)
@@ -31,6 +30,8 @@ class Actor(ActorInterface, Communicator, ABC):
         return self._name
 
     @property
+    # note this is over-written in the derived class ScadaActor
+    # so that it is not static.
     def node(self) -> ShNode:
         return self._node
 

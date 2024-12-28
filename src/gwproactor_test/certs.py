@@ -105,12 +105,26 @@ def _copy_keys(test_cert_dir: Path, dst_paths: TLSPaths) -> None:
     shutil.copy2(src_paths.private_key_path, dst_paths.private_key_path)
 
 
+def mqtt_client_fields(model: BaseModel | BaseSettings) -> list[tuple[str, MQTTClient]]:
+    clients: list[tuple[str, MQTTClient]] = [
+        (field_name, getattr(model, field_name))
+        for field_name in model.model_fields
+        if isinstance(getattr(model, field_name), MQTTClient)
+    ]
+    clients.extend(
+        [
+            (field_name, field_value)
+            for field_name, field_value in getattr(model, "mqtt", {}).items()
+            if isinstance(field_value, MQTTClient)
+        ]
+    )
+    return clients
+
+
 def uses_tls(model: BaseModel | BaseSettings) -> bool:
     """Check whether any MQTTClient in the model have MQTTClient.tls.use_tls == True."""
     return any(
-        isinstance(getattr(model, field_name), MQTTClient)
-        and getattr(model, field_name).tls.use_tls
-        for field_name in model.model_fields
+        client_field[1].tls.use_tls for client_field in mqtt_client_fields(model)
     )
 
 
@@ -123,10 +137,8 @@ def copy_keys(
     if test_cert_cache_dir is None:
         test_cert_cache_dir = test_certificate_cache_dir()
     test_cert_cache = Path(test_cert_cache_dir)
-    for field_name in model.model_fields:
-        v = getattr(model, field_name)
-        if isinstance(v, MQTTClient):
-            _copy_keys(test_cert_cache / model_tag / field_name, v.tls.paths)
+    for field_name, client in mqtt_client_fields(model):
+        _copy_keys(test_cert_cache / model_tag / field_name, client.tls.paths)
 
 
 def set_test_certificate_cache_dir(certificate_cache_dir: Path | str) -> None:

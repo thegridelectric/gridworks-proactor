@@ -2,6 +2,7 @@
 
 import asyncio
 import sys
+import threading
 import traceback
 import uuid
 from typing import (
@@ -17,12 +18,12 @@ from typing import (
 
 import gwproto
 from aiohttp.typedefs import Handler as HTTPHandler
-from aiohttp.web_routedef import RouteDef
 from gwproto.data_classes.components.web_server_component import WebServerComponent
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
 from gwproto.messages import Ack, EventBase, EventT, Ping, ProblemEvent, ShutdownEvent
-from gwproto.types.web_server_gt import WebServerGt
+from gwproto.named_types.web_server_gt import WebServerGt
+from paho.mqtt.client import MQTTMessageInfo
 from result import Err, Ok, Result
 
 from gwproactor import ProactorSettings
@@ -114,6 +115,7 @@ class Proactor(ServicesInterface, Runnable):
                 components={},
                 nodes={},
                 data_channels={},
+                synth_channels={},
             )
         self._layout = hardware_layout
         self._node = self._layout.node(name)
@@ -127,6 +129,7 @@ class Proactor(ServicesInterface, Runnable):
             self._logger.error(reindex_result.err())
         self._links = LinkManager(
             publication_name=self.publication_name,
+            subscription_name=self.subscription_name,
             settings=settings,
             logger=self._logger,
             stats=self._stats,
@@ -163,10 +166,11 @@ class Proactor(ServicesInterface, Runnable):
     def send(self, message: Message) -> None:
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_summary(
-                "OUT internal",
-                message.Header.Src,
-                f"{message.Header.Dst}/{message.Header.MessageType}",
-                message.Payload,
+                direction="OUT internal",
+                src=message.Header.Src,
+                dst=message.Header.Dst,
+                topic=f"{message.Header.Src}/to/{message.Header.Dst}/{message.Header.MessageType}",
+                payload_object=message.Payload,
                 message_id=message.Header.MessageId,
             )
         self._receive_queue.put_nowait(message)
@@ -194,6 +198,10 @@ class Proactor(ServicesInterface, Runnable):
         return self._name
 
     @property
+    def subscription_name(self) -> str:
+        return ""
+
+    @property
     def monitored_names(self) -> Sequence[MonitoredName]:
         return []
 
@@ -212,6 +220,11 @@ class Proactor(ServicesInterface, Runnable):
     @property
     def links(self) -> LinkManager:
         return self._links
+
+    def publish_message(
+        self, link_name: str, message: Message, qos: int = 0, context: Any = None
+    ) -> MQTTMessageInfo:
+        return self._links.publish_message(link_name, message, qos, context)
 
     @property
     def event_persister(self) -> PersisterInterface:
@@ -240,7 +253,7 @@ class Proactor(ServicesInterface, Runnable):
             server_name=server_name, method=method, path=path, handler=handler, **kwargs
         )
 
-    def get_web_server_route_strings(self) -> dict[str, list[RouteDef]]:
+    def get_web_server_route_strings(self) -> dict[str, list[str]]:
         return self._web_manager.get_route_strings()
 
     def get_web_server_configs(self) -> dict[str, WebServerGt]:
@@ -264,8 +277,8 @@ class Proactor(ServicesInterface, Runnable):
         return self._links.upstream_client
 
     @property
-    def primary_peer_client(self) -> str:
-        return self._links.primary_peer_client
+    def downstream_client(self) -> str:
+        return self._links.downstream_client
 
     def _send(self, message: Message) -> None:
         self.send(message)
@@ -369,6 +382,9 @@ class Proactor(ServicesInterface, Runnable):
         except:  # noqa: E722
             self._logger.exception("ERROR stopping proactor")
 
+    def add_task(self, task: asyncio.Task) -> None:
+        self._tasks.append(task)
+
     def start_tasks(self) -> None:
         self._tasks = [
             asyncio.create_task(self.process_messages(), name="process_messages"),
@@ -383,7 +399,7 @@ class Proactor(ServicesInterface, Runnable):
         pass
 
     def _derived_process_mqtt_message(
-        self, message: Message[MQTTReceiptPayload], decoded: Any
+        self, message: Message[MQTTReceiptPayload], decoded: Message[Any]
     ) -> None:
         pass
 
@@ -429,10 +445,11 @@ class Proactor(ServicesInterface, Runnable):
         if not isinstance(message.Payload, (MQTTReceiptPayload, PatWatchdog)):
             path_dbg |= 0x00000001
             self._logger.message_summary(
-                "IN  internal",
-                self.name,
-                f"{message.Header.Src}/{message.Header.MessageType}",
-                message.Payload,
+                direction="IN  internal",
+                src=message.src(),
+                dst=message.dst(),
+                topic=f"{message.src()}/to/{message.dst()}/{message.Header.MessageType}",
+                payload_object=message.Payload,
                 message_id=message.Header.MessageId,
             )
         self._stats.add_message(message)
@@ -516,13 +533,22 @@ class Proactor(ServicesInterface, Runnable):
         if decode_result.is_ok():
             path_dbg |= 0x00000001
             decoded_message = decode_result.value
-            self._logger.message_summary(
-                "IN  mqtt    ",
-                self.name,
-                mqtt_receipt_message.Payload.message.topic,
-                decoded_message.Payload,
-                message_id=decoded_message.Header.MessageId,
+            self._stats.add_decoded_mqtt_message_type(
+                mqtt_receipt_message.Payload.client_name, decoded_message.message_type()
             )
+            if self._logger.message_summary_enabled:
+                if isinstance(decoded_message.Payload, Ack):
+                    message_id = decoded_message.Payload.AckMessageID
+                else:
+                    message_id = decoded_message.Header.MessageId
+                self._logger.message_summary(
+                    direction="IN  mqtt    ",
+                    src=decoded_message.src(),
+                    dst=decoded_message.dst(),
+                    topic=mqtt_receipt_message.Payload.message.topic,
+                    payload_object=decoded_message.Payload,
+                    message_id=message_id,
+                )
             link_mgr_results = self._links.process_mqtt_message(mqtt_receipt_message)
             if link_mgr_results.is_ok():
                 path_dbg |= 0x00000002
@@ -646,7 +672,12 @@ class Proactor(ServicesInterface, Runnable):
             f"Shutting down due to ShutdownMessage, [{message.Payload.Reason}]"
         )
 
-    async def run_forever(self) -> None:
+    def _pre_child_start(self) -> None:
+        """Hook into _start() for derived classes, prior to starting
+        communicators and tasks.
+        """
+
+    def _start(self) -> None:
         self._loop = asyncio.get_running_loop()
         self._receive_queue = asyncio.Queue()
         self._links.start(self._loop, self._receive_queue)
@@ -655,11 +686,30 @@ class Proactor(ServicesInterface, Runnable):
                 self._reindex_problems.problem_event("Startup event reindex() problems")
             )
         self._reindex_problems = None
+        self._pre_child_start()
         for communicator in self._communicators.values():
             if isinstance(communicator, Runnable):
                 communicator.start()
         self.start_tasks()
+
+    async def run_forever(self) -> None:
+        self._start()
         await self.join()
+
+    def run_in_thread(self, *, daemon: bool = True) -> threading.Thread:
+        async def _async_run_forever() -> None:
+            try:
+                await self.run_forever()
+
+            finally:
+                self.stop()
+
+        def _run_forever() -> None:
+            asyncio.run(_async_run_forever())
+
+        thread = threading.Thread(target=_run_forever, daemon=daemon)
+        thread.start()
+        return thread
 
     def start(self) -> NoReturn:
         raise RuntimeError("ERROR. Proactor must be started by awaiting run_forever()")

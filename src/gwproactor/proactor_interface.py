@@ -12,6 +12,7 @@ from typing import Any, Coroutine, NoReturn, Optional, Sequence, Type, TypeVar
 from aiohttp.typedefs import Handler as HTTPHandler
 from gwproto import HardwareLayout, ShNode
 from gwproto.messages import EventT
+from paho.mqtt.client import MQTTMessageInfo
 from result import Result
 
 from gwproactor.config.proactor_settings import ProactorSettings
@@ -193,6 +194,10 @@ class ServicesInterface(CommunicatorInterface):
     def send_threadsafe(self, message: Message) -> None:
         raise NotImplementedError
 
+    @abstractmethod
+    def add_task(self, task: asyncio.Task) -> None:
+        raise NotImplementedError
+
     @property
     @abstractmethod
     def async_receive_queue(self) -> Optional[asyncio.Queue]:
@@ -242,6 +247,17 @@ class ServicesInterface(CommunicatorInterface):
     @property
     @abstractmethod
     def publication_name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def subscription_name(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def publish_message(
+        self, link_name: str, message: Message, qos: int = 0, context: Any = None
+    ) -> MQTTMessageInfo:
         raise NotImplementedError
 
     @property
