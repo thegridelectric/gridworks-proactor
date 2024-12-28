@@ -77,7 +77,12 @@ def test_get_default_logging_config(
         assert len(caplog.records) == 0
         logger.info(msg, i, logger.name)
         assert len(caplog.records) == 1
-        exp_msg = f"{get_exp_formatted_time(caplog.records[-1], formatter)} {msg % (i, logger.name)}\n"
+        exp_time = get_exp_formatted_time(
+            caplog.records[-1],
+            formatter,
+            settings.logging.formatter.use_utc,
+        )
+        exp_msg = f"{exp_time} {msg % (i, logger.name)}\n"
         assert capsys.readouterr().err == exp_msg  # noqa
         text += exp_msg
         caplog.clear()
