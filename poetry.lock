@@ -780,13 +780,13 @@ xdg = ">=6.0.0"
 
 [[package]]
 name = "gridworks-protocol"
-version = "1.2.0"
+version = "1.2.1"
 description = "Gridworks Protocol"
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "gridworks_protocol-1.2.0-py3-none-any.whl", hash = "sha256:9765b2077a535665c62946a023c1a53da86fe26069d49c3576884ed09c4a12e6"},
-    {file = "gridworks_protocol-1.2.0.tar.gz", hash = "sha256:30b14437ffd7870f366c4ac8d798cea9870181a15ef2e7766023e5c6b260dbae"},
+    {file = "gridworks_protocol-1.2.1-py3-none-any.whl", hash = "sha256:fe4dea4c5bdfd69cf22292a174146f638cda88530ab700d8cf6f7716286eb202"},
+    {file = "gridworks_protocol-1.2.1.tar.gz", hash = "sha256:7afd740cf4e2c79f76f6744979a005de01b42c14e76356de9a12a846ae950bb5"},
 ]
 
 [package.dependencies]
@@ -2690,4 +2690,4 @@ tests = ["freezegun", "gridworks-cert", "pytest", "pytest-asyncio"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "5098afac493eac8af97359e05cb39677725471c7e65dbd180442563715bb7754"
+content-hash = "00128bd6d7dec75068e76f6361ab64fc5aadc10f2225ffb1a8e7a2a7e9cb572f"
