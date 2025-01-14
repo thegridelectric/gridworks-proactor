@@ -51,7 +51,10 @@ class Problems(ValueError):
                 if lst:
                     s += f"\n{attr_name.capitalize()}:\n"
                     for i, entry in enumerate(lst):
-                        s += f"  {i:2d}: {entry}\n"
+                        entry_str = str(entry)
+                        if not entry_str:
+                            entry_str = entry.__class__.__name__
+                        s += f"  {i:2d}: {entry_str}\n"
             return s
         return ""
 

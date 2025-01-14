@@ -122,7 +122,9 @@ class Proactor(ServicesInterface, Runnable):
         self._logger = ProactorLogger(**settings.logging.qualified_logger_names())
         self._stats = self.make_stats()
         self._event_persister = self.make_event_persister(settings)
+        self._logger.lifecycle(f"Proactor {self._name} reindexing events")
         reindex_result = self._event_persister.reindex()
+        self._logger.lifecycle(f"Proactor {self._name} reindexing complete")
         if reindex_result.is_err():
             self._reindex_problems = reindex_result.err()
             self._logger.error("ERROR in event persister reindex():")

@@ -153,6 +153,10 @@ class Reuploads:
         if was_reuploading and not self.reuploading():
             path_dbg |= 0x00000008
             self.stats.complete_reupload()
+            self._logger.comm_event(
+                f"Reupload completed. Total started: {self.stats.reupload_counts.started}  "
+                f"completed: {self.stats.reupload_counts.completed}."
+            )
         if self._logger.path_enabled:
             ack_logger.log_ack(path_dbg)
         return reupload_now
@@ -196,15 +200,17 @@ class Reuploads:
     def _log_start_reupload(
         self, num_pending_events: int, num_reupload_now: int
     ) -> None:
-        if self._logger.general_enabled:
+        if self._logger.comm_event_enabled:
             if self.reuploading():
                 state_str = f"{self.num_reupload_pending} reupload events pending."
             else:
                 state_str = "reupload complete."
-            self._logger.info(
+            self._logger.comm_event(
                 f"start_reupload: sent {num_reupload_now} events. "  # noqa: G004
                 f"{state_str} "
-                f"Total events in reupload: {num_pending_events}."
+                f"Total events in reupload: {num_pending_events}.  "
+                f"Reuploads started: {self.stats.reupload_counts.started}  "
+                f"completed: {self.stats.reupload_counts.completed}."
             )
         if self._logger.path_enabled:
             self._logger.path(self.get_str(num_events=5))
