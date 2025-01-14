@@ -154,7 +154,7 @@ class Reuploads:
             path_dbg |= 0x00000008
             self.stats.complete_reupload()
             self._logger.comm_event(
-                f"Reupload completed. Total started: {self.stats.reupload_counts.started}  "
+                f"Reupload completed. Reuploads started: {self.stats.reupload_counts.started}  "
                 f"completed: {self.stats.reupload_counts.completed}."
             )
         if self._logger.path_enabled:
