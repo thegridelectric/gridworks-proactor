@@ -214,18 +214,31 @@ class ProactorLogger(logging.LoggerAdapter):
                     "ERROR. add_category_logger() requires category value "
                     "unless logger is provided."
                 )
-            logger = logging.getLogger(self.category_logger_name(category))
-            logger.setLevel(level)
+            logger = self.category_logger(category)
+            if logger is None:
+                logger = logging.getLogger(self.category_logger_name(category))
+                logger.setLevel(level)
+                self.category_loggers[category] = CategoryLoggerInfo(
+                    logger=logger,
+                    default_level=level,
+                )
         else:
-            category = logger.name
-            self_prefix = f"{self.name}."
-            if category.startswith(self_prefix):
-                category = category[len(self_prefix) :]
+            if not category:
+                category = logger.name
+                self_prefix = f"{self.name}."
+                if category.startswith(self_prefix):
+                    category = category[len(self_prefix) :]
+            if category in self.category_loggers:
+                raise ValueError(
+                    "ERROR. add_category_logger() got explicit logger "
+                    f"named {logger.name}, categorized as {category}, but "
+                    f"logger for that category is already present."
+                )
             level = logger.getEffectiveLevel()
-        self.category_loggers[category] = CategoryLoggerInfo(
-            logger=logger,
-            default_level=level,
-        )
+            self.category_loggers[category] = CategoryLoggerInfo(
+                logger=logger,
+                default_level=level,
+            )
         return logger
 
     def reset_default_category_levels(self) -> None:

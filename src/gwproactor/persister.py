@@ -100,6 +100,11 @@ class PersisterInterface(abc.ABC):
     def num_pending(self) -> int:
         """Get number of pending uids"""
 
+    @property
+    @abstractmethod
+    def curr_bytes(self) -> int:
+        """Return number of bytes used to store events, if known."""
+
     @abstractmethod
     def __contains__(self, uid: str) -> bool:
         """Check whether a uid is pending"""
@@ -130,6 +135,10 @@ class StubPersister(PersisterInterface):
 
     @property
     def num_pending(self) -> int:
+        return 0
+
+    @property
+    def curr_bytes(self) -> int:
         return 0
 
     def __contains__(self, uid: str) -> bool:
