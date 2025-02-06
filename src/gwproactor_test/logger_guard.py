@@ -11,6 +11,7 @@ from gwproactor.config import DEFAULT_BASE_NAME, LoggerLevels
 class LoggerGuard:
     level: int
     propagate: bool
+    disabled: bool
     handlers: set[logging.Handler]
     filters: set[logging.Filter]
 
@@ -18,6 +19,7 @@ class LoggerGuard:
         self.logger = logger
         self.level = logger.level
         self.propagate = logger.propagate
+        self.disabled = logger.disabled
         self.handlers = set(logger.handlers)
         self.filters = set(logger.filters)  # type: ignore[arg-type]
 
@@ -37,6 +39,7 @@ class LoggerGuard:
             )
         self.logger.setLevel(self.level)
         self.logger.propagate = self.propagate
+        self.logger.disabled = self.disabled
         curr_handlers = set(self.logger.handlers)
         for handler in curr_handlers - self.handlers:
             self.logger.removeHandler(handler)

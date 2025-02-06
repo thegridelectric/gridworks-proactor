@@ -20,6 +20,7 @@ class FormatterSettings(BaseModel):
     fmt: str = DEFAULT_LOGGING_FORMAT
     datefmt: str = ""
     default_msec_format: str = DEFAULT_FRACTIONAL_SECOND_FORMAT
+    use_utc: bool = False
 
     def create(self) -> logging.Formatter:
         formatter = logging.Formatter(
@@ -27,7 +28,8 @@ class FormatterSettings(BaseModel):
             datefmt=self.datefmt,
         )
         formatter.default_msec_format = self.default_msec_format
-        formatter.converter = time.gmtime
+        if self.use_utc:
+            formatter.converter = time.gmtime
         return formatter
 
 

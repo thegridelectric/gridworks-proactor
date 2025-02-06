@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Sequence, TypeAlias
 
 
 class MessageSummary:
@@ -81,6 +81,20 @@ class MessageSummary:
 
 
 LoggerAdapterT = logging.LoggerAdapter[logging.Logger]
+LoggerOrAdapter: TypeAlias = logging.Logger | logging.LoggerAdapter[logging.Logger]
+
+
+class CategoryLoggerInfo:
+    logger: LoggerOrAdapter
+    default_level: int = logging.INFO
+    default_disabled = False
+
+    def __init__(
+        self, logger: LoggerOrAdapter, default_level: int = logging.INFO
+    ) -> None:
+        self.logger = logger
+        self.default_level = default_level
+        self.default_disabled = logger.disabled
 
 
 class ProactorLogger(LoggerAdapterT):
@@ -91,19 +105,25 @@ class ProactorLogger(LoggerAdapterT):
     message_summary_logger: logging.Logger
     lifecycle_logger: logging.Logger
     comm_event_logger: logging.Logger
+    category_loggers: dict[str, CategoryLoggerInfo]
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         base: str,
         message_summary: str,
         lifecycle: str,
         comm_event: str,
         extra: Optional[dict[str, Any]] = None,
+        category_logger_names: Optional[Sequence[str]] = None,
     ) -> None:
         super().__init__(logging.getLogger(base), extra=extra)
         self.message_summary_logger = logging.getLogger(message_summary)
         self.lifecycle_logger = logging.getLogger(lifecycle)
         self.comm_event_logger = logging.getLogger(comm_event)
+        self.category_loggers = {}
+        if category_logger_names is not None:
+            for category_logger_name in category_logger_names:
+                self.add_category_logger(category_logger_name)
 
     @property
     def general_enabled(self) -> bool:
@@ -170,6 +190,62 @@ class ProactorLogger(LoggerAdapterT):
         if self.path_enabled:
             self.path(msg, *args, **kwargs)
             self.path(self.MESSAGE_EXIT_DELIMITER)
+
+    def category_logger_name(self, category: str) -> str:
+        return f"{self.name}.{category}"
+
+    def category_logger(
+        self, category: str
+    ) -> Optional[logging.Logger | logging.LoggerAdapter]:
+        """Get existing category logger"""
+        logger_info = self.category_loggers.get(category)
+        if logger_info is not None:
+            return logger_info.logger
+        return None
+
+    def add_category_logger(
+        self,
+        category: str = "",
+        level: int = logging.INFO,
+        logger: Optional[LoggerOrAdapter] = None,
+    ) -> LoggerOrAdapter:
+        if logger is None:
+            if not category:
+                raise ValueError(
+                    "ERROR. add_category_logger() requires category value "
+                    "unless logger is provided."
+                )
+            logger = self.category_logger(category)
+            if logger is None:
+                logger = logging.getLogger(self.category_logger_name(category))
+                logger.setLevel(level)
+                self.category_loggers[category] = CategoryLoggerInfo(
+                    logger=logger,
+                    default_level=level,
+                )
+        else:
+            if not category:
+                category = logger.name
+                self_prefix = f"{self.name}."
+                if category.startswith(self_prefix):
+                    category = category[len(self_prefix) :]
+            if category in self.category_loggers:
+                raise ValueError(
+                    "ERROR. add_category_logger() got explicit logger "
+                    f"named {logger.name}, categorized as {category}, but "
+                    f"logger for that category is already present."
+                )
+            level = logger.getEffectiveLevel()
+            self.category_loggers[category] = CategoryLoggerInfo(
+                logger=logger,
+                default_level=level,
+            )
+        return logger
+
+    def reset_default_category_levels(self) -> None:
+        for logger_info in self.category_loggers.values():
+            logger_info.logger.setLevel(logger_info.default_level)
+            logger_info.logger.disabled = logger_info.default_disabled
 
     def __repr__(self) -> str:
         return (

@@ -34,12 +34,6 @@ class Actor(ActorInterface, Communicator, ABC):
     def node(self) -> ShNode:
         return self._node
 
-    def is_boss_of(self, node: ShNode) -> bool:
-        return (
-            node.Handle is not None
-            and ".".join(node.Handle.split(".")[:-1]) == self.node.handle
-        )
-
     def init(self) -> None:
         """Called after constructor so derived functions can be used in setup."""
 
@@ -59,7 +53,7 @@ class SyncThreadActor(Actor, Generic[SyncThreadT]):
         super().__init__(name, services)
         self._sync_thread = sync_thread
 
-    def process_message(self, message: Message[Any]) -> Result[bool, Exception]:
+    def process_message(self, message: Message) -> Result[bool, Exception]:
         raise ValueError(
             f"Error. {self.__class__.__name__} does not process any messages. Received {message.Header}"
         )

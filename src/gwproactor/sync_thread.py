@@ -1,6 +1,7 @@
 """Classes providing interaction between synchronous and asynchronous code"""
 
 import asyncio
+import logging
 import queue
 import threading
 import time
@@ -9,6 +10,7 @@ import typing
 from abc import ABC
 from typing import Any, Optional
 
+from gwproactor.logger import LoggerOrAdapter
 from gwproactor.message import InternalShutdownMessage, PatInternalWatchdogMessage
 
 DEFAULT_STEP_DURATION = 0.1
@@ -150,6 +152,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
     _responsive_sleep_step_seconds: float
     pat_timeout: Optional[float]
     _last_pat_time: float
+    _logger: LoggerOrAdapter
 
     def __init__(  # noqa: PLR0913
         self,
@@ -160,6 +163,7 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
         responsive_sleep_step_seconds: float = SLEEP_STEP_SECONDS,
         pat_timeout: Optional[float] = PAT_TIMEOUT,
         daemon: bool = True,
+        logger: Optional[LoggerOrAdapter] = None,
     ) -> None:
         super().__init__(name=name, daemon=daemon)
         if channel is None:
@@ -171,6 +175,10 @@ class SyncAsyncInteractionThread(threading.Thread, ABC):
         self.running = None
         self.pat_timeout = pat_timeout
         self._last_pat_time = 0.0
+        if logger is None:
+            self._logger = logging.getLogger(__package__)
+        else:
+            self._logger = logger
 
     def _preiterate(self) -> None:
         pass

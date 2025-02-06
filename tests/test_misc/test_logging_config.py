@@ -169,27 +169,42 @@ def test_logging_settings() -> None:
 
 
 def get_exp_formatted_time(
-    record: logging.LogRecord, formatter: logging.Formatter
+    record: logging.LogRecord, formatter: logging.Formatter, use_utc: bool
 ) -> str:
+    time_used = (
+        time.gmtime(record.created) if use_utc else time.localtime(record.created)
+    )
     return formatter.default_msec_format % (
-        time.strftime(formatter.default_time_format, time.gmtime(record.created)),
+        time.strftime(formatter.default_time_format, time_used),
         record.msecs,
     )
 
 
-def test_formatter_settings() -> None:
-    settings = FormatterSettings()
+def _test_formatter_settings(settings: FormatterSettings) -> None:
     formatter = settings.create()
     record = logging.makeLogRecord({"msg": "bla %s %d", "args": ("biz", 1)})
     got_formatted_time = formatter.formatTime(record, formatter.datefmt)
-    created_gmt = time.gmtime(record.created)
-    strftimed = time.strftime(logging.Formatter.default_time_format, created_gmt)
+    if settings.use_utc:
+        created_time_struct = time.gmtime(record.created)
+    else:
+        created_time_struct = time.localtime(record.created)
+    strftimed = time.strftime(
+        logging.Formatter.default_time_format, created_time_struct
+    )
     assert got_formatted_time.startswith(strftimed)
-    exp_formatted_time = get_exp_formatted_time(record, formatter)
+    exp_formatted_time = get_exp_formatted_time(record, formatter, settings.use_utc)
     assert got_formatted_time == exp_formatted_time
     formatted = formatter.format(record)
     assert formatted.startswith(exp_formatted_time)
     assert formatted.endswith(record.msg % record.args)
+
+
+def test_formatter_settings() -> None:
+    settings = FormatterSettings()
+    assert settings.use_utc is False
+    _test_formatter_settings(settings)
+    settings.use_utc = True
+    _test_formatter_settings(settings)
 
 
 def test_rotating_file_handler_settings(tmp_path: Path) -> None:

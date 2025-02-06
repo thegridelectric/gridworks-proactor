@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Union
 
 from gwproto import Message, MQTTCodec, MQTTTopic
 from gwproto.messages import (
@@ -148,8 +148,7 @@ class LinkManager:
         return self._mqtt_clients.client_wrapper(client_name)
 
     def enable_mqtt_loggers(
-        self,
-        logger: Optional[logging.Logger | logging.LoggerAdapter[logging.Logger]] = None,
+        self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
     ) -> None:
         self._mqtt_clients.enable_loggers(logger)
 
@@ -227,12 +226,32 @@ class LinkManager:
     def get_reuploads_str(self, verbose: bool = True, num_events: int = 5) -> str:  # noqa: FBT001, FBT002
         return self._reuploads.get_str(verbose=verbose, num_events=num_events)
 
-    def publish_message(
-        self, link_name: str, message: Message[Any], qos: int = 0, context: Any = None
+    def publish_message(  # noqa: PLR0913
+        self,
+        link_name: str,
+        message: Message,
+        qos: int = 0,
+        context: Any = None,
+        *,
+        topic: str = "",
+        use_link_topic: bool = False,
     ) -> MQTTMessageInfo:
+        if topic and use_link_topic:
+            raise ValueError(
+                f"Error. Specify at most one of use_link_topic "
+                f"({use_link_topic}) and topic ({topic})"
+            )
         if not message.Header.Dst:
             message.Header.Dst = self._mqtt_clients.topic_dst(link_name)
-        topic = message.mqtt_topic()
+        if use_link_topic:
+            topic = MQTTTopic.encode(
+                envelope_type=message.type_name(),
+                src=self.publication_name,
+                dst=self._mqtt_clients.topic_dst(link_name),
+                message_type=message.message_type(),
+            )
+        elif not topic:
+            topic = message.mqtt_topic()
         payload = self._mqtt_codecs[link_name].encode(message)
         self._logger.message_summary(
             direction="OUT mqtt    ",

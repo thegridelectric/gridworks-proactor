@@ -114,15 +114,22 @@ class Proactor(ServicesInterface, Runnable):
                 components={},
                 nodes={},
                 data_channels={},
+                synth_channels={},
             )
         self._layout = hardware_layout
         self._node = self._layout.node(name)
-        self._logger = ProactorLogger(
-            extra=None, **settings.logging.qualified_logger_names()
-        )
+        self._logger = self.make_logger(settings)
         self._stats = self.make_stats()
         self._event_persister = self.make_event_persister(settings)
+        self._logger.lifecycle(f"Proactor <{self._name}> reindexing events")
         reindex_result = self._event_persister.reindex()
+        self._logger.lifecycle(
+            f"Proactor <{self._name}> reindexing complete.\n"
+            f"  {self._event_persister.num_pending} events present for upload, "
+            f"using approximately {int(self._event_persister.curr_bytes / 1024)} KB / "
+            f"{round(self._event_persister.curr_bytes / 1024 / 1024, 1)} MB "
+            f"storage space."
+        )
         if reindex_result.is_err():
             self._reindex_problems = reindex_result.err()
             self._logger.error("ERROR in event persister reindex():")
@@ -158,6 +165,10 @@ class Proactor(ServicesInterface, Runnable):
     @classmethod
     def make_stats(cls) -> ProactorStats:
         return ProactorStats()
+
+    @classmethod
+    def make_logger(cls, settings: ProactorSettings) -> ProactorLogger:
+        return ProactorLogger(**settings.logging.qualified_logger_names())
 
     @classmethod
     def make_event_persister(cls, settings: ProactorSettings) -> PersisterInterface:  # noqa: ARG003
