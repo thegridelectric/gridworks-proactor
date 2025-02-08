@@ -94,7 +94,7 @@ class CategoryLoggerInfo:
     ) -> None:
         self.logger = logger
         self.default_level = default_level
-        self.default_disabled = logger.disabled
+        self.default_disabled = getattr(logger, "disabled", False)
 
 
 class ProactorLogger(LoggerAdapterT):
@@ -194,9 +194,7 @@ class ProactorLogger(LoggerAdapterT):
     def category_logger_name(self, category: str) -> str:
         return f"{self.name}.{category}"
 
-    def category_logger(
-        self, category: str
-    ) -> Optional[logging.Logger | logging.LoggerAdapter]:
+    def category_logger(self, category: str) -> Optional[LoggerOrAdapter]:
         """Get existing category logger"""
         logger_info = self.category_loggers.get(category)
         if logger_info is not None:
@@ -245,7 +243,8 @@ class ProactorLogger(LoggerAdapterT):
     def reset_default_category_levels(self) -> None:
         for logger_info in self.category_loggers.values():
             logger_info.logger.setLevel(logger_info.default_level)
-            logger_info.logger.disabled = logger_info.default_disabled
+            if hasattr(logger_info.logger, "disabled"):
+                logger_info.logger.disabled = logger_info.default_disabled
 
     def __repr__(self) -> str:
         return (

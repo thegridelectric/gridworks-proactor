@@ -160,7 +160,10 @@ class MQTTClientWrapper:
             subscribe_result = self._client.subscribe(
                 list(self._subscriptions.items()), 0
             )
-            if subscribe_result[0] == MQTT_ERR_SUCCESS:
+            if (
+                subscribe_result[0] == MQTT_ERR_SUCCESS
+                and subscribe_result[1] is not None
+            ):
                 self._pending_subacks[subscribe_result[1]] = topics
         else:
             subscribe_result = MQTT_ERR_SUCCESS, None
@@ -171,7 +174,7 @@ class MQTTClientWrapper:
         return typing.cast(tuple[int, Optional[int]], self._client.unsubscribe(topic))
 
     def connected(self) -> bool:
-        return self._client.is_connected()
+        return self._client.is_connected()  # type: ignore[no-any-return]
 
     def num_subscriptions(self) -> int:
         return len(self._subscriptions)

@@ -205,12 +205,16 @@ class Reuploads:
                 state_str = f"{self.num_reupload_pending} reupload events pending."
             else:
                 state_str = "reupload complete."
-            self._logger.comm_event(
+            s = (
                 f"start_reupload: sent {num_reupload_now} events. "  # noqa: G004
                 f"{state_str} "
                 f"Total events in reupload: {num_pending_events}.  "
-                f"Reuploads started: {self.stats.reupload_counts.started}  "
-                f"completed: {self.stats.reupload_counts.completed}."
             )
+            if self.stats is not None:
+                s += (
+                    f"Reuploads started: {self.stats.reupload_counts.started}  "
+                    f"completed: {self.stats.reupload_counts.completed}."
+                )
+            self._logger.comm_event(s)
         if self._logger.path_enabled:
             self._logger.path(self.get_str(num_events=5))

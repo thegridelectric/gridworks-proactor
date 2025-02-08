@@ -1,8 +1,7 @@
 import asyncio
 import json
-import logging
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple
 
 from gwproto import Message, MQTTCodec, MQTTTopic
 from gwproto.messages import (
@@ -36,7 +35,7 @@ from gwproactor.links.message_times import LinkMessageTimes, MessageTimes
 from gwproactor.links.mqtt import QOS, MQTTClients, MQTTClientWrapper
 from gwproactor.links.reuploads import Reuploads
 from gwproactor.links.timer_interface import TimerManagerInterface
-from gwproactor.logger import ProactorLogger
+from gwproactor.logger import LoggerOrAdapter, ProactorLogger
 from gwproactor.message import (
     MQTTConnectFailPayload,
     MQTTConnectPayload,
@@ -147,9 +146,7 @@ class LinkManager:
     def mqtt_client_wrapper(self, client_name: str) -> MQTTClientWrapper:
         return self._mqtt_clients.client_wrapper(client_name)
 
-    def enable_mqtt_loggers(
-        self, logger: Optional[Union[logging.Logger, logging.LoggerAdapter]] = None
-    ) -> None:
+    def enable_mqtt_loggers(self, logger: Optional[LoggerOrAdapter] = None) -> None:
         self._mqtt_clients.enable_loggers(logger)
 
     def disable_mqtt_loggers(self) -> None:
@@ -229,7 +226,7 @@ class LinkManager:
     def publish_message(  # noqa: PLR0913
         self,
         link_name: str,
-        message: Message,
+        message: Message[Any],
         qos: int = 0,
         context: Any = None,
         *,
