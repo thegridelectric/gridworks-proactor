@@ -384,7 +384,7 @@ class Proactor(ServicesInterface, Runnable):
             while not self._stop_requested:
                 message = await self._receive_queue.get()
                 if not self._stop_requested:
-                    await self.process_message(message)
+                    await self.async_process_message(message)
                 self._receive_queue.task_done()
         except Exception as e:
             if not isinstance(e, asyncio.exceptions.CancelledError):
@@ -459,7 +459,13 @@ class Proactor(ServicesInterface, Runnable):
     def _start_processing_messages(self) -> None:
         """Hook for processing before any messages are pulled from queue"""
 
-    async def process_message(self, message: Message[Any]) -> None:  # noqa: C901, PLR0912
+    def process_message(self, message: Message[Any]) -> Result[bool, Exception]:
+        raise NotImplementedError(
+            "Proactor does not implement process_message, "
+            "but instead async_process_message."
+        )
+
+    async def async_process_message(self, message: Message[Any]) -> None:  # noqa: C901, PLR0912
         if not isinstance(message.Payload, PatWatchdog):
             self._logger.message_enter(
                 "++Proactor.process_message %s/%s",

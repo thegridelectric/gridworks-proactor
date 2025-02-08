@@ -267,14 +267,14 @@ def make_recorder_class(  # noqa: C901
         def release_upstream_subacks(self: ProactorT, num_released: int = -1) -> None:
             self.release_subacks(self.upstream_client, num_released)
 
-        async def process_message(self, message: Message[Any]) -> None:
+        async def async_process_message(self, message: Message[Any]) -> None:
             if (
                 isinstance(message.Payload, MQTTSubackPayload)
                 and self._subacks_paused[message.Payload.client_name]
             ):
                 self._subacks_available[message.Payload.client_name].append(message)
             else:
-                await super().process_message(message)
+                await super().async_process_message(message)
 
         def _derived_process_mqtt_message(
             self, message: Message[MQTTReceiptPayload], decoded: Message[Any]
