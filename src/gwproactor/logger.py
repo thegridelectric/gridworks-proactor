@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 import logging
-from typing import Any, Optional, Sequence, TypeAlias
+from typing import Any, Mapping, Optional, Sequence, TypeAlias
 
 
 class MessageSummary:
@@ -113,8 +113,10 @@ class ProactorLogger(LoggerAdapterT):
         message_summary: str,
         lifecycle: str,
         comm_event: str,
+        *,
         extra: Optional[dict[str, Any]] = None,
         category_logger_names: Optional[Sequence[str]] = None,
+        **_kwargs: Mapping[str, Any],
     ) -> None:
         super().__init__(logging.getLogger(base), extra=extra)
         self.message_summary_logger = logging.getLogger(message_summary)

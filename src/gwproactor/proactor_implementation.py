@@ -4,11 +4,13 @@ import asyncio
 import sys
 import threading
 import traceback
+import typing
 import uuid
 from typing import (
     Any,
     Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Type,
@@ -168,7 +170,9 @@ class Proactor(ServicesInterface, Runnable):
 
     @classmethod
     def make_logger(cls, settings: ProactorSettings) -> ProactorLogger:
-        return ProactorLogger(**settings.logging.qualified_logger_names())
+        return ProactorLogger(
+            **typing.cast(Mapping[str, Any], settings.logging.qualified_logger_names())
+        )
 
     @classmethod
     def make_event_persister(cls, settings: ProactorSettings) -> PersisterInterface:  # noqa: ARG003
@@ -308,15 +312,15 @@ class Proactor(ServicesInterface, Runnable):
             "++Proactor._process_ack_timeout %s", wait_info.message_id
         )
         path_dbg = 0
-        result = self._links.process_ack_timeout(wait_info)
-        if result.is_ok():
-            path_dbg |= 0x00000001
-            if result.value.deactivated():
-                path_dbg |= 0x00000002
-                self._derived_recv_deactivated(result.value)
-        else:
-            path_dbg |= 0x00000004
-            self._report_error(result.err(), msg="Proactor._process_ack_timeout")
+        match self._links.process_ack_timeout(wait_info):
+            case Ok(transition):
+                path_dbg |= 0x00000001
+                if transition.deactivated():
+                    path_dbg |= 0x00000002
+                    self._derived_recv_deactivated(transition)
+            case Err(exception):
+                path_dbg |= 0x00000004
+                self._report_error(exception, msg="Proactor._process_ack_timeout")
         self._logger.message_exit(
             "--Proactor._process_ack_timeout path:0x%08X", path_dbg
         )
