@@ -136,13 +136,26 @@ class RecorderLinks(LinkManager):
         self.needs_ack = []
 
     def publish_message(
-        self, client: str, message: Message[Any], qos: int = 0, context: Any = None
+        self,
+        client: str,
+        message: Message[Any],
+        qos: int = 0,
+        context: Any = None,
+        *,
+        topic: str = "",
+        use_link_topic: bool = False,
     ) -> MQTTMessageInfo:
         if self.acks_paused:
             self.needs_ack.append(_PausedAck(client, message, qos, context))
             return MQTTMessageInfo(-1)
-        # noinspection PyProtectedMember
-        return super().publish_message(client, message, qos=qos, context=context)
+        return super().publish_message(
+            client,
+            message,
+            qos=qos,
+            context=context,
+            topic=topic,
+            use_link_topic=use_link_topic,
+        )
 
     def release_acks(self, clear: bool = False, num_to_release: int = -1) -> int:
         # self._logger.info(
