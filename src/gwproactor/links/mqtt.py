@@ -174,7 +174,7 @@ class MQTTClientWrapper:
         return typing.cast(tuple[int, Optional[int]], self._client.unsubscribe(topic))
 
     def connected(self) -> bool:
-        return self._client.is_connected()  # type: ignore[no-any-return]
+        return self._client.is_connected()
 
     def num_subscriptions(self) -> int:
         return len(self._subscriptions)

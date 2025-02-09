@@ -15,7 +15,7 @@ NUM_INITIAL_EVENT_REUPLOADS: int = 5
 
 
 class ProactorSettings(BaseSettings):
-    paths: Paths = Field(typing.cast(Paths, {}), validate_default=True)
+    paths: Paths = Field(default=typing.cast(Paths, {}), validate_default=True)
     logging: LoggingSettings = LoggingSettings()
     mqtt_link_poll_seconds: float = MQTT_LINK_POLL_SECONDS
     ack_timeout_seconds: float = ACK_TIMEOUT_SECONDS
