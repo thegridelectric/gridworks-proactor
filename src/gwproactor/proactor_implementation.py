@@ -524,7 +524,7 @@ class Proactor(ServicesInterface, Runnable):
         self, mqtt_payload: MQTTReceiptPayload
     ) -> Result[Message[Any], Exception]:
         try:
-            result = Ok(
+            result: Result[Message[Any], Exception] = Ok(
                 self._links.decode(
                     mqtt_payload.client_name,
                     mqtt_payload.message.topic,
@@ -550,7 +550,7 @@ class Proactor(ServicesInterface, Runnable):
             result = Err(e)
         return result
 
-    def _process_mqtt_message(
+    def _process_mqtt_message(  # noqa: C901
         self, mqtt_receipt_message: Message[MQTTReceiptPayload]
     ) -> Result[Message[Any], Exception]:
         self._logger.path(
@@ -560,60 +560,61 @@ class Proactor(ServicesInterface, Runnable):
         )
         path_dbg = 0
         self._stats.add_mqtt_message(mqtt_receipt_message)
-        decode_result = self._decode_mqtt_message(mqtt_receipt_message.Payload)
-        if decode_result.is_ok():
-            path_dbg |= 0x00000001
-            decoded_message = decode_result.value
-            self._stats.add_decoded_mqtt_message_type(
-                mqtt_receipt_message.Payload.client_name, decoded_message.message_type()
-            )
-            if self._logger.message_summary_enabled:
-                if isinstance(decoded_message.Payload, Ack):
-                    message_id = decoded_message.Payload.AckMessageID
-                else:
-                    message_id = decoded_message.Header.MessageId
-                self._logger.message_summary(
-                    direction="IN  mqtt    ",
-                    src=decoded_message.src(),
-                    dst=decoded_message.dst(),
-                    topic=mqtt_receipt_message.Payload.message.topic,
-                    payload_object=decoded_message.Payload,
-                    message_id=message_id,
+        match decode_result := self._decode_mqtt_message(mqtt_receipt_message.Payload):
+            case Ok(decoded_message):
+                path_dbg |= 0x00000001
+                decoded_message = decode_result.value
+                self._stats.add_decoded_mqtt_message_type(
+                    mqtt_receipt_message.Payload.client_name,
+                    decoded_message.message_type(),
                 )
-            link_mgr_results = self._links.process_mqtt_message(mqtt_receipt_message)
-            if link_mgr_results.is_ok():
-                path_dbg |= 0x00000002
-                if link_mgr_results.value.recv_activated():
-                    path_dbg |= 0x00000004
-                    self._derived_recv_activated(link_mgr_results.value)
-            else:
-                path_dbg |= 0x00000008
-                self._report_error(
-                    link_mgr_results.err(),
-                    "_process_mqtt_message/_link_states.process_mqtt_message",
-                )
-            match decoded_message.Payload:
-                case Ack():
-                    path_dbg |= 0x00000010
-                    self._process_ack(
-                        mqtt_receipt_message.Payload.client_name,
-                        decoded_message.Payload.AckMessageID,
+                if self._logger.message_summary_enabled:
+                    if isinstance(decoded_message.Payload, Ack):
+                        message_id = decoded_message.Payload.AckMessageID
+                    else:
+                        message_id = decoded_message.Header.MessageId
+                    self._logger.message_summary(
+                        direction="IN  mqtt    ",
+                        src=decoded_message.src(),
+                        dst=decoded_message.dst(),
+                        topic=mqtt_receipt_message.Payload.message.topic,
+                        payload_object=decoded_message.Payload,
+                        message_id=message_id,
                     )
-                case Ping():
-                    path_dbg |= 0x00000020
-                case DBGPayload():
-                    path_dbg |= 0x00000040
-                    self._process_dbg(decoded_message.Payload)
-                case _:
-                    path_dbg |= 0x00000080
-                    self._derived_process_mqtt_message(
-                        mqtt_receipt_message, decoded_message
+                match self._links.process_mqtt_message(mqtt_receipt_message):
+                    case Ok(transition):
+                        path_dbg |= 0x00000002
+                        if transition.recv_activated():
+                            path_dbg |= 0x00000004
+                            self._derived_recv_activated(transition)
+                    case Err(error):
+                        path_dbg |= 0x00000008
+                        self._report_error(
+                            error,
+                            "_process_mqtt_message/_link_states.process_mqtt_message",
+                        )
+                match decoded_message.Payload:
+                    case Ack():
+                        path_dbg |= 0x00000010
+                        self._process_ack(
+                            mqtt_receipt_message.Payload.client_name,
+                            decoded_message.Payload.AckMessageID,
+                        )
+                    case Ping():
+                        path_dbg |= 0x00000020
+                    case DBGPayload():
+                        path_dbg |= 0x00000040
+                        self._process_dbg(decoded_message.Payload)
+                    case _:
+                        path_dbg |= 0x00000080
+                        self._derived_process_mqtt_message(
+                            mqtt_receipt_message, decoded_message
+                        )
+                if decoded_message.Header.AckRequired:
+                    path_dbg |= 0x00000100
+                    self._links.send_ack(
+                        mqtt_receipt_message.Payload.client_name, decoded_message
                     )
-            if decoded_message.Header.AckRequired:
-                path_dbg |= 0x00000100
-                self._links.send_ack(
-                    mqtt_receipt_message.Payload.client_name, decoded_message
-                )
         self._logger.path(
             "--Proactor._process_mqtt_message:%s  path:0x%08X",
             int(decode_result.is_ok()),
@@ -622,9 +623,9 @@ class Proactor(ServicesInterface, Runnable):
         return decode_result
 
     def _process_mqtt_connected(self, message: Message[MQTTConnectPayload]) -> None:
-        result = self._links.process_mqtt_connected(message)
-        if result.is_err():
-            self._report_error(result.err(), "_process_mqtt_connected")
+        match self._links.process_mqtt_connected(message):
+            case Err(error):
+                self._report_error(error, "_process_mqtt_connected")
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def _derived_recv_deactivated(
@@ -643,17 +644,23 @@ class Proactor(ServicesInterface, Runnable):
     def _process_mqtt_disconnected(
         self, message: Message[MQTTDisconnectPayload]
     ) -> Result[bool, Exception]:
-        link_mgr_result = self._links.process_mqtt_disconnected(message)
-        if link_mgr_result.is_ok() and link_mgr_result.value.recv_deactivated():
-            result = self._derived_recv_deactivated(link_mgr_result.value)
-        else:
-            result = Err(link_mgr_result.err())
+        result: Result[bool, Exception] = Ok()
+        match self._links.process_mqtt_disconnected(message):
+            case Ok(transition):
+                if transition.recv_deactivated():
+                    result = self._derived_recv_deactivated(transition)
+            case Err(error):
+                result = Err(error)
         return result
 
     def _process_mqtt_connect_fail(
         self, message: Message[MQTTConnectFailPayload]
     ) -> Result[bool, Exception]:
-        return self._links.process_mqtt_connect_fail(message)
+        result: Result[bool, Exception] = Ok()
+        match self._links.process_mqtt_connect_fail(message):
+            case Err(error):
+                result = Err(error)
+        return result
 
     def _process_mqtt_suback(
         self, message: Message[MQTTSubackPayload]
@@ -662,18 +669,16 @@ class Proactor(ServicesInterface, Runnable):
             "++Proactor._process_mqtt_suback client:%s", message.Payload.client_name
         )
         path_dbg = 0
-        link_mgr_result = self._links.process_mqtt_suback(message)
-        if link_mgr_result.is_ok():
-            path_dbg |= 0x00000001
-            if link_mgr_result.value.recv_activated():
-                path_dbg |= 0x00000002
-                result = self._derived_recv_activated(link_mgr_result.value)
-            else:
+        result: Result[bool, Exception] = Ok()
+        match self._links.process_mqtt_suback(message):
+            case Ok(transition):
+                path_dbg |= 0x00000001
+                if transition.recv_activated():
+                    path_dbg |= 0x00000002
+                    result = self._derived_recv_activated(transition)
+            case Err(error):
                 path_dbg |= 0x00000004
-                result = Ok(value=True)
-        else:
-            path_dbg |= 0x00000008
-            result = Err(link_mgr_result.err())
+                result = Err(error)
         self._logger.path(
             "--Proactor._process_mqtt_suback:%d  path:0x%08X",
             result.is_ok(),
