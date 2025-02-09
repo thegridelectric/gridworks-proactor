@@ -29,7 +29,7 @@ class TLSPaths(BaseModel):
             private_key_path=client_dir / "private" / f"{client_name}.pem",
         )
 
-    def effective_paths(self, certs_dir: Path, client_name: str) -> "TLSPaths":
+    def effective_paths(self, certs_dir: str | Path, client_name: str) -> "TLSPaths":
         """Re-calculate non-set paths given a certs_dir and client name. Meant to be called in context where those are
         known, e.g. a validator on a higher-level model which has access to a Paths object and a named MQTT
         configuration."""
