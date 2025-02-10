@@ -52,7 +52,7 @@ def _tomorrow() -> datetime.datetime:
 
 
 class PatWatchdogWithFile(ExternalWatchdogCommandBuilder):
-    pat_dir: Optional[Path] = None
+    pat_dir: Path
     """Explicitly set this path on the class before running tests"""
 
     @classmethod
@@ -154,8 +154,8 @@ def test_persister_exception() -> None:
 
 def assert_contents(
     p: TimedRollingFilePersister,
-    uids: Optional[list] = None,
-    exp_paths: Optional[list] = None,
+    uids: Optional[list[str]] = None,
+    exp_paths: Optional[list[Path | str]] = None,
     nearby_days: bool = True,
     possible_days: Optional[list[datetime.datetime]] = None,
     exact_days: Optional[list[datetime.datetime]] = None,
@@ -270,6 +270,7 @@ def test_persister_happy_path(tmp_path: Path) -> None:
     # deserialize
     loaded = json.loads(retrieved.value.decode("utf-8"))
     assert loaded == json.loads(event.model_dump_json())
+    assert isinstance(retrieved.value, bytes)
     loaded_event = ProblemEvent.model_validate_json(retrieved.value)
     assert loaded_event == event
 
@@ -810,6 +811,7 @@ def test_persister_indexing() -> None:
         p.get_path(p.pending_ids()[5]).unlink()
         index.pop(p.pending_ids()[5])
         p6 = p.get_path(p.pending_ids()[6])
+        assert p6 is not None
         p6_dir = p6.parent
         # invalid file - rgx failure
         shutil.copy(p6, p6_dir / (p6.name + "x"))
