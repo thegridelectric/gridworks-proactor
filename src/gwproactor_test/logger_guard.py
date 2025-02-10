@@ -1,7 +1,7 @@
 import logging
 import sys
 from types import TracebackType
-from typing import Optional, Self, Sequence, Type
+from typing import Iterator, Optional, Self, Sequence, Type
 
 import pytest
 
@@ -107,7 +107,7 @@ class LoggerGuards:
 
 
 @pytest.fixture
-def restore_loggers() -> LoggerGuards:
+def restore_loggers() -> Iterator[LoggerGuards]:
     num_root_handlers = len(logging.getLogger().handlers)
     guards = LoggerGuards()
     yield guards
