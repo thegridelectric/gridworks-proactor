@@ -39,8 +39,8 @@ class CommTestHelper(Generic[ParentT, ChildT, ParentSettingsT, ChildSettingsT]):
     parent_settings_t: Type[ParentSettingsT]
     child_settings_t: Type[ChildSettingsT]
 
-    parent_recorder_t: Callable[..., RecorderInterface] = None
-    child_recorder_t: Callable[..., RecorderInterface] = None
+    parent_recorder_t: Callable[..., RecorderInterface] = None  # type:ignore[assignment]
+    child_recorder_t: Callable[..., RecorderInterface] = None  # type:ignore[assignment]
 
     parent_helper: ProactorTestHelper
     child_helper: ProactorTestHelper
@@ -143,11 +143,11 @@ class CommTestHelper(Generic[ParentT, ChildT, ParentSettingsT, ChildSettingsT]):
 
     @property
     def parent(self) -> Optional[ParentT]:
-        return self.parent_helper.proactor
+        return self.parent_helper.proactor  # type: ignore[return-value]
 
     @property
     def child(self) -> Optional[ChildT]:
-        return self.child_helper.proactor
+        return self.child_helper.proactor  # type: ignore[return-value]
 
     def start_child(
         self,
@@ -296,7 +296,7 @@ class CommTestHelper(Generic[ParentT, ChildT, ParentSettingsT, ChildSettingsT]):
         exc_type: Optional[Type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
-    ) -> bool:
+    ) -> bool:  # noqa
         try:
             await self.stop_and_join()
         finally:
