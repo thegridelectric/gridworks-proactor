@@ -18,7 +18,6 @@ from typing import (
 import gwproto
 from aiohttp.typedefs import Handler as HTTPHandler
 from gwproto import Message
-from gwproto.data_classes.components.web_server_component import WebServerComponent
 from gwproto.data_classes.hardware_layout import HardwareLayout
 from gwproto.data_classes.sh_node import ShNode
 from gwproto.messages import Ack, EventBase, EventT, Ping, ProblemEvent, ShutdownEvent
@@ -145,14 +144,7 @@ class Proactor(Runnable):
         self.add_communicator(self._io_loop_manager)
         self._web_manager = _WebManager(services)
         self.add_communicator(self._web_manager)
-        for server_config in self._layout.get_components_by_type(WebServerComponent):
-            self._web_manager.add_web_server_config(
-                name=server_config.web_server_gt.Name,
-                host=server_config.web_server_gt.Host,
-                port=server_config.web_server_gt.Port,
-                enabled=server_config.web_server_gt.Enabled,
-                server_kwargs=server_config.web_server_gt.Kwargs,
-            )
+
 
     @classmethod
     def make_stats(cls) -> ProactorStats:
