@@ -10,6 +10,7 @@ from gwproto.messages import (
     EventBase,
     EventT,
     MQTTConnectEvent,
+    MQTTConnectFailedEvent,
     MQTTDisconnectEvent,
     MQTTFullySubscribedEvent,
     PeerActiveEvent,
@@ -565,7 +566,23 @@ class LinkManager:
     def process_mqtt_connect_fail(
         self, message: Message[MQTTConnectFailPayload]
     ) -> Result[Transition, InvalidCommStateInput]:
-        return self._states.process_mqtt_connect_fail(message)
+        state_result = self._states.process_mqtt_connect_fail(message)
+        rc = message.Payload.rc
+        if rc is None:
+            reason = "no CONNACK"
+        else:
+            reason = f"CONNACK refused: {rc.string} (rc {rc.code})"
+        if state_result.is_ok():
+            self._logger.comm_event("%s  %s", state_result.value, reason)
+        else:
+            self._logger.comm_event(
+                "%s: connect failed, %s", message.Payload.client_name, reason
+            )
+        if rc is not None:
+            self.generate_event(
+                MQTTConnectFailedEvent(PeerName=message.Payload.client_name)
+            )
+        return state_result
 
     def process_mqtt_message(
         self, message: Message[MQTTReceiptPayload]

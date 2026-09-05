@@ -60,6 +60,10 @@ class MQTTClientWrapper:
     _client: PahoMQTTClient
     _stop_requested: bool
     _receive_queue: AsyncQueueWriter
+    _connack_accepted: bool
+    """True from an accepting CONNACK until the socket drops. A refusing
+    CONNACK (bad credentials, not authorized) never connected us, so the
+    socket close that follows it is not a disconnect."""
     _subscriptions: Dict[str, int]
     _pending_subscriptions: Set[str]
     _pending_subacks: Dict[int, List[str]]
@@ -107,6 +111,7 @@ class MQTTClientWrapper:
         self._client.on_connect_fail = self.on_connect_fail
         self._client.on_disconnect = self.on_disconnect
         self._client.on_subscribe = self.on_subscribe
+        self._connack_accepted = False
         self._subscriptions = {}
         self._pending_subscriptions = set()
         self._pending_subacks = {}
@@ -257,14 +262,25 @@ class MQTTClientWrapper:
         reason_code: ReasonCode,
         _properties: Optional[MQTTProperties] = None,
     ) -> None:
-        self._receive_queue.put(
-            MQTTConnectMessage(
-                client_name=self._client_name,
-                userdata=userdata,
-                flags=flags,
-                rc=reason_code,
+        if reason_code.is_failure:
+            self._connack_accepted = False
+            self._receive_queue.put(
+                MQTTConnectFailMessage(
+                    client_name=self._client_name,
+                    userdata=userdata,
+                    rc=reason_code,
+                )
             )
-        )
+        else:
+            self._connack_accepted = True
+            self._receive_queue.put(
+                MQTTConnectMessage(
+                    client_name=self._client_name,
+                    userdata=userdata,
+                    flags=flags,
+                    rc=reason_code,
+                )
+            )
 
     def on_connect_fail(self, _: Any, userdata: Any) -> None:
         self._receive_queue.put(
@@ -282,6 +298,9 @@ class MQTTClientWrapper:
         rc: ReasonCode,
         _properties: Optional[MQTTProperties],
     ) -> None:
+        if not self._connack_accepted:
+            return
+        self._connack_accepted = False
         self._pending_subscriptions = set(self._subscriptions.keys())
         self._receive_queue.put(
             MQTTDisconnectMessage(
