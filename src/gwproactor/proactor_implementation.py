@@ -4,6 +4,7 @@ import asyncio
 import sys
 import threading
 import traceback
+import uuid
 from functools import cached_property
 from typing import (
     Any,
@@ -102,6 +103,7 @@ class Proactor(Runnable):
 
     def __init__(self, services: AppInterface, config: ProactorConfig) -> None:
         self._name = config.name
+        self._instance_id = str(uuid.uuid4())
         self._settings = config.settings
         self._callbacks = CallbackManager(callback_functions=config.callback_functions)
         self._layout = config.layout
@@ -131,6 +133,7 @@ class Proactor(Runnable):
             event_persister=self._event_persister,
             timer_manager=AsyncioTimerManager(),
             ack_timeout_callback=self._process_ack_timeout,
+            instance_id=self._instance_id,
         )
         self._processing_futures = set()
         self._processing_futures_lock = asyncio.Lock()
@@ -359,6 +362,10 @@ class Proactor(Runnable):
     @property
     def hardware_layout(self) -> HardwareLayout:
         return self._layout
+
+    @property
+    def instance_id(self) -> str:
+        return self._instance_id
 
     @property
     def upstream_client(self) -> str:

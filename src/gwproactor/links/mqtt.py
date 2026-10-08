@@ -74,6 +74,7 @@ class MQTTClientWrapper:
         topic_dst: str,
         client_config: config.MQTTClient,
         receive_queue: AsyncQueueWriter,
+        client_id: str,
     ) -> None:
         self._client_name = client_name
         self.topic_dst = topic_dst
@@ -81,7 +82,7 @@ class MQTTClientWrapper:
         self._receive_queue = receive_queue
         self._client = PahoMQTTClient(
             callback_api_version=CallbackAPIVersion.VERSION2,
-            client_id="-".join(str(uuid.uuid4()).split("-")[:-1]),
+            client_id=client_id,
         )
         if self._client_config.username is not None:
             self._client.username_pw_set(
@@ -221,6 +222,11 @@ class MQTTClientWrapper:
     def mqtt_client(self) -> PahoMQTTClient:
         return self._client
 
+    @property
+    def client_id(self) -> str:
+        """The MQTT client_id presented at CONNECT."""
+        return self._client._client_id.decode()  # noqa: SLF001
+
     def on_message(self, _: Any, userdata: Any, message: MQTTMessage) -> None:
         self._receive_queue.put(
             MQTTReceiptMessage(
@@ -329,8 +335,9 @@ class MQTTClients:
     upstream_topic_dst: str = ""
     downstream_client: str = ""
 
-    def __init__(self) -> None:
+    def __init__(self, instance_id: str) -> None:
         self._send_queue = AsyncQueueWriter()
+        self._instance_id = instance_id
         self.clients = {}
 
     def add_client(self, settings: LinkConfig) -> None:
@@ -358,6 +365,10 @@ class MQTTClients:
             topic_dst=settings.spaceheat_name,
             client_config=settings.mqtt,
             receive_queue=self._send_queue,
+            # The upstream link presents the proactor's instance id; every
+            # other link mints its own, since a broker drops the existing
+            # session when a second CONNECT arrives with the same client_id.
+            client_id=self._instance_id if settings.upstream else str(uuid.uuid4()),
         )
 
     def publish(

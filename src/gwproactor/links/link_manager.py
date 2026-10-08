@@ -89,6 +89,7 @@ class LinkManager:
         event_persister: PersisterInterface,
         timer_manager: TimerManagerInterface,
         ack_timeout_callback: AckTimerCallback,
+        instance_id: str,
     ) -> None:
         self.publication_name = publication_name
         self.subscription_name = subscription_name
@@ -101,7 +102,7 @@ class LinkManager:
             self._logger,
             self._settings.num_initial_event_reuploads,
         )
-        self._mqtt_clients = MQTTClients()
+        self._mqtt_clients = MQTTClients(instance_id=instance_id)
         self._mqtt_codecs = {}
         self._states = LinkStates()
         self._message_times = MessageTimes()

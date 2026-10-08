@@ -636,6 +636,10 @@ class App(AppInterface):
         return self.proactor.publish_upstream(payload=payload, qos=qos, **message_args)
 
     @property
+    def instance_id(self) -> str:
+        return self.proactor.instance_id
+
+    @property
     def upstream_client(self) -> str:
         return self.proactor.upstream_client
 
