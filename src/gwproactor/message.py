@@ -183,7 +183,9 @@ class MQTTConnectFailMessage(MQTTClientMessage[MQTTConnectFailPayload]):
             payload=MQTTConnectFailPayload(
                 client_name=client_name,
                 userdata=userdata,
-                rc=None if rc is None else SerializedReasonCode.from_paho_reason_code(rc),
+                rc=None
+                if rc is None
+                else SerializedReasonCode.from_paho_reason_code(rc),
             ),
         )
 

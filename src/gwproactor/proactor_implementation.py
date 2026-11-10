@@ -148,7 +148,6 @@ class Proactor(Runnable):
         self._web_manager = _WebManager(services)
         self.add_communicator(self._web_manager)
 
-
     @classmethod
     def make_stats(cls) -> ProactorStats:
         return ProactorStats()

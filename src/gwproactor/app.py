@@ -58,11 +58,10 @@ class SignalException(Exception):
         super_str = super().__str__()
         if super_str:
             s += f" <{super_str}>"
-        enum_str = (
-            str(signal.Signals(self.signalnum).name)
-            if self.signalnum in signal.Signals
-            else "Unknown signal"
-        )
+        try:
+            enum_str = signal.Signals(self.signalnum).name
+        except ValueError:
+            enum_str = "Unknown signal"
         s += f"  {enum_str}  ({self.signalnum})"
         return s
 
